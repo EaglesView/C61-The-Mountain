@@ -1,0 +1,4 @@
+@startuml US-04
+title US-04 - En tant qu'utilisateur, je veux pouvoir changer mon mot de passe afin de sécuriser mon compte.
+
+@enduml

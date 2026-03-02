@@ -1,0 +1,4 @@
+@startuml US-06
+title US-06 - En tant qu'utilisateur, je veux pouvoir créer une partie afin de jouer avec d'autres joueurs.
+
+@enduml

@@ -1,0 +1,4 @@
+@startuml US-02
+title US-02 - En tant qu'utilisateur, je veux supprimer définitivement mon compte, afin de retirer mes données de la plateforme
+
+@enduml

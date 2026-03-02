@@ -1,0 +1,4 @@
+@startuml US-01
+title US-01 - En tant qu'utilisateur, je veux créer un compte avec mon courriel, afin d'accéder au jeu.	
+
+@enduml

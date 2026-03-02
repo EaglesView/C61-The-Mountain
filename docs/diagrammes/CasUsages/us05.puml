@@ -1,0 +1,4 @@
+@startuml US-05
+title US-05 - En tant qu'utilisateur, je veux pouvoir avoir accès à une interface de menu afin d'accéder aux différentes fonctionnalités du jeu.
+
+@enduml
