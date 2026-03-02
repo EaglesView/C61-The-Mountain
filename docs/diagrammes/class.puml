@@ -1,60 +1,106 @@
 @startuml
-' --- Styling for clarity ---
+' --- Styliser les Classes Godot Hérités---
 skinparam componentStyle uml2
 skinparam class {
-    BackgroundColor<<Godot>> #FFF2CC
-    BorderColor<<Godot>> #D6B656
+    BackgroundColor<<Godot>> #FF7171
+    BorderColor<<Godot>> #FF2222
+    FontColor<<Godot>> #FFFFFF
 }
 
-' --- Godot Engine Nodes ---
-class Node3D << (N,#FF7700) Godot >>
-class CharacterBody3D << (N,#FF7700) Godot >>
 
-' --- Your Custom Scripts ---
-abstract class Entity {
-    + walkspeed: float
-    --
-    + _PhysicsProcess(delta)
-    + TakeDamage()
-    + _Ragdoll()
-    # _Die()
+package Character {
+
+    ' --- Nodes Godot de base ---
+    class Node3D << (N,#FF2222) Godot >>
+    class CharacterBody3D << (N,#FF2222) Godot >> {
+        + _Ready()
+        + _PhysicsProcess()
+    }
+
+    ' --- Classes ---
+    abstract class Entity {
+        + walkspeed: float
+        + model: res
+
+        --
+        + _PhysicsProcess(delta)
+        + TakeDamage()
+        + _Ragdoll()
+        # _Die()
+    }
+
+    class Player {
+        - camera: Camera3D
+        - input_dir: Vector2
+        --
+        + _input(event)
+        - handle_movement()
+        + interact_with_object()
+    }
+
+    ' --- World Objects ---
+    class Interactable {
+        + prompt_text: String
+        + interact()
+    }
+
+    note right of Interactable
+        Cette classe va etre vu dans les éléments
+        De la carte
+    end note
+
+
+    static class EntityUtils {
+        + GetEntityPos : void()=>Vector3
+        + SendAction : boolean()=>PuzzleAction
+
+    }
+
+    ' --- Hierarchy Relationships ---
+    Node3D <|-- CharacterBody3D
+    CharacterBody3D <|-- Entity : "Extends"
+    Entity <|-- Player : "Extends"
+
+    Player ..> Interactable : "Raycast/Area detection"
+
+    note right of Entity
+        TakeDamage() rends le perso
+        "Ragdoll" mode, avec un vecteur de force
+        amplifié dans la direction qu'il allait
+    end note
 }
 
-class Player {
-    - camera: Camera3D
-    - input_dir: Vector2
-    --
-    + _input(event)
-    - handle_movement()
-    + interact_with_object()
+package Puzzle {
+    class Node3D << (N,#FF2222) Godot >>
+    abstract class PuzzleAction {
+        + _Init(): void()
+        + _Activate(): void()=>Callback
+        + _GetResources(): any
+
+    }
+    class PuzzleButton {
+        + _Activate()
+    }
+    class PuzzleJoystick {
+        + _Activate()
+        + _GetResources(): Vector2
+    }
+    class PuzzleSliderLever {
+        + _Activate()
+        + _GetResources(): Float
+    }
+    Node3D *.. PuzzleAction : " Hérite de"
+    PuzzleAction *-- PuzzleButton
+    PuzzleAction *-- PuzzleJoystick
+    PuzzleAction *-- PuzzleSliderLever
+    note bottom of PuzzleButton
+        action booléenne -> Bouton
+        action 1 Axe -> SliderLever
+        action 2 Axes -> Joystick
+    end note
+
 }
 
-' --- World Objects ---
-class Interactable {
-    + prompt_text: String
-    + interact()
-}
 
-static class EntityUtils {
- + tes : String
-}
-
-' --- Hierarchy Relationships ---
-Node3D <|-- CharacterBody3D
-CharacterBody3D <|-- Entity : "Extends"
-Entity <|-- Player : "Extends"
-
-Player ..> Interactable : "Raycast/Area detection"
-
-note right of Entity
-  TakeDamage() rends le perso
-  "Ragdoll" mode, avec un vecteur de force
-  amplifié dans la direction qu'il allait
-end note
-
-note right of Player
-  Contains Camera logic 
-  and Input handling.
-end note
 
 @enduml
