@@ -1,0 +1,161 @@
+@startuml object diag Personnage
+title The Mountain - Schéma d'objets Godot - Niveaux
+
+package LevelManager{
+
+
+    object Node3D {
+        name = "LevelContainer"
+        script = Map.cs
+    }
+
+    object "GridMap1 : GridMap" as GridMap {
+        MeshLibrary = currentFloor
+    }
+
+    object "LevelProps : Node3D" as LevelProps {
+        name = LevelProps
+
+    }
+    object "ControlRoom : MeshInstance" as ControlRoom {
+        name = ControlRoom
+        Description = "c'est le mesh de la salle de contrôle\nprincipale. Elle comporte les boutons permettant  \nde contrôler les éléments de la salle de contrôle"
+    }
+    object "BaseMesh : MeshInstance" as BaseMesh {
+        name = ControlRoom
+    }
+    object "ControlRoomRail : Path3D" as PathRail {
+        name = ControlRoom
+        description = "La salle de contrôle se promène \nsur un rail.Les joueurs doivent entrer dans la salle\nde controle a la fin du niveau, et avoir un certain \nnombre de pingouins votés pour sortir \nau prochain niveau."
+    }
+    note right of GridMap {
+        Les Niveaux sont handcrafteds dans leur .tscn,
+        Mais avec des Tiles 3D dont leur collisions,
+        comportements, seront prédits. Comme cela,
+        on peut facilement créer avec des assets prédéfinis.
+    }
+
+    package Assets {
+        package TileForMVP {
+            object "MeshInstance : TileEmpty" as TileEmpty {
+                name = "TileEmpty"
+                meshInstance = meshInstance
+            }
+            object "MeshInstance : TileAcid" as TileAcid {
+                name = "TileAcid"
+                meshInstance = meshInstance
+                signal = OnPlayerTouch
+            }
+            object "MeshInstance : TileSaw" as TileSaw {
+                name = "TileSaw"
+                meshInstance = meshInstance
+                script = saw.cs
+            }
+            object "MeshInstance : Saw" as Saw {
+                name = "Saw"
+                meshInstance = meshInstance
+            }
+            object "MeshInstance : TileButton" as TileButton {
+                name = "TileButton"
+                meshInstance = meshInstance
+            }
+            object "MeshInstance : Button" as Button {
+                name = "Button"
+                meshInstance = MeshInstance
+            }
+            object "MeshInstance : TilePlatform" as TilePlatform {
+                name = "TilePlatform"
+                description = "Initie une plateforme qui \npeut se déplacer en X et Y sur les \nTileAcid"
+                meshInstance = MeshInstance
+            }
+            object "MeshInstance : TileWall" as TileWallStraight {
+                name = "TileWallStraight"
+                meshInstance = meshInstance
+            }
+            object "MeshInstance : TileWallCorner" as TileWallCorner {
+                name = "TileWallStraight"
+                meshInstance = meshInstance
+            }
+        }
+
+        object "MeshInstance : TileBridgeStraight" as TileBridgeStraight {
+            name = "TileBridge"
+            description = "Tuile Permettant la \ndirection en un axe"
+            meshInstance = meshInstance
+        }
+        object "MeshInstance : TileBridgeBend" as TileBridgeBend {
+            name = "TileBridge"
+            description = "Tuile Permettant la \ndirection en un axe"
+            meshInstance = meshInstance
+        }
+
+        object "MeshInstance : TileBouncer" as TileBouncer {
+            name = "TileBouncer"
+            description = "Tuile qui donne du Velocity Y+ \nquand on saute dessus"
+            meshInstance = MeshInstance
+        }
+        object "MeshInstance : TileWall" as TileWall {
+            name = "TileWall"
+            meshInstance = MeshInstance
+
+        }
+        package WaterTiles {
+            object "MeshInstance : TileWater" as TileWater {
+                name = "TileWater"
+                description = "Les joueurs peuvent potentiellement y aller!"
+                meshInstance = MeshInstance
+
+            }
+            object "MeshInstance : TileWaterPathStraight" as TileWaterPathStraight {
+                name = "TileWaterPathStraight"
+                meshInstance = MeshInstance
+
+            }
+            object "MeshInstance : TileWaterPathBend" as TileWaterPathBend {
+                name = "TileWaterPathBend"
+                meshInstance = MeshInstance
+
+            }
+            object "MeshInstance : TileWaterPathWall" as TileWaterPathWall {
+                name = "TilePathWaterPathWall"
+                description = "Tuile avec un path rivière, et un mur, \nforcant a plonger"
+                meshInstance = MeshInstance
+
+            }
+            object "MeshInstance : TileWaterBridgeStraight" as TileWaterBridgeStraight {
+                name = "TileWaterBridgeStraight"
+                description = "La tuile est connecté a un TileWaterPath \nou un TileWaterPathWall. Les joueurs au plancher peuvent\nvoir les Joueurs dans les tunnels"
+                meshInstance = MeshInstance
+
+            }
+            object "MeshInstance : TileWaterBridgeBend" as TileWaterBridgeBend {
+                name = "TileWaterBridgeBend"
+                description = "La tuile est connecté a un TileWaterPath ou un \nTileWaterPathWall. Les joueurs au plancher peuvent voir les \nJoueurs dans les tunnels"
+                meshInstance = MeshInstance
+
+            }
+        }
+
+
+        TileSaw *-- Saw
+        TileButton *-- Button
+    }
+
+    note bottom of Assets {
+        C'est les assets utilisés pour former les niveaux
+        dans les gridmaps
+    }
+
+
+
+
+    Node3D *.. GridMap : "Chargé \ndynamiquement"
+    GridMap *-- Assets
+    Node3D *-- LevelProps
+    LevelProps *-- ControlRoom
+    LevelProps *-- BaseMesh
+    ControlRoom *--PathRail
+}
+
+
+@enduml
