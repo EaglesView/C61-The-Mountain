@@ -1,0 +1,82 @@
+@startuml object diag Personnage
+title The Mountain - Schéma d'objets Godot - Personnage
+
+package Character{
+
+
+object CharacterBody3D {
+  name = "Player"
+  transform = Transform3D
+  script = Character.cs
+  animations = CharacterAnimations.res
+}
+
+object Skeleton3D {
+  bone_count = 8
+}
+
+
+
+object MeshInstance3D {
+  mesh = "character.res"
+  skin = Skin
+}
+
+object "Bone: Root" as BoneRoot {
+  index = 0
+  rest = Transform3D
+}
+
+object "Bone: Spine01" as BoneSpine {
+  index = 1
+  parent = 0
+}
+object "Bone: Spine02" as BoneSpine2 {
+  index = 2
+  parent = 1
+}
+object "Bone: ShoulderL" as ShoulderL {
+  index = 3
+  parent = 2
+}
+object "Bone: ShoulderR" as ShoulderR {
+  index = 4
+  parent = 2
+}
+object "Bone: ArmL" as ArmL {
+  index = 5
+  parent = 3
+}
+object "Bone: ArmR" as ArmR {
+  index = 6
+  parent = 4
+}
+object "Bone: Head" as BoneHead {
+  index = 7
+  parent = 2
+}
+
+CharacterBody3D *-- Skeleton3D
+CharacterBody3D *-- MeshInstance3D
+BoneSpine *-- BoneRoot
+BoneSpine2 *-- BoneSpine
+ShoulderL --> BoneSpine2
+BoneHead --> BoneSpine2 
+ShoulderR --> BoneSpine2
+ArmR --> ShoulderR
+ArmL --> ShoulderL
+MeshInstance3D ..> Skeleton3D : skinned to
+BoneRoot *-- Skeleton3D 
+note bottom of Skeleton3D {
+    Il faut prendre en compte
+    qu'il y aura des calculs 
+    de physique et du travail
+    d'animation rudimentaire,
+    alors 8 bones est déja
+    enough en charge de travail!
+}
+
+}
+
+
+@enduml
