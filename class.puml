@@ -1,0 +1,60 @@
+@startuml
+' --- Styling for clarity ---
+skinparam componentStyle uml2
+skinparam class {
+    BackgroundColor<<Godot>> #FFF2CC
+    BorderColor<<Godot>> #D6B656
+}
+
+' --- Godot Engine Nodes ---
+class Node3D << (N,#FF7700) Godot >>
+class CharacterBody3D << (N,#FF7700) Godot >>
+
+' --- Your Custom Scripts ---
+abstract class Entity {
+    + walkspeed: float
+    --
+    + _PhysicsProcess(delta)
+    + TakeDamage()
+    + _Ragdoll()
+    # _Die()
+}
+
+class Player {
+    - camera: Camera3D
+    - input_dir: Vector2
+    --
+    + _input(event)
+    - handle_movement()
+    + interact_with_object()
+}
+
+' --- World Objects ---
+class Interactable {
+    + prompt_text: String
+    + interact()
+}
+
+static class EntityUtils {
+ + tes : String
+}
+
+' --- Hierarchy Relationships ---
+Node3D <|-- CharacterBody3D
+CharacterBody3D <|-- Entity : "Extends"
+Entity <|-- Player : "Extends"
+
+Player ..> Interactable : "Raycast/Area detection"
+
+note right of Entity
+  TakeDamage() rends le perso
+  "Ragdoll" mode, avec un vecteur de force
+  amplifié dans la direction qu'il allait
+end note
+
+note right of Player
+  Contains Camera logic 
+  and Input handling.
+end note
+
+@enduml
