@@ -1,0 +1,15 @@
+' --- Fragment de style partagé — inclure dans chaque .puml avec !include style.iuml ---
+skinparam componentStyle uml2
+skinparam class {
+    BackgroundColor<<Godot>> #FF7171
+    BorderColor<<Godot>> #FF2222
+    FontColor<<Godot>> #FFFFFF
+}
+skinparam package {
+    BackgroundColor #F9F9F9
+    BorderColor #AAAAAA
+}
+skinparam abstractClass {
+    BackgroundColor #E8EAF6
+    BorderColor #5C6BC0
+}

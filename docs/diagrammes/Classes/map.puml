@@ -1,0 +1,34 @@
+@startuml Map
+!include style.iuml
+title The Mountain - Diagramme de Classe - Map
+
+package Map {
+
+    class Node3D << (N,#FF2222) Godot >>
+
+    abstract class MapManager {
+        - levelFiles: Resource
+        - gameMode: GameMode
+        --
+        + _LoadLevel(levelId: String): void
+        + _TriggerLevelChange(): void
+        + OnLevelCompleted(): void
+    }
+
+    Node3D <|-- MapManager : "Hérite de"
+
+    note right of MapManager
+        Les niveaux sont des scènes .tscn
+        construites avec des GridMap 3D.
+        gameMode (référence Network.GameMode)
+        détermine la disposition des équipes
+        dans le niveau chargé.
+    end note
+}
+
+' --- Référence inter-package ---
+enum GameMode
+
+MapManager --> GameMode : "utilise"
+
+@enduml

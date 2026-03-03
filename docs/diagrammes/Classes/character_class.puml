@@ -1,0 +1,67 @@
+@startuml Character
+!include style.iuml
+title The Mountain - Diagramme de Classe - Character
+
+package Character {
+
+    ' --- Nodes Godot de base ---
+    class Node3D << (N,#FF2222) Godot >>
+    class CharacterBody3D << (N,#FF2222) Godot >> {
+        + _Ready()
+        + _PhysicsProcess(delta: float)
+    }
+
+    ' --- Classes de jeu ---
+    abstract class Entity {
+        + walkSpeed: float
+        + model: Resource
+        --
+        + _PhysicsProcess(delta: float): void
+        + TakeDamage(force: Vector3): void
+        + _Ragdoll(force: Vector3): void
+        # _Die(): void
+    }
+
+    class Player {
+        + peerId: int
+        - camera: Camera3D
+        - inputDir: Vector2
+        --
+        + _Input(event: InputEvent): void
+        - _HandleMovement(): void
+        + Interact(): void
+    }
+
+    ' --- Objets du monde ---
+    class Interactable {
+        + promptText: String
+        --
+        + Interact(player: Player): void
+    }
+
+    class EntityUtils <<static>> {
+        + {static} GetEntityPos(entity: Entity): Vector3
+        + {static} SendAction(action: PuzzleAction): bool
+    }
+
+    ' --- Hiérarchie ---
+    Node3D <|-- CharacterBody3D
+    CharacterBody3D <|-- Entity : "Extends"
+    Entity <|-- Player : "Extends"
+
+    Player ..> Interactable : "Raycast / Area detection"
+
+    note right of Entity
+        TakeDamage() passe le personnage
+        en mode Ragdoll avec un vecteur
+        de force amplifié dans sa direction
+    end note
+
+    note right of Interactable
+        Implémentée par les éléments
+        interactifs de la carte (puzzles,
+        portes, objets...)
+    end note
+}
+
+@enduml

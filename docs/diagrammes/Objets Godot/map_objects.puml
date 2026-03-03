@@ -1,0 +1,81 @@
+@startuml map_objects
+title The Mountain - Schéma d'objets Godot - Niveaux
+
+package LevelManager {
+
+    object "LevelContainer : Node3D" as LevelContainer {
+        script = Map.cs
+    }
+
+    object "GridMap1 : GridMap" as GridMap {
+        MeshLibrary = currentFloor
+    }
+
+    object "LevelProps : Node3D" as LevelProps {
+    }
+
+    object "ControlRoom : MeshInstance3D" as ControlRoom {
+        description = "Salle de contrôle principale\navec les commandes de la salle de jeu"
+    }
+
+    object "BaseMesh : MeshInstance3D" as BaseMesh {
+    }
+
+    object "ControlRoomRail : Path3D" as PathRail {
+        description = "La salle se déplace sur ce rail.\nLes joueurs doivent voter pour passer\nau niveau suivant."
+    }
+
+    ' --- Catalogue des tuiles (MeshLibrary items) ---
+
+    map "Tuiles MVP" as TilesMVP {
+        TileEmpty           =>
+        TileAcid            => signal : OnPlayerTouch
+        TileSaw             => script : saw.cs  |  enfant : Saw
+        TileButton          => enfant : Button
+        TilePlatform        => déplacement X/Y sur TileAcid
+        TileWallStraight    =>
+        TileWallCorner      =>
+    }
+
+    map "Tuiles Eau" as TilesWater {
+        TileWater               => nageable
+        TileWaterPathStraight   =>
+        TileWaterPathBend       =>
+        TileWaterPathWall       => force les joueurs à plonger
+        TileWaterBridgeStraight => tunnel visible depuis le dessus
+        TileWaterBridgeBend     => tunnel visible depuis le dessus
+    }
+
+    map "Tuiles Communes" as TilesCommon {
+        TileBridgeStraight  => direction sur 1 axe
+        TileBridgeBend      => virage sur 1 axe
+        TileBouncer         => applique Velocity Y+
+        TileWall            =>
+    }
+
+    ' --- Relations structurelles ---
+    LevelContainer *.. GridMap     : "chargé dynamiquement"
+    LevelContainer *--  LevelProps
+    LevelProps     *--  ControlRoom
+    LevelProps     *--  BaseMesh
+    ControlRoom    *--  PathRail
+    GridMap        -->  TilesMVP
+    GridMap        -->  TilesWater
+    GridMap        -->  TilesCommon
+
+    note right of GridMap
+        Les niveaux sont construits à la main
+        dans leur .tscn avec des tiles 3D
+        aux collisions et comportements prédéfinis.
+    end note
+
+    note bottom of TilesMVP
+        Toutes les tuiles sont des items
+        d'une seule MeshLibrary Godot.
+        Les trois tableaux sont des
+        regroupements logiques, pas des
+        ressources séparées.
+    end note
+}
+
+@enduml
