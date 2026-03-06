@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://cue46vlh7h8q8"]
+
+[ext_resource type="PackedScene" uid="uid://box4tr0tsqn1k" path="res://Assets/Models/penguin01.glb" id="1_4ahtj"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_gqvew"]
+radius = 0.48736572
+height = 2.0605621
+
+[node name="Character" type="CharacterBody3D" unique_id=1298834634]
+
+[node name="penguin01" parent="." unique_id=1980648417 instance=ExtResource("1_4ahtj")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=563404839]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.068367, 0)
+shape = SubResource("CapsuleShape3D_gqvew")
