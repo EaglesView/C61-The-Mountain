@@ -1,0 +1,18 @@
+[
+  {
+    "label": "C#: Attach to Godot",
+    "adapter": "coreclr",
+    "request": "attach",
+    "processId": "${command:pickProcess}"
+  },
+  {
+    "label": "C#: Launch via Godot",
+    "adapter": "coreclr",
+    "request": "launch",
+    "program": "C:\\Users\\Administrateur.UTILISA-2J0T246\\Desktop\\Godot_v4.6.1-stable_mono_win64.exe",
+    "args": ["--path", "${ZED_WORKTREE_ROOT}/dev-game"],
+    "cwd": "${ZED_WORKTREE_ROOT}/dev-game",
+    "stopAtEntry": false,
+    "console": "internalConsole"
+  }
+]

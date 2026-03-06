@@ -1,0 +1,16 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://cdfeo7qo52ab0"]
+
+[ext_resource type="Texture2D" uid="uid://cpefxj431n1tb" path="res://Assets/Textures/Tiles/ConcreteTileWall01/textures/concrete_tile_facade_diff_1k.jpg" id="1_aw27k"]
+[ext_resource type="Texture2D" uid="uid://mgp4p43vnq7g" path="res://Assets/Textures/Tiles/ConcreteTileWall01/textures/concrete_tile_facade_arm_1k.jpg" id="2_82pql"]
+[ext_resource type="Texture2D" uid="uid://bj6guujox1aiw" path="res://Assets/Textures/Tiles/ConcreteTileWall01/textures/concrete_tile_facade_nor_gl_1k.jpg" id="3_vddje"]
+
+[resource]
+resource_name = "concrete_tile_facade"
+cull_mode = 2
+albedo_texture = ExtResource("1_aw27k")
+metallic_texture = ExtResource("2_82pql")
+metallic_texture_channel = 2
+roughness_texture = ExtResource("2_82pql")
+roughness_texture_channel = 1
+normal_enabled = true
+normal_texture = ExtResource("3_vddje")
