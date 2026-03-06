@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://dorhtbdets0hh"]
+
+[ext_resource type="Material" uid="uid://ppei8ixjbr5b" path="res://Assets/Textures/Tiles/RubberTile01/rubber_tiles.tres" id="1_fno4u"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_ovyob"]
+material = ExtResource("1_fno4u")
+size = Vector3(2, 0.1, 2)
+
+[sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_6lqjh"]
+data = PackedVector3Array(-1, 0.049999997, 1, 1, 0.049999997, 1, -1, -0.049999997, 1, 1, 0.049999997, 1, 1, -0.049999997, 1, -1, -0.049999997, 1, 1, 0.049999997, -1, -1, 0.049999997, -1, 1, -0.049999997, -1, -1, 0.049999997, -1, -1, -0.049999997, -1, 1, -0.049999997, -1, 1, 0.049999997, 1, 1, 0.049999997, -1, 1, -0.049999997, 1, 1, 0.049999997, -1, 1, -0.049999997, -1, 1, -0.049999997, 1, -1, 0.049999997, -1, -1, 0.049999997, 1, -1, -0.049999997, -1, -1, 0.049999997, 1, -1, -0.049999997, 1, -1, -0.049999997, -1, 1, 0.049999997, 1, -1, 0.049999997, 1, 1, 0.049999997, -1, -1, 0.049999997, 1, -1, 0.049999997, -1, 1, 0.049999997, -1, -1, -0.049999997, 1, 1, -0.049999997, 1, -1, -0.049999997, -1, 1, -0.049999997, 1, 1, -0.049999997, -1, -1, -0.049999997, -1)
+
+[node name="FloorTile01" type="Area3D" unique_id=1443130575]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1143795094]
+mesh = SubResource("BoxMesh_ovyob")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1899672208]
+shape = SubResource("ConcavePolygonShape3D_6lqjh")

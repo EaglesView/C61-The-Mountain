@@ -1,0 +1,16 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://ppei8ixjbr5b"]
+
+[ext_resource type="Texture2D" uid="uid://dte3cy8f1cd5i" path="res://Assets/Textures/Tiles/RubberTile01/textures/rubber_tiles_diff_1k.jpg" id="1_o7fce"]
+[ext_resource type="Texture2D" uid="uid://bpinbctn13g0v" path="res://Assets/Textures/Tiles/RubberTile01/textures/rubber_tiles_arm_1k.jpg" id="2_vtty6"]
+[ext_resource type="Texture2D" uid="uid://bqvgwb5wvf7x7" path="res://Assets/Textures/Tiles/RubberTile01/textures/rubber_tiles_nor_gl_1k.jpg" id="3_1pvap"]
+
+[resource]
+resource_name = "rubber_tiles"
+cull_mode = 2
+albedo_texture = ExtResource("1_o7fce")
+metallic_texture = ExtResource("2_vtty6")
+metallic_texture_channel = 2
+roughness_texture = ExtResource("2_vtty6")
+roughness_texture_channel = 1
+normal_enabled = true
+normal_texture = ExtResource("3_1pvap")
