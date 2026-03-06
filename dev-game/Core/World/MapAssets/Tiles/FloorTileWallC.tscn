@@ -1,0 +1,45 @@
+[gd_scene format=3 uid="uid://dfv7rb2lhsews"]
+
+[ext_resource type="Material" uid="uid://ppei8ixjbr5b" path="res://Assets/Textures/Tiles/RubberTile01/rubber_tiles.tres" id="1_gh7bs"]
+[ext_resource type="Material" uid="uid://cdfeo7qo52ab0" path="res://Assets/Textures/Tiles/ConcreteTileWall01/concrete_tile_facade.tres" id="2_3eh00"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_pqex8"]
+material = ExtResource("1_gh7bs")
+size = Vector3(2, 0.1, 2)
+
+[sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_4p05h"]
+data = PackedVector3Array(-1, 0.049999997, 1, 1, 0.049999997, 1, -1, -0.049999997, 1, 1, 0.049999997, 1, 1, -0.049999997, 1, -1, -0.049999997, 1, 1, 0.049999997, -1, -1, 0.049999997, -1, 1, -0.049999997, -1, -1, 0.049999997, -1, -1, -0.049999997, -1, 1, -0.049999997, -1, 1, 0.049999997, 1, 1, 0.049999997, -1, 1, -0.049999997, 1, 1, 0.049999997, -1, 1, -0.049999997, -1, 1, -0.049999997, 1, -1, 0.049999997, -1, -1, 0.049999997, 1, -1, -0.049999997, -1, -1, 0.049999997, 1, -1, -0.049999997, 1, -1, -0.049999997, -1, 1, 0.049999997, 1, -1, 0.049999997, 1, 1, 0.049999997, -1, -1, 0.049999997, 1, -1, 0.049999997, -1, 1, 0.049999997, -1, -1, -0.049999997, 1, 1, -0.049999997, 1, -1, -0.049999997, -1, 1, -0.049999997, 1, 1, -0.049999997, -1, -1, -0.049999997, -1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_8i5kb"]
+material = ExtResource("2_3eh00")
+size = Vector3(4, 0.1, 2)
+
+[sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_gh7bs"]
+data = PackedVector3Array(-2, 0.049999997, 1, 2, 0.049999997, 1, -2, -0.049999997, 1, 2, 0.049999997, 1, 2, -0.049999997, 1, -2, -0.049999997, 1, 2, 0.049999997, -1, -2, 0.049999997, -1, 2, -0.049999997, -1, -2, 0.049999997, -1, -2, -0.049999997, -1, 2, -0.049999997, -1, 2, 0.049999997, 1, 2, 0.049999997, -1, 2, -0.049999997, 1, 2, 0.049999997, -1, 2, -0.049999997, -1, 2, -0.049999997, 1, -2, 0.049999997, -1, -2, 0.049999997, 1, -2, -0.049999997, -1, -2, 0.049999997, 1, -2, -0.049999997, 1, -2, -0.049999997, -1, 2, 0.049999997, 1, -2, 0.049999997, 1, 2, 0.049999997, -1, -2, 0.049999997, 1, -2, 0.049999997, -1, 2, 0.049999997, -1, -2, -0.049999997, 1, 2, -0.049999997, 1, -2, -0.049999997, -1, 2, -0.049999997, 1, 2, -0.049999997, -1, -2, -0.049999997, -1)
+
+[sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_66t5o"]
+data = PackedVector3Array(-2, 0.049999997, 1, 2, 0.049999997, 1, -2, -0.049999997, 1, 2, 0.049999997, 1, 2, -0.049999997, 1, -2, -0.049999997, 1, 2, 0.049999997, -1, -2, 0.049999997, -1, 2, -0.049999997, -1, -2, 0.049999997, -1, -2, -0.049999997, -1, 2, -0.049999997, -1, 2, 0.049999997, 1, 2, 0.049999997, -1, 2, -0.049999997, 1, 2, 0.049999997, -1, 2, -0.049999997, -1, 2, -0.049999997, 1, -2, 0.049999997, -1, -2, 0.049999997, 1, -2, -0.049999997, -1, -2, 0.049999997, 1, -2, -0.049999997, 1, -2, -0.049999997, -1, 2, 0.049999997, 1, -2, 0.049999997, 1, 2, 0.049999997, -1, -2, 0.049999997, 1, -2, 0.049999997, -1, 2, 0.049999997, -1, -2, -0.049999997, 1, 2, -0.049999997, 1, -2, -0.049999997, -1, 2, -0.049999997, 1, 2, -0.049999997, -1, -2, -0.049999997, -1)
+
+[node name="FloorTileWallCorner" type="Area3D" unique_id=859949590]
+
+[node name="FloorMesh" type="MeshInstance3D" parent="." unique_id=2001475951]
+mesh = SubResource("BoxMesh_pqex8")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=884757109]
+shape = SubResource("ConcavePolygonShape3D_4p05h")
+
+[node name="WallMesh" type="MeshInstance3D" parent="." unique_id=656382832]
+transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 1, 2, 0)
+mesh = SubResource("BoxMesh_8i5kb")
+
+[node name="WallMesh2" type="MeshInstance3D" parent="." unique_id=47828092]
+transform = Transform3D(1.9106855e-15, 4.371139e-08, -1, 1, -4.371139e-08, 0, -4.371139e-08, -1, -4.371139e-08, 0, 2, 1)
+mesh = SubResource("BoxMesh_8i5kb")
+
+[node name="CollisionShape3D3" type="CollisionShape3D" parent="." unique_id=504049858]
+transform = Transform3D(1.9106855e-15, 4.371139e-08, -1, 1, -4.371139e-08, 0, -4.371139e-08, -1, -4.371139e-08, 0, 2, 1)
+shape = SubResource("ConcavePolygonShape3D_gh7bs")
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="." unique_id=223587738]
+transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 1, 2, 0)
+shape = SubResource("ConcavePolygonShape3D_66t5o")

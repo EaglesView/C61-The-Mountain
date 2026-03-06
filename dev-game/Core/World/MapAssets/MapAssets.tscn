@@ -1,7 +1,13 @@
 [gd_scene format=3 uid="uid://bay2qshpbkcl4"]
 
 [ext_resource type="PackedScene" uid="uid://dorhtbdets0hh" path="res://Core/World/MapAssets/Tiles/FloorTile01.tscn" id="1_2shsh"]
+[ext_resource type="PackedScene" uid="uid://dfv7rb2lhsews" path="res://Core/World/MapAssets/Tiles/FloorTileWallC.tscn" id="2_dar40"]
+[ext_resource type="PackedScene" uid="uid://c3dg0yi8pja5i" path="res://Core/World/MapAssets/Tiles/FloorTileWallS.tscn" id="3_08mp2"]
 
 [node name="MapAssets" type="Node3D" unique_id=1632210479]
 
 [node name="FloorTile01" parent="." unique_id=1443130575 instance=ExtResource("1_2shsh")]
+
+[node name="FloorTileWallCorner" parent="." unique_id=859949590 instance=ExtResource("2_dar40")]
+
+[node name="FloorTileWallS" parent="." unique_id=1421007688 instance=ExtResource("3_08mp2")]
