@@ -1,15 +1,25 @@
 [gd_scene format=3 uid="uid://cue46vlh7h8q8"]
 
 [ext_resource type="PackedScene" uid="uid://box4tr0tsqn1k" path="res://Assets/Models/penguin01.glb" id="1_4ahtj"]
+[ext_resource type="Script" uid="uid://biatj8cmpe213" path="res://Core/World/CharacterModel/Character.cs" id="1_gqvew"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_gqvew"]
 radius = 0.48736572
 height = 2.0605621
 
 [node name="Character" type="CharacterBody3D" unique_id=1298834634]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
+script = ExtResource("1_gqvew")
 
 [node name="penguin01" parent="." unique_id=1980648417 instance=ExtResource("1_4ahtj")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0003476143, 2.3841858e-07, 0.0028927326)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=563404839]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.068367, 0)
 shape = SubResource("CapsuleShape3D_gqvew")
+
+[node name="CameraYaw" type="Node3D" parent="." unique_id=2147483647]
+
+[node name="Camera3D" type="Camera3D" parent="CameraYaw" unique_id=1063626746]
+transform = Transform3D(-1, 5.946086e-09, -8.722033e-08, 0, 0.9976843, 0.06801529, 8.742278e-08, 0.06801529, -0.9976843, 0, 1.935, -0.45)
+fov = 59.658794

@@ -6,9 +6,9 @@
 
 [node name="Skeleton3D" parent="Armature" parent_id_path=PackedInt32Array(1361632008) index="0" unique_id=1805704189]
 bones/1/rotation = Quaternion(0.0003446022, -0.0028660286, 0.034660053, 0.999395)
-bones/2/rotation = Quaternion(-0.0003828599, 0.0031842173, -0.03850802, 0.9992532)
-bones/8/rotation = Quaternion(-0.009511616, 0.50850236, 0.85373765, 0.11165548)
-bones/9/rotation = Quaternion(-0.52875894, -0.009890566, 0.11595675, 0.8407557)
+bones/2/rotation = Quaternion(-0.0003828599, 0.003184217, -0.03850802, 0.99925315)
+bones/8/rotation = Quaternion(-0.009511616, 0.50850236, 0.8537376, 0.11165547)
+bones/9/rotation = Quaternion(-0.528759, -0.009890567, 0.11595677, 0.84075576)
 bones/10/rotation = Quaternion(0.92814046, -0.05624234, -0.06506364, 0.36215848)
 bones/11/rotation = Quaternion(0.012692815, -0.24942173, 0.9676424, 0.03599986)
 bones/12/rotation = Quaternion(-0.3765518, -0.029694129, -0.029741874, 0.9254418)
