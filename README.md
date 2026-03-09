@@ -13,52 +13,32 @@ La source du projet Godot se situe dans `./dev-game/`. Pour démarrer le projet 
 
 ## Configuration avancée
 
-La configuration avancé permet de coder à l'intérieur de votre IDE sans avoir a retourner sur Godot Engine sans arrêt. Pour se faire, il faut ajouter un dossier .vscode (ou .zed) et y ajouter ces fichiers:
-- `tasks.json` : Permet de définir des actions comme démarrer le projet, l'éditeur etc.
-- `debug.json` : Permet de configurer le debbugeur pour csharp et le projet en soi
-- `launch.json`: 
+Pour avoir des fonctions de développement avancés dans votre éditeur de choix (Zed ou VsCode), Il vous faudra configurer les variables d'environnement du chemin vers l'éxécutable Godot. Pour ce faire, 
 
+Sur Windows:
+```powershell
+[Environment]::SetEnvironmentVariable("GODOT_BIN", "C:\DDJV\core\Godot_v4.6.1-stable_mono_win64.exe", "User")
+```
+
+Et sur Linux:
+```bash
+export GODOT_BIN="/usr/bin/godot/Godot_v4.6.1-stable_mono_win64" 
+# Changer le path pour le votre
+```
+
+Vue que les propriétés sont écris comme:
 ```json
-[
-  {
-    "label": "Godot: Run Game",
-    "command": "C:\\Users\\Administrateur.UTILISA-2J0T246\\Desktop\\godot\\Godot_v4.6.1-stable_mono_win64.exe",
-    "args": ["--path", "$ZED_WORKTREE_ROOT/dev-game"],
-    "allow_concurrent_runs": false,
-    "reveal": "always",
-  },
-  {
-    "label": "Godot: Run Game (Debug)",
-    "command": "C:\\Users\\Administrateur.UTILISA-2J0T246\\Desktop\\godot\\Godot_v4.6.1-stable_mono_win64.exe",
-    "args": ["--path", "$ZED_WORKTREE_ROOT/dev-game", "--verbose"],
-    "allow_concurrent_runs": false,
-    "reveal": "always",
-  },
-  {
-    "label": "Godot: Open Editor",
-    "command": "C:\\Users\\Administrateur.UTILISA-2J0T246\\Desktop\\godot\\Godot_v4.6.1-stable_mono_win64.exe",
-    "args": ["--editor", "--path", "$ZED_WORKTREE_ROOT/dev-game"],
-    "allow_concurrent_runs": false,
-    "reveal": "never",
-  },
-  {
-    "label": "C#: Build",
-    "command": "dotnet",
-    "args": ["build", "$ZED_WORKTREE_ROOT/dev-game/dev-game.csproj"],
-    "allow_concurrent_runs": false,
-    "reveal": "always",
-  },
-  {
-    "label": "C#: Clean",
-    "command": "dotnet",
-    "args": ["clean", "$ZED_WORKTREE_ROOT/dev-game/dev-game.csproj"],
-    "allow_concurrent_runs": false,
-    "reveal": "always",
-  },
-]
+    "command": "$env(GODOT_BIN)",    
+```
+alors ca va fonctioner *Out of the box*. Si jamais ca ne fonctionne pas comme Linux, avec des shells comme *fish*, alors aller dans le fichier de config (`~/.config/fish/fish.config`) et ajouter:
 
+```config
+set -gx GODOT_BIN /path/to/godot
 ```
 
 ```bash
 # Rien encore
 ```
+
+## Convention 
+Nous utilisons les conventions standards pour DOTNET et Godot pour le code. Avec l'ajout de TOUJOURS placer les fonctions _Ready() , _Process() et autres a la fin du document.
