@@ -16,3 +16,5 @@ data_*/
 mono_crash.*.json
 # Ajout de fichier Dev, pas remis, souvent du bullscrap AI Pour tester le code courant
 dev/
+*.lock
+*.xlsx#

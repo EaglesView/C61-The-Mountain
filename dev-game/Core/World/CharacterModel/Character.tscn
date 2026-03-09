@@ -1,12 +1,15 @@
 [gd_scene format=3 uid="uid://cue46vlh7h8q8"]
 
 [ext_resource type="PackedScene" uid="uid://box4tr0tsqn1k" path="res://Assets/Models/penguin01.glb" id="1_4ahtj"]
+[ext_resource type="Script" uid="uid://dkhfcnkgk3d3n" path="res://Core/World/CharacterModel/Character.cs" id="1_gqvew"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_gqvew"]
 radius = 0.48736572
 height = 2.0605621
 
 [node name="Character" type="CharacterBody3D" unique_id=1298834634]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
+script = ExtResource("1_gqvew")
 
 [node name="penguin01" parent="." unique_id=1980648417 instance=ExtResource("1_4ahtj")]
 
