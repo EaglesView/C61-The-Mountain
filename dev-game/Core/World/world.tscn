@@ -1,44 +1,6 @@
 [gd_scene format=3 uid="uid://y8cajmk108h3"]
 
 [ext_resource type="Script" uid="uid://bivbri8k5yp3h" path="res://Core/World/World.cs" id="1_34ec0"]
-[ext_resource type="MeshLibrary" uid="uid://gfduo2egy61g" path="res://Core/World/MapAssets/Tiles/tile_resources.tres" id="2_n02df"]
-[ext_resource type="PackedScene" uid="uid://cue46vlh7h8q8" path="res://Core/World/CharacterModel/Character.tscn" id="3_2u2as"]
-[ext_resource type="PackedScene" uid="uid://bjlumci20oaqn" path="res://Core/World/CharacterModel/character_rig.tscn" id="4_m5ydj"]
-
-[sub_resource type="Sky" id="Sky_2u2as"]
-
-[sub_resource type="Environment" id="Environment_2u2as"]
-background_mode = 2
-sky = SubResource("Sky_2u2as")
-ambient_light_source = 3
-ambient_light_color = Color(0.0062488155, 0.21296391, 0.9226849, 1)
-glow_enabled = true
-fog_enabled = true
-volumetric_fog_density = 0.001
-
-[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_m5ydj"]
-
-[sub_resource type="Compositor" id="Compositor_am4d6"]
 
 [node name="World" type="Node3D" unique_id=500049071]
 script = ExtResource("1_34ec0")
-
-[node name="GridMap" type="GridMap" parent="." unique_id=1753635446]
-mesh_library = ExtResource("2_n02df")
-data = {
-"cells": PackedInt32Array(65535, 3, 655366, 0, 3, 655366, 0, 2, 655366, 65535, 2, 655366, 65534, 2, 655366, 65534, 3, 655366, 65534, 4, 655366, 65535, 4, 655366, 0, 4, 655366, 65534, 1, 1441796, 65535, 1, 1441796, 0, 1, 1441796, 1, 2, 655364, 1, 3, 655364, 1, 4, 655364, 65533, 2, 4, 65534, 5, 1048580, 65535, 5, 1048580, 0, 5, 1048580, 65533, 1, 1441797, 1, 1, 655365, 1, 5, 1048581, 65533, 5, 5, 65533, 4, 6, 65533, 3, 6, 65532, 4, 1048580, 65532, 3, 1441796, 65531, 2, 655365, 65531, 5, 1048581, 65531, 3, 1048582, 65531, 4, 1048582, 65530, 5, 5, 65530, 2, 1441797, 65530, 4, 4, 65530, 3, 4)
-}
-
-[node name="Character" parent="." unique_id=1298834634 instance=ExtResource("3_2u2as")]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 7)
-
-[node name="CharacterCamera" type="Camera3D" parent="Character" unique_id=380437583]
-transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, -2.3372365e-08, 1.922199, 0.26734877)
-
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=726337145]
-environment = SubResource("Environment_2u2as")
-camera_attributes = SubResource("CameraAttributesPractical_m5ydj")
-compositor = SubResource("Compositor_am4d6")
-
-[node name="CharacterRig" parent="." unique_id=1068576839 instance=ExtResource("4_m5ydj")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4.376962)
