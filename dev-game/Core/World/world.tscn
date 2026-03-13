@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://bivbri8k5yp3h" path="res://Core/World/World.cs" id="1_34ec0"]
 [ext_resource type="MeshLibrary" uid="uid://gfduo2egy61g" path="res://Core/World/MapAssets/Tiles/tile_resources.tres" id="2_n02df"]
 [ext_resource type="PackedScene" uid="uid://cue46vlh7h8q8" path="res://Core/World/CharacterModel/Character.tscn" id="3_2u2as"]
+[ext_resource type="PackedScene" uid="uid://bjlumci20oaqn" path="res://Core/World/CharacterModel/character_rig.tscn" id="4_m5ydj"]
 
 [sub_resource type="Sky" id="Sky_2u2as"]
 
@@ -38,3 +39,6 @@ transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, -2.3
 environment = SubResource("Environment_2u2as")
 camera_attributes = SubResource("CameraAttributesPractical_m5ydj")
 compositor = SubResource("Compositor_am4d6")
+
+[node name="CharacterRig" parent="." unique_id=1068576839 instance=ExtResource("4_m5ydj")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4.376962)
