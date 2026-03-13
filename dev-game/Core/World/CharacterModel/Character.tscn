@@ -1,18 +1,19 @@
 [gd_scene format=3 uid="uid://cue46vlh7h8q8"]
 
-[ext_resource type="Script" uid="uid://dkhfcnkgk3d3n" path="res://Core/World/CharacterModel/Character.cs" id="1_gqvew"]
-[ext_resource type="PackedScene" uid="uid://bjlumci20oaqn" path="res://Core/World/CharacterModel/character_rig.tscn" id="2_gqvew"]
+[ext_resource type="Script" uid="uid://brkul28mksbkr" path="res://Core/World/CharacterModel/Player.cs" id="1_jeftp"]
+[ext_resource type="PackedScene" uid="uid://bjlumci20oaqn" path="res://Core/World/CharacterModel/character_rig.tscn" id="2_6esn3"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_gqvew"]
 radius = 0.48736572
 height = 2.0605621
 
-[node name="Character" type="CharacterBody3D" unique_id=1298834634]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
-script = ExtResource("1_gqvew")
+[node name="Player" type="CharacterBody3D" unique_id=1298834634]
+script = ExtResource("1_jeftp")
 
-[node name="CharacterRig" parent="." unique_id=1068576839 instance=ExtResource("2_gqvew")]
+[node name="CharacterRig" parent="." unique_id=1068576839 instance=ExtResource("2_6esn3")]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0, 0, 0)
+_ragdollActive = false
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=563404839]
+[node name="CharacterHitBox" type="CollisionShape3D" parent="." unique_id=563404839]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.068367, 0)
 shape = SubResource("CapsuleShape3D_gqvew")
