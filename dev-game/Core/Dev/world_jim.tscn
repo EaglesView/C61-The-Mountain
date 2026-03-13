@@ -32,7 +32,6 @@ _cam = NodePath("Camera3D")
 
 [node name="Camera3D" type="Camera3D" parent="Player" index="2" unique_id=1026983136]
 transform = Transform3D(1, 0, -1.7484555e-07, 0, 1, 0, 1.7484555e-07, 0, 1, 6.582056e-08, 1.9298725, -0.36809525)
-fov = 88.3
 
 [node name="RayCast3D" type="RayCast3D" parent="Player/Camera3D" index="0" unique_id=862847736]
 target_position = Vector3(0, 0, -5)

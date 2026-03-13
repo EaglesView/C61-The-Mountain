@@ -11,11 +11,15 @@ public partial class Player : CharacterBody3D
     [Export] private float _mouseSensitivity = 0.002f;
     [Export] private float _controllerSensitivity = 2.5f; // radians / sec
     required public RayCast3D _raycaster;
-
+    [Export] private Node3D _characterRig;
+    private
     public override void _Ready()
     {
         _raycaster = GetNode<RayCast3D>("Camera3D/RayCast3D");
         Input.MouseMode = Input.MouseModeEnum.Captured; //Cache le curseur
+        if(_characterRig){
+            
+        }
 
     }
     public override void _Input(InputEvent @event)
