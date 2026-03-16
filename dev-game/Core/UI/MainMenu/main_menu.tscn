@@ -51,6 +51,10 @@ text = "Profile"
 layout_mode = 2
 text = "Credits"
 
+[node name="SignOutButton" type="Button" parent="VBoxContainer" unique_id=1109665976]
+layout_mode = 2
+text = "Sign Out"
+
 [node name="ExitButton" type="Button" parent="VBoxContainer" unique_id=1109665973]
 layout_mode = 2
 text = "Exit"

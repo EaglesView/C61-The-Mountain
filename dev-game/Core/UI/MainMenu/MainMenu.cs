@@ -7,6 +7,7 @@ public partial class MainMenu : Control
     private Button _join = null!;
     private Button _profile = null!;
     private Button _credits = null!;
+    private Button _signOut = null!;
     private Button _exit = null!;
 
     public override void _Ready()
@@ -16,6 +17,7 @@ public partial class MainMenu : Control
         _join = GetNode<Button>("VBoxContainer/JoinGameButton");
         _profile = GetNode<Button>("VBoxContainer/ProfileButton");
         _credits = GetNode<Button>("VBoxContainer/CreditsButton");
+        _signOut = GetNode<Button>("VBoxContainer/SignOutButton");
         _exit = GetNode<Button>("VBoxContainer/ExitButton");
 
         _play.Pressed += OnPlayPressed;
@@ -23,6 +25,7 @@ public partial class MainMenu : Control
         _join.Pressed += OnJoinPressed;
         _profile.Pressed += OnProfilePressed;
         _credits.Pressed += OnCreditsPressed;
+        _signOut.Pressed += OnSignOutPressed;
         _exit.Pressed += OnExitPressed;
     }
 
@@ -49,6 +52,12 @@ public partial class MainMenu : Control
     private void OnCreditsPressed()
     {
 
+    }
+
+    private async void OnSignOutPressed()
+    {
+        await Core.Auth.AuthServiceProvider.SignOutAsync();
+        GetTree().ChangeSceneToFile("res://Core/UI/LoginTemp/login_temp.tscn");
     }
 
     private void OnExitPressed()
