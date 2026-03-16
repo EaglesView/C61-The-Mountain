@@ -1,5 +1,4 @@
 @startuml Character
-!include style.iuml
 title The Mountain - Diagramme de Classe - Character
 
 package Character {
@@ -10,15 +9,21 @@ package Character {
         + _Ready()
         + _PhysicsProcess(delta: float)
     }
-
+    enum CharacterRigState {
+        Ragdoll
+        Active
+        Animated
+        Static
+    }
     ' --- Classes de jeu ---
-    abstract class Entity {
+    abstract class Character {
         + walkSpeed: float
         + model: Resource
         --
         + _PhysicsProcess(delta: float): void
         + TakeDamage(force: Vector3): void
         + _Ragdoll(force: Vector3): void
+        +
         # _Die(): void
     }
 
@@ -32,6 +37,12 @@ package Character {
         + Interact(): void
     }
 
+    class CharacterRig {
+        + _BoneState : enum CharacterRigState
+        + _ChangeState(CharacterRigState state)
+
+    }
+
     ' --- Objets du monde ---
     class Interactable {
         + promptText: String
@@ -39,19 +50,19 @@ package Character {
         + Interact(player: Player): void
     }
 
-    class EntityUtils <<static>> {
-        + {static} GetEntityPos(entity: Entity): Vector3
+    class CharacterUtils <<static>> {
+        + {static} GetCharacterPos(character: Character): Vector3
         + {static} SendAction(action: PuzzleAction): bool
     }
 
     ' --- Hiérarchie ---
     Node3D <|-- CharacterBody3D
-    CharacterBody3D <|-- Entity : "Extends"
-    Entity <|-- Player : "Extends"
-
+    CharacterBody3D <|-- Character : "Extends"
+    Character <|-- Player : "Extends"
+    Character <-- CharacterRig : "Est enfant dans \nla hiérarchie Godot"
     Player ..> Interactable : "Raycast / Area detection"
 
-    note right of Entity
+    note right of Character
         TakeDamage() passe le personnage
         en mode Ragdoll avec un vecteur
         de force amplifié dans sa direction
