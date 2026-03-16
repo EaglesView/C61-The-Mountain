@@ -11,12 +11,17 @@ public partial class Player : CharacterBody3D
 	[Export] private float _mouseSensitivity = 0.002f;
 	[Export] private float _controllerSensitivity = 2.5f; // radians / sec
 	required public RayCast3D _raycaster;
+	private CharacterRig _characterRig;
+	private float _headAngle = 0.0f;//rads
+	private float _prevAngle = 0.0f;
 	//[Export] private Node3D _characterRig;
 	public override void _Ready()
 	{
-		_raycaster = GetNode<RayCast3D>("Camera3D/RayCast3D");
+		_raycaster = GetNode<RayCast3D>("PlayerCamera_FP/RayCast3D");
 		Input.MouseMode = Input.MouseModeEnum.Captured; //Cache le curseur
-		//if (_characterRig == null) return;
+														//if (_characterRig == null) return;
+		_characterRig = GetNode<CharacterRig>("CharacterRig");
+		Skeleton3D Skelton = GetNode<Skeleton3D>("CharacterRig/Armature/Skeleton3D");
 
 
 
@@ -30,64 +35,67 @@ public partial class Player : CharacterBody3D
 			RotateY(-mouseMotion.Relative.X * _mouseSensitivity);
 
 			// Vertical tourne seulement la caméra pour l'instant
-			_cam.RotateX(-mouseMotion.Relative.Y * _mouseSensitivity);
-			_cam.Rotation = new Vector3(
-				Mathf.Clamp(_cam.Rotation.X, Mathf.DegToRad(-80), Mathf.DegToRad(80)),
-				_cam.Rotation.Y,
-				_cam.Rotation.Z
-			);
-		}
-	}
-	public override void _PhysicsProcess(double delta)
-	{
-		Vector3 velocity = Velocity;
+            _cam.RotateX(-mouseMotion.Relative.Y * _mouseSensitivity);
+            _cam.Rotation = new Vector3(
+                Mathf.Clamp(_cam.Rotation.X, Mathf.DegToRad(-80), Mathf.DegToRad(80)),
+                _cam.Rotation.Y,
+                _cam.Rotation.Z
+            );
+            _prevAngle = _headAngle;
+            _headAngle = _cam.Rotation.X;
+        }
+    }
+    public override void _PhysicsProcess(double delta)
+    {
+        Vector3 velocity = Velocity;
 
-		// Add the gravity.
-		if (!IsOnFloor())
-		{
-			velocity += GetGravity() * (float)delta;
-		}
+        // Add the gravity.
+        if (!IsOnFloor())
+        {
+            velocity += GetGravity() * (float)delta;
+        }
 
-		// Handle Jump.
-		if (Input.IsActionJustPressed("jump") && IsOnFloor())
-		{
-			velocity.Y = JumpVelocity;
-		}
+        // Handle Jump.
+        if (Input.IsActionJustPressed("jump") && IsOnFloor())
+        {
+            velocity.Y = JumpVelocity;
+        }
+        _characterRig.SetHeadPose(Mathf.Lerp(_prevAngle, _headAngle, 100.0f * (float)delta));
 
-		if (Input.IsActionJustPressed("interact"))
-		{
+        if (Input.IsActionJustPressed("interact"))
+        {
 
-			GetObjectTypeFromRaycast(_raycaster);
-		}
+            GetObjectTypeFromRaycast(_raycaster);
+        }
 
-		// Basic movements from the godot boilerplate, to adapt to the game
-		Vector2 aimDir = Input.GetVector("aim_left", "aim_right", "aim_up", "aim_down");
-		Vector2 inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");
-		Vector3 direction = (Transform.Basis * new Vector3(inputDir.X, 0, inputDir.Y)).Normalized();
-		//Gérer le aiming (controller ou souris)
-		if (aimDir != Vector2.Zero)
-		{
-			RotateY(-aimDir.X * _controllerSensitivity * (float)delta);
+        // Basic movements from the godot boilerplate, to adapt to the game
+        Vector2 aimDir = Input.GetVector("aim_left", "aim_right", "aim_up", "aim_down");
+        Vector2 inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");
+        Vector3 direction = (Transform.Basis * new Vector3(inputDir.X, 0, inputDir.Y)).Normalized();
+        //Gérer le aiming (controller ou souris)
+        if (aimDir != Vector2.Zero)
+        {
+            RotateY(-aimDir.X * _controllerSensitivity * (float)delta);
 
-			_cam.RotateX(-aimDir.Y * _controllerSensitivity * (float)delta);
-			_cam.Rotation = new Vector3(
-				Mathf.Clamp(_cam.Rotation.X, Mathf.DegToRad(-80), Mathf.DegToRad(80)),
-				_cam.Rotation.Y,
-				_cam.Rotation.Z
-			);
-		}
-		if (direction != Vector3.Zero)
-		{
-			velocity.X = direction.X * Speed;
-			velocity.Z = direction.Z * Speed;
-		}
-		else
-		{
-			velocity.X = Mathf.MoveToward(Velocity.X, 0, Speed);
-			velocity.Z = Mathf.MoveToward(Velocity.Z, 0, Speed);
-		}
+            _cam.RotateX(-aimDir.Y * _controllerSensitivity * (float)delta);
+            _cam.Rotation = new Vector3(
+                Mathf.Clamp(_cam.Rotation.X, Mathf.DegToRad(-80), Mathf.DegToRad(80)),
+                _cam.Rotation.Y,
+                _cam.Rotation.Z
+            );
+        }
+        if (direction != Vector3.Zero)
+        {
+            velocity.X = direction.X * Speed;
+            velocity.Z = direction.Z * Speed;
+        }
+        else
+        {
+            velocity.X = Mathf.MoveToward(Velocity.X, 0, Speed);
+            velocity.Z = Mathf.MoveToward(Velocity.Z, 0, Speed);
+        }
 
-		Velocity = velocity;
-		MoveAndSlide();
-	}
+        Velocity = velocity;
+        MoveAndSlide();
+    }
 }

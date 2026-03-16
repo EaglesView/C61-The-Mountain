@@ -4,8 +4,8 @@
 [ext_resource type="PackedScene" uid="uid://bjlumci20oaqn" path="res://Core/World/CharacterModel/character_rig.tscn" id="2_6esn3"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_gqvew"]
-radius = 0.48736572
-height = 2.0605621
+radius = 0.2979164
+height = 0.5958328
 
 [node name="Player" type="CharacterBody3D" unique_id=1298834634 node_paths=PackedStringArray("_cam")]
 script = ExtResource("1_jeftp")
@@ -16,8 +16,11 @@ transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0, 0
 _ragdollActive = false
 
 [node name="CharacterHitBox" type="CollisionShape3D" parent="." unique_id=563404839]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.068367, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.33600235, 0)
 shape = SubResource("CapsuleShape3D_gqvew")
 
 [node name="PlayerCamera_FP" type="Camera3D" parent="." unique_id=1820301189]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.587872, -0.05647108)
+
+[node name="RayCast3D" type="RayCast3D" parent="PlayerCamera_FP" unique_id=2028927911]
+target_position = Vector3(0, 0, -5)
