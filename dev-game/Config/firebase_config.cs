@@ -5,4 +5,5 @@ namespace Config;
 public static class FirebaseConfig
 {
     public const string ApiKey = "AIzaSyBbQoz1qimAMRwgjFDncBoXM10ICjm79zA";
+    public const string ProjectId = "the-mountain-game";
 }
