@@ -43,7 +43,7 @@ public partial class MainMenu : Control
 
     private void OnProfilePressed()
     {
-
+        GetTree().ChangeSceneToFile("res://Core/UI/Profile/profile.tscn");
     }
 
     private void OnCreditsPressed()

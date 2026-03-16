@@ -23,5 +23,8 @@ public static class AuthServiceProvider
         }
     }
     
+    public static string GetCurrentToken() =>
+        Instance.IdToken ?? throw new System.InvalidOperationException("User is not authenticated.");
+
     public static void Reset() => _instance = null;
 }

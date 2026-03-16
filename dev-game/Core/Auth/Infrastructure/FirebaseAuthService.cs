@@ -27,6 +27,7 @@ public sealed class FirebaseAuthService : IAuthService
 
     public User? CurrentUser => _currentUser;
     public bool IsAuthenticated => _currentUser is not null;
+    public string? IdToken => _idToken;
 
     public Task<AuthResult> SignInAsync(string email, string password)
         => RequestAsync(SignInUrl + _apiKey, email, password);
