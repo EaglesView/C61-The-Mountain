@@ -7,8 +7,9 @@
 radius = 0.48736572
 height = 2.0605621
 
-[node name="Player" type="CharacterBody3D" unique_id=1298834634]
+[node name="Player" type="CharacterBody3D" unique_id=1298834634 node_paths=PackedStringArray("_cam")]
 script = ExtResource("1_jeftp")
+_cam = NodePath("PlayerCamera_FP")
 
 [node name="CharacterRig" parent="." unique_id=1068576839 instance=ExtResource("2_6esn3")]
 transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0, 0, 0)
@@ -17,3 +18,6 @@ _ragdollActive = false
 [node name="CharacterHitBox" type="CollisionShape3D" parent="." unique_id=563404839]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.068367, 0)
 shape = SubResource("CapsuleShape3D_gqvew")
+
+[node name="PlayerCamera_FP" type="Camera3D" parent="." unique_id=1820301189]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)

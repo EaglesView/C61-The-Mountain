@@ -1,6 +1,9 @@
 [gd_scene format=3 uid="uid://y8cajmk108h3"]
 
 [ext_resource type="Script" uid="uid://bivbri8k5yp3h" path="res://Core/World/World.cs" id="1_34ec0"]
+[ext_resource type="PackedScene" uid="uid://gxttws0oc2ur" path="res://Core/UI/LoginTemp/login_temp.tscn" id="2_2u2as"]
 
 [node name="World" type="Node3D" unique_id=500049071]
 script = ExtResource("1_34ec0")
+
+[node name="Control" parent="." unique_id=1362554432 instance=ExtResource("2_2u2as")]

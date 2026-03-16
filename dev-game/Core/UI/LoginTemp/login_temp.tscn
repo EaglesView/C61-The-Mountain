@@ -30,28 +30,28 @@ layout_mode = 2
 text = "The Mountain"
 horizontal_alignment = 1
 
-[node name="EmailField" type="LineEdit" parent="VBoxContainer"]
+[node name="EmailField" type="LineEdit" parent="VBoxContainer" unique_id=1521309159]
 layout_mode = 2
 placeholder_text = "Email"
 
-[node name="UsernameField" type="LineEdit" parent="VBoxContainer"]
+[node name="UsernameField" type="LineEdit" parent="VBoxContainer" unique_id=119918398]
 layout_mode = 2
 placeholder_text = "Username"
 
-[node name="PasswordField" type="LineEdit" parent="VBoxContainer"]
+[node name="PasswordField" type="LineEdit" parent="VBoxContainer" unique_id=245912937]
 layout_mode = 2
 placeholder_text = "Password"
 secret = true
 
-[node name="LoginButton" type="Button" parent="VBoxContainer"]
+[node name="LoginButton" type="Button" parent="VBoxContainer" unique_id=1109665968]
 layout_mode = 2
 text = "Login"
 
-[node name="SignUpButton" type="Button" parent="VBoxContainer"]
+[node name="SignUpButton" type="Button" parent="VBoxContainer" unique_id=1806046937]
 layout_mode = 2
 text = "Sign Up"
 
-[node name="ErrorLabel" type="Label" parent="VBoxContainer"]
+[node name="ErrorLabel" type="Label" parent="VBoxContainer" unique_id=1574762756]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
 horizontal_alignment = 1
