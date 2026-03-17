@@ -4,6 +4,7 @@ using static Utils.RayCastUtils;
 public partial class Player : CharacterBody3D
 {
 	[Export] private Camera3D _cam;
+	private Interactable? _lastHighlightedInteractable;
 
 	public const float Speed = 5.0f;
 	public const float JumpVelocity = 4.5f;
@@ -41,6 +42,23 @@ public partial class Player : CharacterBody3D
 	}
 	public override void _PhysicsProcess(double delta)
 	{
+		Interactable? currentInteractable = GetInteractableFromRaycast(_raycaster, _interactionRange);
+		
+		if (currentInteractable != _lastHighlightedInteractable)
+		{
+			if (_lastHighlightedInteractable != null)
+			{
+				_lastHighlightedInteractable.OnUnhighlight();
+			}
+			
+			if (currentInteractable != null)
+			{
+				currentInteractable.OnHighlight();
+			}
+			
+			_lastHighlightedInteractable = currentInteractable;
+		}
+	
 		Vector3 velocity = Velocity;
 
 		// Add the gravity.
@@ -83,7 +101,7 @@ public partial class Player : CharacterBody3D
 				_cam.Rotation.Y,
 				_cam.Rotation.Z
 			);
-		}
+			}
 		if (direction != Vector3.Zero)
 		{
 			velocity.X = direction.X * Speed;
