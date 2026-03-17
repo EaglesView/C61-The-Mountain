@@ -10,6 +10,7 @@ public partial class Player : CharacterBody3D
 	[ExportGroup("Controller Settings")]
 	[Export] private float _mouseSensitivity = 0.002f;
 	[Export] private float _controllerSensitivity = 2.5f; // radians / sec
+	[Export] private float _interactionRange = 3.0f;
 	required public RayCast3D _raycaster;
 	//[Export] private Node3D _characterRig;
 	public override void _Ready()
@@ -56,8 +57,15 @@ public partial class Player : CharacterBody3D
 
 		if (Input.IsActionJustPressed("interact"))
 		{
-
-			GetObjectTypeFromRaycast(_raycaster);
+			Interactable? interactable = GetInteractableFromRaycast(_raycaster, _interactionRange);
+			if (interactable != null)
+			{
+				interactable.Interact(this);
+			}
+			else
+			{
+				GetObjectTypeFromRaycast(_raycaster);
+			}
 		}
 
 		// Basic movements from the godot boilerplate, to adapt to the game
