@@ -86,8 +86,6 @@ public partial class PhysicsSkeleton : Skeleton3D
         var bonesToSimulate = new Godot.Collections.Array<StringName>();
         foreach (PhysicalBone3D bone in _physicsBones)
         {
-            //les physicalsbones sappelles part_000
-            //if (!bone.Name.ToString().Contains("Spine_004") && !bone.Name.ToString().Contains("Spine_003"))
             {
                 GD.Print(bone.Name);
                 bonesToSimulate.Add(new StringName(GetBoneName(bone.GetBoneId())));
@@ -95,12 +93,11 @@ public partial class PhysicsSkeleton : Skeleton3D
 
         }
         _boneSim.PhysicalBonesStartSimulation(bonesToSimulate);
-        //_boneSim.PhysicalBonesStopSimulation(new Godot.Collections.Array<StringName> { "Head.001", "Mouth.001" }); _boneSim.Active = true;
-        //AnimPlayer.Play("WalkAction_001");
     }
 
     public override void _PhysicsProcess(double delta)
     {
+        if (_physicsBones == null) return;
         foreach (PhysicalBone3D bone in _physicsBones)
         {
             //LINEAR START
