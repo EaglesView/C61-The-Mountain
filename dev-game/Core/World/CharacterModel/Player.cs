@@ -12,17 +12,31 @@ public partial class Player : CharacterBody3D
 	[Export] private float _controllerSensitivity = 2.5f; // radians / sec
 	required public RayCast3D _raycaster;
 	private CharacterRig _characterRig;
+	[Export] public required AnimationPlayer AnimPlayer;
+	[Export] public required PhysicsSkeleton PhysicsSkelton;
 	private float _headAngle = 0.0f;//rads
 	private float _prevAngle = 0.0f;
+	private Skeleton3D _animSkeleton;
+	private string _currentAnim;
 	//[Export] private Node3D _characterRig;
+
+	public void SetAnimation(string anim)
+	{
+		if (_currentAnim != anim)
+		{
+			_currentAnim = anim;
+			//AnimPlayer.Play(anim);
+		}
+	}
+
 	public override void _Ready()
 	{
 		_raycaster = GetNode<RayCast3D>("PlayerCamera_FP/RayCast3D");
 		Input.MouseMode = Input.MouseModeEnum.Captured; //Cache le curseur
 														//if (_characterRig == null) return;
-		Skeleton3D Skelton = GetNode<Skeleton3D>("PhysicsRig/AnimatedRig/Armature/Skeleton3D");
-
-
+		if (PhysicsSkelton == null) PhysicsSkelton = GetNode<PhysicsSkeleton>("PhysicsRig/Armature/Skeleton3D");
+		if (AnimPlayer == null) AnimPlayer = PhysicsSkelton.AnimPlayer;
+		_animSkeleton = PhysicsSkelton.TargetSkeleton;
 
 
 	}
@@ -40,8 +54,12 @@ public partial class Player : CharacterBody3D
 				_cam.Rotation.Y,
 				_cam.Rotation.Z
 			);
-			//_prevAngle = _headAngle;
-			//_headAngle = _cam.Rotation.X;
+			_prevAngle = _headAngle;
+			_headAngle = _cam.Rotation.X;
+		}
+		else if (@event is InputEventAction action)
+		{
+
 		}
 	}
 	public override void _PhysicsProcess(double delta)
@@ -59,7 +77,6 @@ public partial class Player : CharacterBody3D
 		{
 			velocity.Y = JumpVelocity;
 		}
-		//_characterRig.SetHeadPose(Mathf.Lerp(_prevAngle, _headAngle, 100.0f * (float)delta));
 
 		if (Input.IsActionJustPressed("interact"))
 		{
@@ -87,12 +104,15 @@ public partial class Player : CharacterBody3D
 		{
 			velocity.X = direction.X * Speed;
 			velocity.Z = direction.Z * Speed;
+			SetAnimation("WalkAction_001");
 		}
 		else
 		{
 			velocity.X = Mathf.MoveToward(Velocity.X, 0, Speed);
 			velocity.Z = Mathf.MoveToward(Velocity.Z, 0, Speed);
+			SetAnimation("Idle_001");
 		}
+		PhysicsSkelton.HeadAngle = _headAngle;
 
 		Velocity = velocity;
 		MoveAndSlide();

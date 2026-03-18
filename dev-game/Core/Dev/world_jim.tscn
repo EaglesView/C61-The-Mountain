@@ -37,6 +37,7 @@ collision_layer = 2
 collision_mask = 5
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=835417019]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05518222, 0)
 shape = SubResource("WorldBoundaryShape3D_uskl1")
 
 [node name="GridMap" type="GridMap" parent="StaticBody3D" unique_id=157398374]
