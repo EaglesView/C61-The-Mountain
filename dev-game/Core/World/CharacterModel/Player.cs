@@ -43,7 +43,6 @@ public partial class Player : CharacterBody3D
     [Export] public required PhysicsSkeleton PhysicsSkelton;
     [Export] required public RayCast3D Raycaster;
     [Export] private Camera3D? _cam;
-    private CharacterRig? _characterRig;
     private float _headAngle = 0.0f;//rads
     private float _prevAngle = 0.0f;
     private Skeleton3D? _animSkeleton;
