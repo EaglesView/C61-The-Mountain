@@ -36,7 +36,7 @@ public partial class Login : Control
 
 		if (result.Success)
 		{
-			GetTree().ChangeSceneToFile("res://Core/Dev/world_jim.tscn");
+			GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
 		}
 		else
 		{
@@ -53,7 +53,7 @@ public partial class Login : Control
 
 		if (result.Success)
 		{
-			GetTree().ChangeSceneToFile("res://Core/Dev/world_jim.tscn");
+			GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
 		}
 		else
 		{

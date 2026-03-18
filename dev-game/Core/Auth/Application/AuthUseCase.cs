@@ -46,4 +46,5 @@ public sealed class AuthUseCase
     public Task SignOutAsync() => _authService.SignOutAsync();
     public User? CurrentUser => _authService.CurrentUser;
     public bool IsAuthenticated => _authService.IsAuthenticated;
+    public string? IdToken => _authService.IdToken;
 }

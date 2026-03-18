@@ -23,5 +23,14 @@ public static class AuthServiceProvider
         }
     }
     
+    public static string GetCurrentToken() =>
+        Instance.IdToken ?? throw new System.InvalidOperationException("User is not authenticated.");
+
+    public static async System.Threading.Tasks.Task SignOutAsync()
+    {
+        await Instance.SignOutAsync();
+        Reset();
+    }
+
     public static void Reset() => _instance = null;
 }
