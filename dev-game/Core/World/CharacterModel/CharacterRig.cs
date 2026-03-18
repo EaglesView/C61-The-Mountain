@@ -6,6 +6,7 @@ public partial class CharacterRig : Node3D
 	[ExportGroup("Dev")]
 	[Export] private bool _ragdollActive = true;
 	public required PhysicalBoneSimulator3D BoneSimulator;
+	public required AnimationPlayer AnimPlayer;
 	// ------ PRIVATE VARS TO THE RIG FOR EASY ACCESS
 	private Skeleton3D _skeleton;
 	private int _headBoneIdx;
@@ -41,7 +42,6 @@ public partial class CharacterRig : Node3D
 		_headBoneIdx = _skeleton.FindBone("Head.001");
 		_mouthBoneIdx = _skeleton.FindBone("Mouth.001");
 		SetRagdoll(_ragdollActive);
-
 	}
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.

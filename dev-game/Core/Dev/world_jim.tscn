@@ -24,10 +24,17 @@ volumetric_fog_density = 0.01
 
 [sub_resource type="Compositor" id="Compositor_cctn4"]
 
+[sub_resource type="BoxMesh" id="BoxMesh_e3c1y"]
+
+[sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_uskl1"]
+data = PackedVector3Array(-0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5)
+
 [node name="World" type="Node3D" unique_id=500049071]
 script = ExtResource("1_e3c1y")
 
 [node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=1617775627]
+collision_layer = 2
+collision_mask = 5
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=835417019]
 shape = SubResource("WorldBoundaryShape3D_uskl1")
@@ -50,3 +57,107 @@ compositor = SubResource("Compositor_cctn4")
 transform = Transform3D(1, 0, 0, 0, 0.70710677, 0.70710677, 0, -0.70710677, 0.70710677, 0, 5, 0)
 
 [node name="Player" parent="." unique_id=1298834634 instance=ExtResource("3_e3c1y")]
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=899323474]
+transform = Transform3D(0.8660254, 0, 0.5, 0, 1, 0, -0.5, 0, 0.8660254, 0.9052132, 0.4570483, 1.2242526)
+
+[node name="TestCol" type="StaticBody3D" parent="." unique_id=687671996]
+
+[node name="MeshInstance3D8" type="MeshInstance3D" parent="TestCol" unique_id=1423214945]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.11055517, 0.024489522, 1.0842457, 1.5097327)
+mesh = SubResource("BoxMesh_e3c1y")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="TestCol/MeshInstance3D8" unique_id=339817719]
+collision_layer = 8
+collision_mask = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TestCol/MeshInstance3D8/StaticBody3D" unique_id=1150786839]
+shape = SubResource("ConcavePolygonShape3D_uskl1")
+
+[node name="MeshInstance3D10" type="MeshInstance3D" parent="TestCol" unique_id=1896444489]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.11055517, 0.024489522, 1.0842457, 1.1629605)
+mesh = SubResource("BoxMesh_e3c1y")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="TestCol/MeshInstance3D10" unique_id=963961331]
+collision_layer = 8
+collision_mask = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TestCol/MeshInstance3D10/StaticBody3D" unique_id=644288352]
+shape = SubResource("ConcavePolygonShape3D_uskl1")
+
+[node name="MeshInstance3D9" type="MeshInstance3D" parent="TestCol" unique_id=451268138]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.11055517, 0.024489522, 1.0842457, 1.8578575)
+mesh = SubResource("BoxMesh_e3c1y")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="TestCol/MeshInstance3D9" unique_id=899371157]
+collision_layer = 8
+collision_mask = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TestCol/MeshInstance3D9/StaticBody3D" unique_id=64777635]
+shape = SubResource("ConcavePolygonShape3D_uskl1")
+
+[node name="MeshInstance3D11" type="MeshInstance3D" parent="TestCol" unique_id=1730268358]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.11055517, 0.024489522, 1.0842457, 2.2796602)
+mesh = SubResource("BoxMesh_e3c1y")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="TestCol/MeshInstance3D11" unique_id=604110720]
+collision_layer = 8
+collision_mask = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TestCol/MeshInstance3D11/StaticBody3D" unique_id=1611334953]
+shape = SubResource("ConcavePolygonShape3D_uskl1")
+
+[node name="MeshInstance3D12" type="MeshInstance3D" parent="TestCol" unique_id=1921419053]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.11055517, 0.02448976, 1.0704433, 2.6804101)
+mesh = SubResource("BoxMesh_e3c1y")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="TestCol/MeshInstance3D12" unique_id=646406479]
+collision_layer = 8
+collision_mask = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TestCol/MeshInstance3D12/StaticBody3D" unique_id=986018008]
+shape = SubResource("ConcavePolygonShape3D_uskl1")
+
+[node name="MeshInstance3D13" type="MeshInstance3D" parent="TestCol" unique_id=787415345]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.11055517, 0.02448976, 1.0704433, 3.0824325)
+mesh = SubResource("BoxMesh_e3c1y")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="TestCol/MeshInstance3D13" unique_id=1495186694]
+collision_layer = 8
+collision_mask = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TestCol/MeshInstance3D13/StaticBody3D" unique_id=420902660]
+shape = SubResource("ConcavePolygonShape3D_uskl1")
+
+[node name="MeshInstance3D14" type="MeshInstance3D" parent="TestCol" unique_id=1127241466]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.11055517, 0.02448976, 1.0704433, 3.4882758)
+mesh = SubResource("BoxMesh_e3c1y")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="TestCol/MeshInstance3D14" unique_id=467003099]
+collision_layer = 8
+collision_mask = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TestCol/MeshInstance3D14/StaticBody3D" unique_id=1595599078]
+shape = SubResource("ConcavePolygonShape3D_uskl1")
+
+[node name="MeshInstance3D3" type="MeshInstance3D" parent="TestCol" unique_id=1627130136]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.024489403, 0.8888515, 4.7821097)
+mesh = SubResource("BoxMesh_e3c1y")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="TestCol/MeshInstance3D3" unique_id=240991017]
+collision_layer = 8
+collision_mask = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TestCol/MeshInstance3D3/StaticBody3D" unique_id=68457880]
+shape = SubResource("ConcavePolygonShape3D_uskl1")
+
+[node name="MeshInstance3D4" type="MeshInstance3D" parent="TestCol" unique_id=971580854]
+transform = Transform3D(1, 0, 0, 0, 0.70710677, 0.70710677, 0, -0.70710677, 0.70710677, -2.578847, 0.8888515, 4.7821097)
+mesh = SubResource("BoxMesh_e3c1y")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="TestCol/MeshInstance3D4" unique_id=184658134]
+collision_layer = 8
+collision_mask = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TestCol/MeshInstance3D4/StaticBody3D" unique_id=500809687]
+shape = SubResource("ConcavePolygonShape3D_uskl1")
