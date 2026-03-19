@@ -77,7 +77,7 @@ public partial class Player : CharacterBody3D
 	public override void _Ready()
 	{
 		if (_cam == null) return;
-		_currentCamOffset = _offsetTP;
+		_currentCamOffset = _offsetFP;
 		if (Raycaster == null) Raycaster = GetNode<RayCast3D>("PlayerCamera_FP/RayCast3D");
 		Input.MouseMode = Input.MouseModeEnum.Captured; //Cache le curseur à son controle
 														//TODO: Mettre dans un médiateur de contrôle
@@ -141,10 +141,19 @@ public partial class Player : CharacterBody3D
 			GetObjectTypeFromRaycast(Raycaster);
 			//TEMPORAIRE : Changer la camera a third person pour voir le rig
 			//_currentCamOffset = (_currentCamOffset == _offsetFP)?_offsetTP:_offsetFP;
-
+			PhysicsSkelton.Aiming = true;
+			PhysicsSkelton.ArmPointDir = -Raycaster.GlobalTransform.Basis.Z;
 
 		}
-
+		if (Input.IsActionJustReleased("interact")){
+			PhysicsSkelton.Aiming = false;
+		}
+		if (Input.IsActionJustPressed("show_sign")){
+			PhysicsSkelton.ArmsUp = true;
+		}
+		if (Input.IsActionJustReleased("show_sign")){
+			PhysicsSkelton.ArmsUp = false;
+		}
 		// Basic movements from the godot boilerplate, to adapt to the game
 		Vector2 aimDir = Input.GetVector("aim_left", "aim_right", "aim_up", "aim_down");
 		Vector2 inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");
@@ -164,7 +173,9 @@ public partial class Player : CharacterBody3D
 			SetAnimation("Idle_001");
 		}
 		PhysicsSkelton.HeadAngle = _headAngle;
-
+		if(PhysicsSkelton.Aiming){
+			PhysicsSkelton.ArmPointDir = -Raycaster.GlobalTransform.Basis.Z;
+		}
 		Velocity = velocity;
 		MoveAndSlide();
 	}
