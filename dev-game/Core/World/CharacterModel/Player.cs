@@ -47,6 +47,7 @@ public partial class Player : CharacterBody3D
     private float _prevAngle = 0.0f;
     private Skeleton3D? _animSkeleton;
     private string? _currentAnim;
+    private Interactable? _highlightedInteractable;
     //[Export] private Node3D _characterRig;
 
     public void SetAnimation(string anim)
@@ -119,8 +120,8 @@ public partial class Player : CharacterBody3D
 
         if (Input.IsActionJustPressed("interact"))
         {
-
-            GetObjectTypeFromRaycast(Raycaster);
+            var interactable = GetInteractableFromRaycast(Raycaster);
+            interactable?.Interact(this);
         }
 
         // Basic movements from the godot boilerplate, to adapt to the game
@@ -151,5 +152,13 @@ public partial class Player : CharacterBody3D
         int boneIdx = PhysicsSkelton.FindBone("Head.001");
         Transform3D headWorld = PhysicsSkelton.GlobalTransform * PhysicsSkelton.GetBoneGlobalPose(boneIdx);
         _cam.GlobalPosition = headWorld.Origin + headWorld.Basis * new Vector3(0, 0.05f, 0.25f); //TODO: mettre offset dans var
+
+        var interactable = GetInteractableFromRaycast(Raycaster);
+        if (interactable != _highlightedInteractable)
+        {
+            _highlightedInteractable?.OnUnhighlight();
+            _highlightedInteractable = interactable;
+            _highlightedInteractable?.OnHighlight();
+        }
     }
 }
