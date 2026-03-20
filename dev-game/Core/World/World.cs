@@ -12,15 +12,16 @@ public partial class World : Node3D
         _remoteCharacterScene = GD.Load<PackedScene>("res://Core/World/CharacterModel/RemoteCharacter.tscn");
 
         var net = NetworkManager.Instance;
-        net.PeerJoined    += OnPeerJoined;
-        net.PeerLeft      += OnPeerLeft;
-        net.StateReceived += OnStateReceived;
 
         if (net.IsServer)
         {
             GD.Print("[World] Dedicated server — no local player spawned.");
             return;
         }
+
+        net.PeerJoined    += OnPeerJoined;
+        net.PeerLeft      += OnPeerLeft;
+        net.StateReceived += OnStateReceived;
 
         if (net.IsAutoConnecting)
             net.LocalConnected += () => SpawnLocalPlayer(net.LocalPeerId);

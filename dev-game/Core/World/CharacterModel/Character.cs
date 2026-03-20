@@ -56,7 +56,7 @@ public partial class Character : CharacterBody3D
 
     // ── Network ──────────────────────────────────────────────────────────────
 
-    public int PeerId { get; set; } = 1;
+    public int PeerId { get; set; } = 0;
 
     public virtual PlayerNetState SnapshotState()
     {

@@ -116,7 +116,12 @@ public partial class GodotENetProvider : Node, INetworkProvider
 
     private void OnConnectedToServer()       => PeerConnected?.Invoke(Multiplayer.GetUniqueId());
     private void OnConnectionFailed()        => ConnectionFailed?.Invoke("Connection to server failed");
-    private void OnPeerConnected(long id)    => PeerConnected?.Invoke((int)id);
+    private void OnPeerConnected(long id)
+    {
+        // On clients, peer 1 is the server — already handled by ConnectedToServer; skip it.
+        if (_role == NetworkRole.Client && id == 1) return;
+        PeerConnected?.Invoke((int)id);
+    }
     private void OnPeerDisconnected(long id) => PeerDisconnected?.Invoke((int)id);
     private void OnPeerPacket(long fromId, byte[] packet) => PacketReceived?.Invoke((int)fromId, packet);
 }
