@@ -10,6 +10,14 @@ public static class CharacterUtils
         Idle,
         Sliding
     }
+
+    public static MovementState GetMovementStateFromMovement(Vector3 InMoveDir, Vector3 InAimDir)
+    {
+
+        if (InMoveDir == Vector3.Zero) return MovementState.Idle;
+        return MovementState.Walking;
+    }
+
     /// <summary>
     /// Calcule la force vectorielle 3D d'un ressort amorti selon la loi de Hooke étendue.
     /// La force résultante est : F = -k·x - b·v, où k est la raideur, x le déplacement,

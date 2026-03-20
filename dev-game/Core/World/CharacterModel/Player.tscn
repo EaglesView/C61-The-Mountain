@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://dov2ubp3kihwm"]
+
+[ext_resource type="PackedScene" uid="uid://cue46vlh7h8q8" path="res://Core/World/CharacterModel/Character.tscn" id="1_13ybx"]
+[ext_resource type="Script" uid="uid://brkul28mksbkr" path="res://Core/World/CharacterModel/Player.cs" id="2_gnb1y"]
+
+[node name="Player" unique_id=1298834634 instance=ExtResource("1_13ybx")]
+script = ExtResource("2_gnb1y")
+Speed = 2.5
+RunMultiplier = 2.0
+JumpVelocity = 4.5
+_mouseSensitivity = 0.002
+_controllerSensitivity = 2.5
+
+[node name="Physical Bone Spine_002" parent="PhysicsRig/Armature/Skeleton3D/PhysicalBoneSimulator3D" parent_id_path=PackedInt32Array(911866307) index="1" unique_id=1334271584]
+transform = Transform3D(0.99887806, -0.0074177394, -0.04677276, -0.047357302, -0.15636739, -0.986563, 4.333027e-06, 0.98767114, -0.15654323, 0.0035850527, 0.22608185, -0.026105596)
+body_offset = Transform3D(1, -4.223151e-06, 9.975031e-07, 9.949822e-07, 4.2170286e-06, -0.99999994, 4.2256397e-06, 1.0000001, 4.2170286e-06, 1.10361725e-07, 0.07664436, -4.4703484e-08)
+
+[node name="Physical Bone Spine_003" parent="PhysicsRig/Armature/Skeleton3D/PhysicalBoneSimulator3D" parent_id_path=PackedInt32Array(911866307) index="2" unique_id=136131466]
+transform = Transform3D(0.9982862, -0.003098349, -0.058439337, -0.058521412, -0.052748527, -0.9968916, 6.129433e-06, 0.99860305, -0.05283944, 0.010564883, 0.35960564, -0.011037238)
+joint_offset = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.6928907e-07, -3.3004517e-07, 0.05808931)
+body_offset = Transform3D(1.0000001, -5.8334826e-06, 1.01188925e-05, 1.0121412e-05, 2.3171306e-06, -1.0000001, 5.835585e-06, 1.0000002, 2.346933e-06, -3.1851232e-07, 0.058089316, 1.937151e-07)

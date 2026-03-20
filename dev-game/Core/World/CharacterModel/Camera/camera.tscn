@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://c7wq24d3my487"]
+
+[ext_resource type="Script" uid="uid://dmhrrkipw1poe" path="res://Core/World/CharacterModel/Camera/CameraMan.cs" id="1_cn5h5"]
+[ext_resource type="Script" uid="uid://c6omojwexwsoo" path="res://Core/World/CharacterModel/Camera/Camera.cs" id="1_i70ko"]
+
+[node name="CameraMan" type="Node3D" unique_id=1693174102]
+script = ExtResource("1_cn5h5")
+
+[node name="SpringArm3D" type="SpringArm3D" parent="." unique_id=2073258390]
+
+[node name="PlayerCamera" type="Camera3D" parent="SpringArm3D" unique_id=199338511]
+script = ExtResource("1_i70ko")
+
+[node name="RayCastTo" type="RayCast3D" parent="SpringArm3D/PlayerCamera" unique_id=620595555]
