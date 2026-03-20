@@ -90,7 +90,7 @@ public partial class Player : Character
         if (@event is InputEventMouseMotion mouseMotion)
         {
             RotateY(-mouseMotion.Relative.X * _mouseSensitivity);
-            float newAngle = headAngle - mouseMotion.Relative.Y * _mouseSensitivity;
+            float newAngle = headAngle + mouseMotion.Relative.Y * _mouseSensitivity;
             RotateHead(Mathf.Clamp(newAngle, Mathf.DegToRad(-80), Mathf.DegToRad(80)));
         }
         else if (@event is InputEventAction action)
@@ -148,8 +148,8 @@ public partial class Player : Character
         Vector2 inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");
         Vector3 direction = (Transform.Basis * new Vector3(-inputDir.X, 0, -inputDir.Y)).Normalized();
         //Gérer le aiming (controller ou souris)
-        moveVec = direction;
-        aimVec = direction;
+        moveVec = -direction;
+        aimVec = -direction;
         base._PhysicsProcess(delta);
         if (currentEmoteState == EmoteState.Pointing){
             pointVec = _cameraMan.GetRaycastPointingVector();
