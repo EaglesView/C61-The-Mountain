@@ -17,6 +17,7 @@
 using Godot;
 using System;
 using static Utils.RayCastUtils;
+using static Utils.CharacterUtils;
 /// <summary>
 /// Joueur principal du client, Permet de contrôler son propre personnage.
 /// Sera éventuellement séparé avec un Character Class, mais pour l'instant
@@ -40,34 +41,25 @@ public partial class Player : Character
     [Export(PropertyHint.Range, "0.0f,0.1f,0.001f")] private float _mouseSensitivity = 0.002f;
     [Export(PropertyHint.Range, "0.0f,5.0f,0.05f")] private float _controllerSensitivity = 2.5f; // radians / sec
     [ExportGroup("Character Nodes")]
-    [Export] public required AnimationPlayer AnimPlayer;
-    [Export] public required PhysicsSkeleton PhysicsSkelton;
-    [Export] required public RayCast3D Raycaster;
-    [Export] private Camera3D? _cam;
-    private float _headAngle = 0.0f;//rads
-    private float _prevAngle = 0.0f;
+    [Export] public RayCast3D Raycaster;
+    //[Export] public required AnimationPlayer AnimPlayer;
+    //[Export] public required PhysicsSkeleton PhysicsSkelton;
+    [Export] private CameraMan _cameraMan;
+    //[Export] private Camera3D? _cam;
     private Skeleton3D? _animSkeleton;
-    private string? _currentAnim;
     private Vector3 _offsetFP = new Vector3(0, 0.05f, 0.25f);
     private Vector3 _offsetTP = new Vector3(0, 0.1f, -1.25f);
     private Vector3 _currentCamOffset;
     //[Export] private Node3D _characterRig;
 
-    public void SetAnimation(string anim)
-    {
-        if (_currentAnim != anim)
-        {
-            _currentAnim = anim;
-            AnimPlayer.Play(anim);
-        }
-    }
 
-    public void SetCamPos()
-    {
-        int boneIdx = PhysicsSkelton.FindBone("Head.001");
-        Transform3D headWorld = PhysicsSkelton.GlobalTransform * PhysicsSkelton.GetBoneGlobalPose(boneIdx);
-        _cam.GlobalPosition = headWorld.Origin + headWorld.Basis * _currentCamOffset;
-    }
+
+    //public void SetCamPos()
+    //{
+    //    int boneIdx = PhysicsSkelton.FindBone("Head.001");
+    //    Transform3D headWorld = PhysicsSkelton.GlobalTransform * PhysicsSkelton.GetBoneGlobalPose(boneIdx);
+    //    _cam.GlobalPosition = headWorld.Origin + headWorld.Basis * _currentCamOffset;
+    //}
 
     /// ···········································
     /// : _    ___ ___ ___ _____   _____ _    ___ :
@@ -77,15 +69,17 @@ public partial class Player : Character
     /// ···········································
     public override void _Ready()
     {
-        if (_cam == null) return;
+        if (_cameraMan == null) return;
         _currentCamOffset = _offsetFP;
-        if (Raycaster == null) Raycaster = GetNode<RayCast3D>("PlayerCamera_FP/RayCast3D");
+        if (Raycaster == null) Raycaster = _cameraMan.GetNode<RayCast3D>("SpringArm3D/PlayerCamera/RayCastTo");
         Input.MouseMode = Input.MouseModeEnum.Captured; //Cache le curseur à son controle
                                                         //TODO: Mettre dans un médiateur de contrôle
                                                         // pour permettre de lose control
         if (PhysicsSkelton == null) PhysicsSkelton = GetNode<PhysicsSkeleton>("PhysicsRig/Armature/Skeleton3D");
         if (AnimPlayer == null) AnimPlayer = PhysicsSkelton.AnimPlayer;
         _animSkeleton = PhysicsSkelton.TargetSkeleton;
+        speed = WalkSpeed;
+
 
     }
     public override void _Input(InputEvent @event)
@@ -96,15 +90,15 @@ public partial class Player : Character
             RotateY(-mouseMotion.Relative.X * _mouseSensitivity);
 
             // Vertical tourne seulement la caméra pour l'instant
-            _cam.RotateX(mouseMotion.Relative.Y * _mouseSensitivity);
-            _cam.Rotation = new Vector3(
-                Mathf.Clamp(_cam.Rotation.X, Mathf.DegToRad(-80), Mathf.DegToRad(80)),
-                _cam.Rotation.Y,
-                _cam.Rotation.Z
-            );
+            //_cam.RotateX(mouseMotion.Relative.Y * _mouseSensitivity);
+            //_cam.Rotation = new Vector3(
+            //    Mathf.Clamp(_cam.Rotation.X, Mathf.DegToRad(-80), Mathf.DegToRad(80)),
+            //    _cam.Rotation.Y,
+            //    _cam.Rotation.Z
+            //);
             //tourner la tete sur laxe x (les spine bones sont dans le process de PhysicsSkeleton.cs)
-            _prevAngle = _headAngle;
-            _headAngle = _cam.Rotation.X;
+            //_prevAngle = _headAngle;
+            //_headAngle = _cam.Rotation.X;
         }
         else if (@event is InputEventAction action)
         {
@@ -113,13 +107,8 @@ public partial class Player : Character
     }
     public override void _PhysicsProcess(double delta)
     {
-        Vector3 velocity = Velocity;
+        velocity = Velocity;
 
-        // Add the gravity.
-        if (!IsOnFloor())
-        {
-            velocity += GetGravity() * (float)delta;
-        }
 
         // Handle Jump.
         if (Input.IsActionJustPressed("jump") && IsOnFloor())
@@ -144,13 +133,14 @@ public partial class Player : Character
             GetObjectTypeFromRaycast(Raycaster);
             //TEMPORAIRE : Changer la camera a third person pour voir le rig
             //_currentCamOffset = (_currentCamOffset == _offsetFP)?_offsetTP:_offsetFP;
-            PhysicsSkelton.Aiming = true;
-            PhysicsSkelton.ArmPointDir = -Raycaster.GlobalTransform.Basis.Z;
+            currentEmoteState = EmoteState.Pointing; //temporary
 
         }
         if (Input.IsActionJustReleased("interact"))
         {
             PhysicsSkelton.Aiming = false;
+            currentEmoteState = EmoteState.None; //temporary
+
         }
         if (Input.IsActionJustPressed("show_sign"))
         {
@@ -165,29 +155,19 @@ public partial class Player : Character
         Vector2 inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");
         Vector3 direction = (Transform.Basis * new Vector3(-inputDir.X, 0, -inputDir.Y)).Normalized();
         //Gérer le aiming (controller ou souris)
+        moveVec = direction;
+        aimVec = direction;
+        base._PhysicsProcess(delta);
+        if (currentEmoteState == EmoteState.Pointing){
+            pointVec = _cameraMan.GetRaycastPointingVector();
 
-        if (direction != Vector3.Zero)
-        {
-            velocity.X = direction.X * WalkSpeed;
-            velocity.Z = direction.Z * WalkSpeed;
-            SetAnimation("WalkAction_001");
         }
-        else
-        {
-            velocity.X = Mathf.MoveToward(Velocity.X, 0, WalkSpeed);
-            velocity.Z = Mathf.MoveToward(Velocity.Z, 0, WalkSpeed);
-            SetAnimation("Idle_001");
-        }
-        PhysicsSkelton.HeadAngle = _headAngle;
-        if (PhysicsSkelton.Aiming)
-        {
-            PhysicsSkelton.ArmPointDir = -Raycaster.GlobalTransform.Basis.Z;
-        }
-        Velocity = velocity;
-        MoveAndSlide();
+        //Velocity = velocity;
+        //MoveAndSlide();
     }
     public override void _Process(double delta)
     {
-        SetCamPos();
+        base._Process(delta);
+        //SetCamPos();
     }
 }

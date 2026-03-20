@@ -11,11 +11,37 @@ public static class CharacterUtils
         Sliding
     }
 
+    public enum EmoteState {
+        Pointing,
+        ArmsUp,
+        ShowSign,
+        None
+    }
+
     public static MovementState GetMovementStateFromMovement(Vector3 InMoveDir, Vector3 InAimDir)
     {
 
         if (InMoveDir == Vector3.Zero) return MovementState.Idle;
         return MovementState.Walking;
+    }
+
+    public static void PlayAnimationFromMovement(MovementState InNew,AnimationPlayer InAnimationPlayer){
+        switch (InNew){
+            case MovementState.Walking:
+            InAnimationPlayer.Play("WalkAction_001");
+            break;
+            case MovementState.Running:
+            // Présentement, utilises la même animation, mais l'accélère
+            // cela pourrais changer, case still valide
+            InAnimationPlayer.Play("WalkAction_001");
+            break;
+            case MovementState.Idle:
+            InAnimationPlayer.Play("Idle_001");
+            break;
+            case MovementState.Sliding:
+            InAnimationPlayer.Play("SlideAction_001");
+            break;
+        }
     }
 
     /// <summary>

@@ -40,15 +40,30 @@ public partial class CameraMan : Node3D
 	[ExportSubgroup("Third Person Cam Properties")]
 	[Export(PropertyHint.Range, "1.0f,99.0f,0.5f")] private float _cameraDistanceTP = 10.0f;
 
+	private float _camDistance=0.0f;
+
 
 	public void SetCameraType(CameraType InCamType)
 	{
 		_camType = InCamType;
+		switch(_camType){
+		    case CameraType.FirstPerson:
+			_camDistance = 0.0f;
+		    break;
+		    case CameraType.ThirdPerson:
+			_camDistance = _cameraDistanceTP;
+		    break;
+		}
+		SpringArmThirdPerson.SpringLength = _camDistance;
 	}
 
+	public Vector3 GetRaycastPointingVector(){
+	 return -Raycaster.GlobalTransform.Basis.Z;
+	}
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
+	    SetCameraType(_camType);
 	}
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
