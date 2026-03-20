@@ -3,9 +3,9 @@
 [ext_resource type="Script" uid="uid://dmhrrkipw1poe" path="res://Core/World/CharacterModel/Camera/CameraMan.cs" id="1_cn5h5"]
 [ext_resource type="Script" uid="uid://c6omojwexwsoo" path="res://Core/World/CharacterModel/Camera/Camera.cs" id="1_i70ko"]
 
-[node name="CameraMan" type="Node3D" unique_id=1693174102 node_paths=PackedStringArray("PlayerCamera", "Raycaster", "SpringArmThirdPerson")]
+[node name="CameraMan" type="Node3D" unique_id=1693174102 node_paths=PackedStringArray("_playerCamera", "Raycaster", "SpringArmThirdPerson")]
 script = ExtResource("1_cn5h5")
-PlayerCamera = NodePath("SpringArm3D/PlayerCamera")
+_playerCamera = NodePath("SpringArm3D/PlayerCamera")
 Raycaster = NodePath("SpringArm3D/PlayerCamera/RayCastTo")
 SpringArmThirdPerson = NodePath("SpringArm3D")
 

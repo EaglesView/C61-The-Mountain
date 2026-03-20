@@ -78,6 +78,10 @@ public partial class PhysicsSkeleton : Skeleton3D
 		SetBonePoseRotation(_headBoneIdx, headRot);
 		SetBonePoseRotation(_mouthBoneIdx, mouthRot);
 	}
+	public Transform3D GetHeadPose(){
+	    // returns the head bone pose in globalspace
+		return TargetSkeleton.GetBoneGlobalPose(_headBoneIdx);
+	}
 	public void SetSpinePoseFromHead(float InHeadXAngle){
 	TargetSkeleton.SetBonePoseRotation(_spine3BoneIdx, new Quaternion(Vector3.Right, -InHeadXAngle * 1.0f));
 	TargetSkeleton.SetBonePoseRotation(_spine4BoneIdx, new Quaternion(Vector3.Right, -InHeadXAngle * 0.4f));
@@ -203,8 +207,8 @@ public partial class PhysicsSkeleton : Skeleton3D
 			// LINEAR APPLY
 			bone.LinearVelocity += Force * (float)delta; //linear
 			//ANGULAR START
-			Quaternion targetRot = TransformTarget.Basis.GetRotationQuaternion().Normalized();
-			Quaternion currentRot = TransformCurrent.Basis.GetRotationQuaternion().Normalized();
+			Quaternion targetRot = TransformTarget.Basis.GetRotationQuaternion();
+			Quaternion currentRot = TransformCurrent.Basis.GetRotationQuaternion();
 			//Correction Bug Shortest Path, évite les rotations douteuses
 			if (targetRot.Dot(currentRot) < 0f)
 				currentRot = -currentRot;

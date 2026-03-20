@@ -27,7 +27,8 @@ public partial class CameraMan : Node3D
 	/// ····································
 	[ExportCategory("PlayerCameraAttributes")]
 	[ExportGroup("Nodes")]
-	[Export] public required Camera3D PlayerCamera;
+	[Export] private Camera3D _playerCamera;
+	[Export] private Player _player;
 	[Export] public required RayCast3D Raycaster;
 	[Export] public required SpringArm3D SpringArmThirdPerson;
 	[Export] private Node3D? _camTarget;
@@ -36,19 +37,19 @@ public partial class CameraMan : Node3D
 	[Export] private CameraType _camType = CameraType.FirstPerson;
 
 	[ExportSubgroup("First Person Cam Properties")]
-	[Export(PropertyHint.Range, "0.0f,50.0f,1.0f")] private float _camDamping = 0.0f;
+	[Export(PropertyHint.Range, "0.0f,50.0f,1.0f")] private float _camDamping = 10.0f;
 	[ExportSubgroup("Third Person Cam Properties")]
 	[Export(PropertyHint.Range, "1.0f,99.0f,0.5f")] private float _cameraDistanceTP = 10.0f;
 
 	private float _camDistance=0.0f;
-
+	private Vector3 _camOffset = new Vector3(0.0f, 0.0f, 0.001f);
 
 	public void SetCameraType(CameraType InCamType)
 	{
 		_camType = InCamType;
 		switch(_camType){
 		    case CameraType.FirstPerson:
-			_camDistance = 0.0f;
+			_camDistance = -0.0f;
 		    break;
 		    case CameraType.ThirdPerson:
 			_camDistance = _cameraDistanceTP;
@@ -60,14 +61,29 @@ public partial class CameraMan : Node3D
 	public Vector3 GetRaycastPointingVector(){
 	 return -Raycaster.GlobalTransform.Basis.Z;
 	}
+
+	public void ComputeCameraPosition()
+	{
+		switch(_camType){
+		    case CameraType.FirstPerson:
+				_playerCamera.GlobalPosition = _playerCamera.GlobalPosition.Lerp(_player.GetHeadBonePosition()+_camOffset, _camDamping);
+		    break;
+		    case CameraType.ThirdPerson:
+			_camDistance = _cameraDistanceTP;
+		    break;
+		}
+	}
+
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
 	    SetCameraType(_camType);
+
 	}
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
 	public override void _Process(double delta)
 	{
+	ComputeCameraPosition();
 	}
 }

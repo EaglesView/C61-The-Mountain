@@ -48,7 +48,9 @@ public partial class Character : CharacterBody3D
     public void PointAt(Vector3 InDirection){
         PhysicsSkelton.ArmPointDir = InDirection;
     }
-
+    public Vector3 GetHeadBonePosition(){
+        return PhysicsSkelton.ToGlobal(PhysicsSkelton.GetHeadPose().Origin);
+    }
     public void ComputeEmotePhysics(){
         switch(currentEmoteState){
             case EmoteState.None:
