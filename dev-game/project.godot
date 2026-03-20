@@ -15,6 +15,10 @@ run/main_scene="uid://bh01ma0t3rrth"
 config/features=PackedStringArray("4.6", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
+[autoload]
+
+NetworkManager="*res://Core/Network/NetworkManager.cs"
+
 [dotnet]
 
 project/assembly_name="dev-game"

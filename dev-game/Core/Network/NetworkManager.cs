@@ -44,7 +44,12 @@ public partial class NetworkManager : Node
         _provider = enet;
 
         _provider.PeerConnected    += OnProviderPeerConnected;
-        _provider.PeerDisconnected += id  => { _lastKnownPos.Remove(id); PeerLeft?.Invoke(id); };
+        _provider.PeerDisconnected += id  =>
+        {
+            GD.Print($"[NetworkManager] Peer {id} disconnected. Active peers: {_lastKnownPos.Count - 1}");
+            _lastKnownPos.Remove(id);
+            PeerLeft?.Invoke(id);
+        };
         _provider.PacketReceived   += OnPacketReceived;
         _provider.ServerStarted    += ()  => GD.Print("[NetworkManager] Server started on port 7777.");
         _provider.ConnectionFailed += msg => GD.PrintErr($"[NetworkManager] {msg}");
@@ -75,6 +80,11 @@ public partial class NetworkManager : Node
 
     private void OnProviderPeerConnected(int id)
     {
+        if (_provider?.Role == NetworkRole.Server)
+            GD.Print($"[NetworkManager] Player {id} connected. Active peers: {Multiplayer.GetPeers().Length}");
+        else
+            GD.Print($"[NetworkManager] Connected to server. Local peer ID: {id}");
+
         PeerJoined?.Invoke(id);
         // Fire LocalConnected when our own client connection is confirmed
         if (_provider?.Role == NetworkRole.Client && id == _provider.LocalPeerId)
