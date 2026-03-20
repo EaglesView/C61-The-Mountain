@@ -69,10 +69,13 @@ public partial class Player : Character
     /// ···········································
     public override void _Ready()
     {
+        PeerId = Multiplayer.GetUniqueId();
+
         if (_cameraMan == null) return;
         _currentCamOffset = _offsetFP;
         if (Raycaster == null) Raycaster = _cameraMan.GetNode<RayCast3D>("SpringArm3D/PlayerCamera/RayCastTo");
-        Input.MouseMode = Input.MouseModeEnum.Captured; //Cache le curseur à son controle
+        if (DisplayServer.GetName() != "headless")
+            Input.MouseMode = Input.MouseModeEnum.Captured; //Cache le curseur à son controle
                                                         //TODO: Mettre dans un médiateur de contrôle
                                                         // pour permettre de lose control
         if (PhysicsSkelton == null) PhysicsSkelton = GetNode<PhysicsSkeleton>("PhysicsRig/Armature/Skeleton3D");
@@ -86,19 +89,9 @@ public partial class Player : Character
     {
         if (@event is InputEventMouseMotion mouseMotion)
         {
-            //Rotate le player en horizontal complet (on fera la tete plus tard isolé)
             RotateY(-mouseMotion.Relative.X * _mouseSensitivity);
-
-            // Vertical tourne seulement la caméra pour l'instant
-            //_cam.RotateX(mouseMotion.Relative.Y * _mouseSensitivity);
-            //_cam.Rotation = new Vector3(
-            //    Mathf.Clamp(_cam.Rotation.X, Mathf.DegToRad(-80), Mathf.DegToRad(80)),
-            //    _cam.Rotation.Y,
-            //    _cam.Rotation.Z
-            //);
-            //tourner la tete sur laxe x (les spine bones sont dans le process de PhysicsSkeleton.cs)
-            //_prevAngle = _headAngle;
-            //_headAngle = _cam.Rotation.X;
+            float newAngle = headAngle - mouseMotion.Relative.Y * _mouseSensitivity;
+            RotateHead(Mathf.Clamp(newAngle, Mathf.DegToRad(-80), Mathf.DegToRad(80)));
         }
         else if (@event is InputEventAction action)
         {

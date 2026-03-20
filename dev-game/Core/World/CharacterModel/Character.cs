@@ -16,6 +16,7 @@
 /// +==============================================================+
 using Godot;
 using System;
+using Core.Network;
 using static Utils.CharacterUtils;
 public partial class Character : CharacterBody3D
 {
@@ -43,13 +44,41 @@ public partial class Character : CharacterBody3D
 
     public void RotateHead(float InXAngle){
         prevHeadAngle = headAngle;
-        //headAngle = _cam.Rotation.X; //gere par le CameraMan
+        headAngle = InXAngle;
     }
     public void PointAt(Vector3 InDirection){
         PhysicsSkelton.ArmPointDir = InDirection;
     }
     public Vector3 GetHeadBonePosition(){
-        return PhysicsSkelton.ToGlobal(PhysicsSkelton.GetHeadPose().Origin);
+        return PhysicsSkelton.GetHeadPose().Origin;
+    }
+    public float GetHeadAngle() => headAngle;
+
+    // ── Network ──────────────────────────────────────────────────────────────
+
+    public int PeerId { get; set; } = 1;
+
+    public virtual PlayerNetState SnapshotState()
+    {
+        byte flags = 0;
+        if (PhysicsSkelton.Aiming) flags |= 0x01;
+        if (PhysicsSkelton.ArmsUp) flags |= 0x02;
+        return new PlayerNetState(PeerId, GlobalPosition, velocity,
+            Rotation.Y, headAngle, PhysicsSkelton.ArmPointDir,
+            (byte)currentMovementState, (byte)currentEmoteState, flags);
+    }
+
+    public virtual void ApplyNetworkState(PlayerNetState state)
+    {
+        GlobalPosition             = state.Position;
+        velocity                   = state.Velocity;
+        Rotation                   = new Vector3(Rotation.X, state.BodyYaw, Rotation.Z);
+        RotateHead(state.HeadPitch);
+        PhysicsSkelton.ArmPointDir = state.ArmPointDir;
+        PhysicsSkelton.Aiming      = state.Aiming;
+        PhysicsSkelton.ArmsUp      = state.ArmsUp;
+        currentMovementState       = state.MoveState;
+        currentEmoteState          = state.EmoteState;
     }
     public void ComputeEmotePhysics(){
         switch(currentEmoteState){

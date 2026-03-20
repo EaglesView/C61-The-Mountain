@@ -12,6 +12,7 @@ SpringArmThirdPerson = NodePath("SpringArm3D")
 [node name="SpringArm3D" type="SpringArm3D" parent="." unique_id=2073258390]
 
 [node name="PlayerCamera" type="Camera3D" parent="SpringArm3D" unique_id=199338511]
+transform = Transform3D(-1, 0, 8.940697e-08, 0, 1, 0, -8.940697e-08, 0, -1, 0, 0, 0)
 script = ExtResource("1_i70ko")
 
 [node name="RayCastTo" type="RayCast3D" parent="SpringArm3D/PlayerCamera" unique_id=620595555]

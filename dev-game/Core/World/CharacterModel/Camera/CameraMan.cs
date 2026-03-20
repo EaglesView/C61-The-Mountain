@@ -62,11 +62,19 @@ public partial class CameraMan : Node3D
 	 return -Raycaster.GlobalTransform.Basis.Z;
 	}
 
-	public void ComputeCameraPosition()
+	public void ComputeCameraPosition(float delta)
 	{
 		switch(_camType){
 		    case CameraType.FirstPerson:
-				_playerCamera.GlobalPosition = _playerCamera.GlobalPosition.Lerp(_player.GetHeadBonePosition()+_camOffset, _camDamping);
+				Vector3 headPos = _player.GetHeadBonePosition();
+				Quaternion yaw   = new Quaternion(Vector3.Up,    _player.Rotation.Y);
+				Quaternion pitch = new Quaternion(Vector3.Right, -_player.GetHeadAngle());
+				Basis camBasis   = new Basis(yaw * pitch);
+				_playerCamera.GlobalBasis    = camBasis;
+				_playerCamera.GlobalPosition = _playerCamera.GlobalPosition.Lerp(
+					headPos + camBasis * _camOffset,
+					Mathf.Clamp(_camDamping * delta, 0f, 1f)
+				);
 		    break;
 		    case CameraType.ThirdPerson:
 			_camDistance = _cameraDistanceTP;
@@ -84,6 +92,6 @@ public partial class CameraMan : Node3D
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
 	public override void _Process(double delta)
 	{
-	ComputeCameraPosition();
+		ComputeCameraPosition((float)delta);
 	}
 }

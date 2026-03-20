@@ -79,8 +79,8 @@ public partial class PhysicsSkeleton : Skeleton3D
 		SetBonePoseRotation(_mouthBoneIdx, mouthRot);
 	}
 	public Transform3D GetHeadPose(){
-	    // returns the head bone pose in globalspace
-		return TargetSkeleton.GetBoneGlobalPose(_headBoneIdx);
+	    // returns the head bone pose in world space
+		return TargetSkeleton.GlobalTransform * TargetSkeleton.GetBoneGlobalPose(_headBoneIdx);
 	}
 	public void SetSpinePoseFromHead(float InHeadXAngle){
 	TargetSkeleton.SetBonePoseRotation(_spine3BoneIdx, new Quaternion(Vector3.Right, -InHeadXAngle * 1.0f));
@@ -201,7 +201,6 @@ public partial class PhysicsSkeleton : Skeleton3D
 			Transform3D TransformCurrent = bone.GlobalTransform * bone.BodyOffset.AffineInverse();//* GetBoneGlobalPose(bone.GetBoneId());
 			//On ramasse la différence, et on applique une force selon sa distance et vélocité actuelle
 			Vector3 PositionDifference = TransformTarget.Origin - TransformCurrent.Origin;
-			if(FindBone("Arm.002.R")==bone.GetBoneId())GD.Print($"Current Differebce: {PositionDifference}");
 
 			Vector3 Force = HookesLaw(PositionDifference, bone.LinearVelocity, LinStiff, LinDamp);
 			// LINEAR APPLY
