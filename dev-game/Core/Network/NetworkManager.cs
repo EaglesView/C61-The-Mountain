@@ -7,11 +7,15 @@ using Core.Network.Providers;
 namespace Core.Network;
 
 /// <summary>
-/// Autoload singleton. Owns the transport provider, runs 20Hz client tick,
-/// relays state on the server. World subscribes to PeerJoined/Left/StateReceived.
+/// Singleton autoload qui orchestre toute la couche réseau.
+/// Possède le transport actif (<see cref="INetworkProvider"/>), envoie les snapshots
+/// client à 20 Hz, et relaie les états reçus aux autres pairs côté serveur.
+/// Le <c>World</c> s'abonne à <see cref="PeerJoined"/>, <see cref="PeerLeft"/>
+/// et <see cref="StateReceived"/> pour gérer le spawn et la mise à jour des personnages.
 /// </summary>
 public partial class NetworkManager : Node
 {
+    /// <summary>Instance unique du singleton, disponible dès <c>_Ready</c>.</summary>
     public static NetworkManager Instance { get; private set; } = null!;
 
     private INetworkProvider? _provider;
@@ -23,17 +27,60 @@ public partial class NetworkManager : Node
     // Per-peer last known position for server-side sanity check (20 units/tick max)
     private readonly Dictionary<int, Vector3> _lastKnownPos = new();
 
+    /// <summary><c>true</c> si ce pair est le serveur de la session.</summary>
     public bool IsServer        => _provider?.Role == NetworkRole.Server;
+
+    /// <summary><c>true</c> si ce pair est un client connecté à un serveur.</summary>
     public bool IsClient        => _provider?.Role == NetworkRole.Client;
+
+    /// <summary><c>true</c> si le transport est actif et opérationnel.</summary>
     public bool IsRunning       => _provider?.IsRunning ?? false;
+
+    /// <summary>Identifiant unique de ce pair dans la session ENet.</summary>
     public int  LocalPeerId     => _provider?.LocalPeerId ?? 1;
+
+    /// <summary>
+    /// <c>true</c> si une connexion automatique via <c>--connect</c> est en cours au démarrage.
+    /// </summary>
     public bool IsAutoConnecting { get; private set; }
 
+    /// <summary>Déclenché lorsqu'un nouveau pair rejoint la session. Paramètre : identifiant du pair.</summary>
     public event Action<int>?            PeerJoined;
+
+    /// <summary>Déclenché lorsqu'un pair quitte la session. Paramètre : identifiant du pair.</summary>
     public event Action<int>?            PeerLeft;
+
+    /// <summary>
+    /// Déclenché à la réception d'un <see cref="PlayerNetState"/> validé.
+    /// Côté serveur, ce snapshot a déjà été relayé aux autres pairs avant d'être émis ici.
+    /// </summary>
     public event Action<PlayerNetState>? StateReceived;
-    /// <summary>Fires once when our own client connection to the server is confirmed.</summary>
+
+    /// <summary>Déclenché une seule fois lorsque la connexion locale au serveur est confirmée (client seulement).</summary>
     public event Action?                 LocalConnected;
+
+    /// <summary>
+    /// Enregistre le personnage local pour que le tick client puisse sérialiser son état.
+    /// Doit être appelé par le <c>World</c> après avoir instancié le joueur local.
+    /// </summary>
+    /// <param name="player">Le personnage contrôlé par ce client.</param>
+    public void SetLocalPlayer(Character player) => _localPlayer = player;
+
+    /// <summary>
+    /// Démarre manuellement un serveur sur le port et le nombre de pairs donnés.
+    /// </summary>
+    /// <param name="port">Le port UDP d'écoute. Par défaut <c>7777</c>.</param>
+    /// <param name="maxPeers">Le nombre maximum de clients simultanés. Par défaut <c>16</c>.</param>
+    public void StartServer(int port = 7777, int maxPeers = 16)
+        => _provider?.StartServer(port, maxPeers);
+
+    /// <summary>
+    /// Connecte manuellement ce client à un serveur distant.
+    /// </summary>
+    /// <param name="address">L'adresse IP ou le nom de domaine du serveur.</param>
+    /// <param name="port">Le port UDP du serveur. Par défaut <c>7777</c>.</param>
+    public void ConnectToServer(string address, int port = 7777)
+        => _provider?.ConnectToServer(address, port);
 
     public override void _Ready()
     {
@@ -90,15 +137,6 @@ public partial class NetworkManager : Node
         if (_provider?.Role == NetworkRole.Client && id == _provider.LocalPeerId)
             LocalConnected?.Invoke();
     }
-
-    /// <summary>Called by World after spawning the local Player.</summary>
-    public void SetLocalPlayer(Character player) => _localPlayer = player;
-
-    public void StartServer(int port = 7777, int maxPeers = 16)
-        => _provider?.StartServer(port, maxPeers);
-
-    public void ConnectToServer(string address, int port = 7777)
-        => _provider?.ConnectToServer(address, port);
 
     public override void _Process(double delta)
     {

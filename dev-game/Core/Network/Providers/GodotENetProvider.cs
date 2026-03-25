@@ -4,10 +4,11 @@ using Godot;
 namespace Core.Network.Providers;
 
 /// <summary>
-/// ENet transport. Must be added as a child of NetworkManager before use
-/// so Multiplayer is in-tree when StartServer/ConnectToServer are called.
-/// Raw packet I/O uses SceneMultiplayer (SendBytes / PeerPacket signal),
-/// which is the concrete type behind Node.Multiplayer in standard Godot 4.
+/// Implémentation ENet du transport réseau. Doit être ajouté comme enfant
+/// du <see cref="NetworkManager"/> avant utilisation, pour que <c>Multiplayer</c>
+/// soit dans l'arbre de scène lors des appels à <see cref="StartServer"/> et <see cref="ConnectToServer"/>.
+/// L'I/O de paquets bruts passe par <c>SceneMultiplayer</c> (SendBytes / signal PeerPacket),
+/// qui est le type concret derrière <c>Node.Multiplayer</c> en Godot 4 standard.
 /// </summary>
 public partial class GodotENetProvider : Node, INetworkProvider
 {
@@ -15,14 +16,24 @@ public partial class GodotENetProvider : Node, INetworkProvider
     private SceneMultiplayer?     _sm;
     private NetworkRole           _role = NetworkRole.None;
 
+    /// <summary>Rôle actuel de ce pair dans la session.</summary>
     public NetworkRole Role     => _role;
+
+    /// <summary>Identifiant unique de ce pair attribué par ENet.</summary>
     public int LocalPeerId      => Multiplayer.GetUniqueId();
+
+    /// <summary><c>true</c> si le peer ENet est actif et un rôle est assigné.</summary>
     public bool IsRunning       => _peer != null && _role != NetworkRole.None;
 
+    /// <inheritdoc/>
     public event Action<int>?         PeerConnected;
+    /// <inheritdoc/>
     public event Action<int>?         PeerDisconnected;
+    /// <inheritdoc/>
     public event Action<int, byte[]>? PacketReceived;
+    /// <inheritdoc/>
     public event Action?              ServerStarted;
+    /// <inheritdoc/>
     public event Action<string>?      ConnectionFailed;
 
     // Explicit interface impl so non-nullable interface contract is satisfied
@@ -32,19 +43,11 @@ public partial class GodotENetProvider : Node, INetworkProvider
     event Action              INetworkProvider.ServerStarted    { add => ServerStarted    += value; remove => ServerStarted    -= value; }
     event Action<string>      INetworkProvider.ConnectionFailed { add => ConnectionFailed += value; remove => ConnectionFailed -= value; }
 
-    public override void _Ready()
-    {
-        _sm = Multiplayer as SceneMultiplayer;
-        if (_sm == null)
-            GD.PrintErr("[GodotENetProvider] Multiplayer is not SceneMultiplayer — raw packets unavailable.");
-
-        Multiplayer.ConnectedToServer += OnConnectedToServer;
-        Multiplayer.ConnectionFailed  += OnConnectionFailed;
-        Multiplayer.PeerConnected     += OnPeerConnected;
-        Multiplayer.PeerDisconnected  += OnPeerDisconnected;
-        if (_sm != null) _sm.PeerPacket += OnPeerPacket;
-    }
-
+    /// <summary>
+    /// Démarre un serveur ENet sur le port donné.
+    /// </summary>
+    /// <param name="port">Le port UDP d'écoute.</param>
+    /// <param name="maxPeers">Le nombre maximum de clients simultanés.</param>
     public void StartServer(int port, int maxPeers)
     {
         _peer = new ENetMultiplayerPeer();
@@ -59,6 +62,11 @@ public partial class GodotENetProvider : Node, INetworkProvider
         ServerStarted?.Invoke();
     }
 
+    /// <summary>
+    /// Connecte ce client à un serveur ENet distant.
+    /// </summary>
+    /// <param name="address">L'adresse IP ou le nom de domaine du serveur.</param>
+    /// <param name="port">Le port UDP du serveur.</param>
     public void ConnectToServer(string address, int port)
     {
         _peer = new ENetMultiplayerPeer();
@@ -72,6 +80,7 @@ public partial class GodotENetProvider : Node, INetworkProvider
         _role = NetworkRole.Client;
     }
 
+    /// <summary>Ferme le peer ENet et réinitialise le rôle à <see cref="NetworkRole.None"/>.</summary>
     public void Disconnect()
     {
         _peer?.Close();
@@ -79,12 +88,15 @@ public partial class GodotENetProvider : Node, INetworkProvider
         _role = NetworkRole.None;
     }
 
+    /// <inheritdoc/>
     public void SendReliable(int toPeerId, byte[] data)
         => _sm?.SendBytes(data, toPeerId, MultiplayerPeer.TransferModeEnum.Reliable);
 
+    /// <inheritdoc/>
     public void SendUnreliable(int toPeerId, byte[] data)
         => _sm?.SendBytes(data, toPeerId, MultiplayerPeer.TransferModeEnum.UnreliableOrdered);
 
+    /// <inheritdoc/>
     public void BroadcastUnreliable(byte[] data, int excludePeerId = -1)
     {
         if (_sm == null) return;
@@ -95,6 +107,7 @@ public partial class GodotENetProvider : Node, INetworkProvider
         }
     }
 
+    /// <inheritdoc/>
     public void BroadcastReliable(byte[] data, int excludePeerId = -1)
     {
         if (_sm == null) return;
@@ -103,6 +116,19 @@ public partial class GodotENetProvider : Node, INetworkProvider
             if (id != excludePeerId)
                 _sm.SendBytes(data, id, MultiplayerPeer.TransferModeEnum.Reliable);
         }
+    }
+
+    public override void _Ready()
+    {
+        _sm = Multiplayer as SceneMultiplayer;
+        if (_sm == null)
+            GD.PrintErr("[GodotENetProvider] Multiplayer is not SceneMultiplayer — raw packets unavailable.");
+
+        Multiplayer.ConnectedToServer += OnConnectedToServer;
+        Multiplayer.ConnectionFailed  += OnConnectionFailed;
+        Multiplayer.PeerConnected     += OnPeerConnected;
+        Multiplayer.PeerDisconnected  += OnPeerDisconnected;
+        if (_sm != null) _sm.PeerPacket += OnPeerPacket;
     }
 
     public override void _ExitTree()

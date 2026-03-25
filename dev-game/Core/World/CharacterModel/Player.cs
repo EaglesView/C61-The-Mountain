@@ -1,19 +1,21 @@
-/// +=============================================================+
-/// |    _____ _          __  __              _        _          |
-/// |   |_   _| |_  ___  |  \/  |___ _  _ _ _| |_ __ _(_)_ _      |
-/// |     | | | ' \/ -_) | |\/| / _ | || | ' |  _/ _` | | ' \     |
-/// |     |_| |_||_\___| |_|  |_\___/\_,_|_||_\__\__,_|_|_||_|    |
-/// |                                                             |
-/// |  ---------------------------------------------------------  |
-/// |  Fichier:               Player.cs                           |
-/// |  Auteur:           Jean-Marc Bouchard                       |
-/// |  Fonction: Permet de contrôler le personnage client         |
-/// |  ---------------------------------------------------------  |
-/// |                                                             |
-/// |                                                             |
-/// |                                                             |
-/// |                                                             |
-/// +==============================================================+
+/*
++=============================================================+
+|    _____ _          __  __              _        _          |
+|   |_   _| |_  ___  |  \/  |___ _  _ _ _| |_ __ _(_)_ _      |
+|     | | | ' \/ -_) | |\/| / _ | || | ' |  _/ _` | | ' \     |
+|     |_| |_||_\___| |_|  |_\___/\_,_|_||_\__\__,_|_|_||_|    |
+|                                                             |
+|  ---------------------------------------------------------  |
+|  Fichier:               Player.cs                           |
+|  Auteur:           Jean-Marc Bouchard                       |
+|  Fonction: Permet de contrôler le personnage client         |
+|  ---------------------------------------------------------  |
+|                                                             |
+|                                                             |
+|                                                             |
+|                                                             |
++==============================================================+
+*/
 using Godot;
 using System;
 using static Utils.RayCastUtils;
@@ -25,26 +27,33 @@ using static Utils.CharacterUtils;
 /// </summary>
 public partial class Player : Character
 {
-    /// ····································
-    /// : _____  _____  ___  ___ _____ ___ :
-    /// :| __\ \/ | _ \/ _ \| _ |_   _/ __|:
-    /// :| _| >  <|  _| (_) |   / | | \__ \:
-    /// :|___/_/\_|_|  \___/|_|_\ |_| |___/:
-    /// ····································
+    /*
+    ····································
+    : _____  _____  ___  ___ _____ ___ :
+    :| __\ \/ | _ \/ _ \| _ |_   _/ __|:
+    :| _| >  <|  _| (_) |   / | | \__ \:
+    :|___/_/\_|_|  \___/|_|_\ |_| |___/:
+    ····································
+    */
 
     [ExportGroup("Player Settings")]
+    ///<summary> La vitesse de marche du personnage joué</summary>
     [Export(PropertyHint.Range, "0.0f,10.0f,0.1f")] public float WalkSpeed = 2.5f;
+    ///<summary> Le multiplicateur de vitesse de la course </summary>
     [Export(PropertyHint.Range, "0.0f,10.0f,0.1f")] public float RunMultiplier = 2.0f;
+    ///<summary>La force de saut du personnage</summary>
     [Export(PropertyHint.Range, "0.0f,10.0f,0.1f")] public float JumpVelocity = 4.5f;
 
     [ExportGroup("Controller Settings")]
     [Export(PropertyHint.Range, "0.0f,0.1f,0.001f")] private float _mouseSensitivity = 0.002f;
     [Export(PropertyHint.Range, "0.0f,5.0f,0.05f")] private float _controllerSensitivity = 2.5f; // radians / sec
     [ExportGroup("Character Nodes")]
-    [Export] public RayCast3D Raycaster;
+    [Export] private CameraMan? _cameraMan;
+    [Export]
+    ///<summary> Le raycaster du joueur pour detecter les objets</summary>
+    public RayCast3D Raycaster;
     //[Export] public required AnimationPlayer AnimPlayer;
     //[Export] public required PhysicsSkeleton PhysicsSkelton;
-    [Export] private CameraMan _cameraMan;
     //[Export] private Camera3D? _cam;
     private Skeleton3D? _animSkeleton;
     private Vector3 _offsetFP = new Vector3(0, 0.05f, 0.25f);

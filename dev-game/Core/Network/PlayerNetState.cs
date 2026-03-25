@@ -4,33 +4,75 @@ using static Utils.CharacterUtils;
 
 namespace Core.Network;
 
+/// <summary>
+/// Type de paquet réseau envoyé sur le wire.
+/// Sert de premier octet dans chaque paquet pour identifier son contenu.
+/// </summary>
 public enum PacketType : byte
 {
+    /// <summary>Snapshot de l'état complet d'un joueur. Envoyé à 20 Hz en non-fiable.</summary>
     StateUpdate   = 0x01,
+    /// <summary>Requête de spawn d'un joueur. Envoyé en fiable à la connexion.</summary>
     SpawnReq      = 0x02,
+    /// <summary>Notification de despawn d'un joueur. Envoyé en fiable à la déconnexion.</summary>
     DespawnNotify = 0x03,
 }
 
 /// <summary>
-/// 52-byte wire struct: 1 prefix + 51 state bytes.
-/// Layout: PacketType(1) PeerId(4) Position(12) Velocity(12)
-///         BodyYaw(4) HeadPitch(4) ArmPointDir(12) MoveState(1) EmoteState(1) Flags(1)
+/// Snapshot immuable de l'état réseau d'un joueur, sérialisé en 52 octets.
+/// Layout wire : <c>PacketType(1) PeerId(4) Position(12) Velocity(12)
+/// BodyYaw(4) HeadPitch(4) ArmPointDir(12) MoveState(1) EmoteState(1) Flags(1)</c>
 /// </summary>
 public readonly struct PlayerNetState
 {
+    /// <summary>Identifiant unique du pair ENet associé à ce joueur.</summary>
     public readonly int     PeerId;
+
+    /// <summary>Position du personnage en world space.</summary>
     public readonly Vector3 Position;
+
+    /// <summary>Vélocité actuelle du personnage.</summary>
     public readonly Vector3 Velocity;
+
+    /// <summary>Rotation du corps autour de l'axe Y (yaw), en radians.</summary>
     public readonly float   BodyYaw;
+
+    /// <summary>Angle de la tête autour de l'axe X (pitch), en radians.</summary>
     public readonly float   HeadPitch;
+
+    /// <summary>Direction de pointage du bras droit en world space.</summary>
     public readonly Vector3 ArmPointDir;
+
+    /// <summary>État de déplacement courant du personnage.</summary>
     public readonly MovementState MoveState;
+
+    /// <summary>État d'emote courant du personnage.</summary>
     public readonly EmoteState    EmoteState;
+
+    /// <summary>
+    /// Champ de bits pour les états booléens.
+    /// Bit 0 = <see cref="Aiming"/>, Bit 1 = <see cref="ArmsUp"/>.
+    /// </summary>
     public readonly byte    Flags;
 
+    /// <summary><c>true</c> si le personnage est en train de viser (bit 0 de <see cref="Flags"/>).</summary>
     public bool Aiming => (Flags & 0x01) != 0;
+
+    /// <summary><c>true</c> si le personnage a les bras levés (bit 1 de <see cref="Flags"/>).</summary>
     public bool ArmsUp => (Flags & 0x02) != 0;
 
+    /// <summary>
+    /// Construit un snapshot d'état joueur complet.
+    /// </summary>
+    /// <param name="peerId">Identifiant ENet du pair.</param>
+    /// <param name="position">Position en world space.</param>
+    /// <param name="velocity">Vélocité actuelle.</param>
+    /// <param name="bodyYaw">Rotation Y du corps en radians.</param>
+    /// <param name="headPitch">Angle X de la tête en radians.</param>
+    /// <param name="armPointDir">Direction de pointage du bras en world space.</param>
+    /// <param name="moveState">État de déplacement sous forme de byte (<see cref="MovementState"/>).</param>
+    /// <param name="emoteState">État d'emote sous forme de byte (<see cref="EmoteState"/>).</param>
+    /// <param name="flags">Champ de bits booléens (Aiming, ArmsUp).</param>
     public PlayerNetState(int peerId, Vector3 position, Vector3 velocity,
         float bodyYaw, float headPitch, Vector3 armPointDir,
         byte moveState, byte emoteState, byte flags)
@@ -46,6 +88,12 @@ public readonly struct PlayerNetState
         Flags       = flags;
     }
 
+    /// <summary>
+    /// Sérialise un snapshot en tableau d'octets prêt à être envoyé sur le réseau.
+    /// </summary>
+    /// <param name="type">Le type de paquet à inscrire comme premier octet.</param>
+    /// <param name="s">Le snapshot à sérialiser.</param>
+    /// <returns>Un tableau de 52 octets en little-endian.</returns>
     public static byte[] Serialize(PacketType type, PlayerNetState s)
     {
         using var ms = new MemoryStream(52);
@@ -63,6 +111,11 @@ public readonly struct PlayerNetState
         return ms.ToArray();
     }
 
+    /// <summary>
+    /// Désérialise un tableau d'octets reçu du réseau en snapshot typé.
+    /// </summary>
+    /// <param name="data">Les octets bruts reçus du transport.</param>
+    /// <returns>Un tuple contenant le <see cref="PacketType"/> et le <see cref="PlayerNetState"/> reconstitué.</returns>
     public static (PacketType type, PlayerNetState state) Deserialize(byte[] data)
     {
         using var ms = new MemoryStream(data);
