@@ -58,3 +58,77 @@ text = "Sign Out"
 [node name="ExitButton" type="Button" parent="VBoxContainer" unique_id=1109665973]
 layout_mode = 2
 text = "Exit"
+
+[node name="JoinOverlay" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="Backdrop" type="ColorRect" parent="JoinOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.65)
+
+[node name="JoinDialog" type="PanelContainer" parent="JoinOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -190.0
+offset_top = -110.0
+offset_right = 190.0
+offset_bottom = 110.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="JoinOverlay/JoinDialog"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="JoinOverlay/JoinDialog/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="JoinTitle" type="Label" parent="JoinOverlay/JoinDialog/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Join Game"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 22
+
+[node name="CodeEntry" type="LineEdit" parent="JoinOverlay/JoinDialog/MarginContainer/VBoxContainer"]
+layout_mode = 2
+placeholder_text = "Room Code (e.g. AB3X7Y)"
+
+[node name="ButtonsRow" type="HBoxContainer" parent="JoinOverlay/JoinDialog/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="CancelButton" type="Button" parent="JoinOverlay/JoinDialog/MarginContainer/VBoxContainer/ButtonsRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(90, 0)
+text = "Cancel"
+
+[node name="JoinButton" type="Button" parent="JoinOverlay/JoinDialog/MarginContainer/VBoxContainer/ButtonsRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(90, 0)
+text = "Join"
+
+[node name="JoinStatus" type="Label" parent="JoinOverlay/JoinDialog/MarginContainer/VBoxContainer"]
+layout_mode = 2
+visible = false
+horizontal_alignment = 1
+awrap_mode = 2
