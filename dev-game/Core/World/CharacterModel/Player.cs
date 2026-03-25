@@ -156,7 +156,7 @@ public partial class Player : Character
         //SetCamPos();
         int boneIdx = PhysicsSkelton.FindBone("Head.001");
         Transform3D headWorld = PhysicsSkelton.GlobalTransform * PhysicsSkelton.GetBoneGlobalPose(boneIdx);
-        _cam.GlobalPosition = headWorld.Origin + headWorld.Basis * new Vector3(0, 0.05f, 0.25f); //TODO: mettre offset dans var
+        //_cam.GlobalPosition = headWorld.Origin + headWorld.Basis * new Vector3(0, 0.05f, 0.25f); //TODO: mettre offset dans var
 
         var interactable = GetInteractableFromRaycast(Raycaster);
         if (interactable != _highlightedInteractable)
