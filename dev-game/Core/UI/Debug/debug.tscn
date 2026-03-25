@@ -1,0 +1,230 @@
+[gd_scene format=3 uid="uid://bqm28efgwql4h"]
+
+[ext_resource type="Theme" uid="uid://barb3fnyyh5h7" path="res://Config/themes/debug_theme.tres" id="1_d6iev"]
+[ext_resource type="Script" uid="uid://vun14e1nnrxy" path="res://Core/UI/Debug/Debug.cs" id="1_u2dwp"]
+
+[node name="Debug" type="Control" unique_id=752801447 node_paths=PackedStringArray("_fpsValue", "_serverValue", "_responseTimeValue", "_playerAmtValue", "_pingValue", "_positionXLabel", "_positionYLabel", "_headAngleRadLabel", "_headAngleDegLabel", "_velocityLabel")]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+script = ExtResource("1_u2dwp")
+_fpsValue = NodePath("PanelContainer/MarginContainer/VBoxContainer/FPS/ValueLabel")
+_serverValue = NodePath("PanelContainer/MarginContainer/VBoxContainer/CurrentServer/ValueLabel")
+_responseTimeValue = NodePath("PanelContainer/MarginContainer/VBoxContainer/ServerResponseTime/ValueLabel")
+_playerAmtValue = NodePath("PanelContainer/MarginContainer/VBoxContainer/PlayerAmt/ValueLabel")
+_pingValue = NodePath("PanelContainer/MarginContainer/VBoxContainer/Ping/ValueLabel")
+_positionXLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/PosX/ValueLabel")
+_positionYLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/PoxY/ValueLabel")
+_headAngleRadLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/HeadAngleRad/ValueLabel")
+_headAngleDegLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/HeadAngleDeg/ValueLabel")
+_velocityLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/Velocity/ValueLabel")
+
+[node name="PanelContainer" type="PanelContainer" parent="." unique_id=370331976]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer" unique_id=1447263074]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer" unique_id=378509981]
+layout_mode = 2
+
+[node name="DebugLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=301691356]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+text = "Secret debug Menu"
+
+[node name="PerformanceTitleLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=2121115649]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_type_variation = &"HeaderLarge"
+theme_override_font_sizes/font_size = 10
+text = "-~-PERFORMANCE-~-"
+
+[node name="FPS" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=229664225]
+layout_mode = 2
+alignment = 1
+
+[node name="FPSLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/FPS" unique_id=577108479]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "FPS:"
+
+[node name="ValueLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/FPS" unique_id=1289672438]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "60 (ideal)"
+
+[node name="PositionLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=1591239655]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_type_variation = &"HeaderLarge"
+theme_override_font_sizes/font_size = 10
+text = "-~-CharacterPosition-~-"
+
+[node name="PosX" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=580835768]
+layout_mode = 2
+alignment = 1
+
+[node name="PosXLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/PosX" unique_id=67396119]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "X:"
+
+[node name="ValueLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/PosX" unique_id=577598437]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "0.000000000000"
+
+[node name="PoxY" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=32919926]
+layout_mode = 2
+alignment = 1
+
+[node name="PosYLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/PoxY" unique_id=1206121691]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "Y:"
+
+[node name="ValueLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/PoxY" unique_id=301620376]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "0.000000000000"
+
+[node name="Velocity" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=811955158]
+layout_mode = 2
+alignment = 1
+
+[node name="ValocityLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/Velocity" unique_id=95176547]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "Velocity"
+
+[node name="ValueLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/Velocity" unique_id=505462493]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "0.0000"
+
+[node name="HeadAngleRad" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=474799431]
+layout_mode = 2
+alignment = 1
+
+[node name="HeadAngleRadLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/HeadAngleRad" unique_id=389817408]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "Head Angle (rad):"
+
+[node name="ValueLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/HeadAngleRad" unique_id=67091974]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "0.0000"
+
+[node name="HeadAngleDeg" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=1458001728]
+layout_mode = 2
+alignment = 1
+
+[node name="HeadAngleDegLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/HeadAngleDeg" unique_id=141101198]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "Head Angle (deg):"
+
+[node name="ValueLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/HeadAngleDeg" unique_id=1568817520]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "0.0000"
+
+[node name="ServerPerformanceLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=1207138300]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_type_variation = &"HeaderLarge"
+theme_override_font_sizes/font_size = 10
+text = "-~-SERVER PERFORMANCE-~-"
+
+[node name="CurrentServer" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=1097255455]
+layout_mode = 2
+alignment = 1
+
+[node name="CurrentServerLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/CurrentServer" unique_id=607026952]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "Server:"
+
+[node name="ValueLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/CurrentServer" unique_id=1675023662]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "www.myserver.com"
+
+[node name="ServerResponseTime" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=256597330]
+layout_mode = 2
+alignment = 1
+
+[node name="ServerResponseTimeLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/ServerResponseTime" unique_id=1501243552]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "Response Time (ms)"
+
+[node name="ValueLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/ServerResponseTime" unique_id=1998700504]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "0.00 (ideal)"
+
+[node name="PlayerAmt" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=1056899904]
+layout_mode = 2
+alignment = 1
+
+[node name="PlayerAmtLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/PlayerAmt" unique_id=613737384]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "Player(s):"
+
+[node name="ValueLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/PlayerAmt" unique_id=655774501]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "6 (ideal)"
+
+[node name="Ping" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=423027875]
+layout_mode = 2
+alignment = 1
+
+[node name="FPSLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/Ping" unique_id=1379946023]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "Ping (Latency , ms)"
+
+[node name="ValueLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/Ping" unique_id=1983813853]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "0 (ideal)"

@@ -1,0 +1,6 @@
+[gd_resource type="Theme" format=3 uid="uid://barb3fnyyh5h7"]
+
+[ext_resource type="FontFile" uid="uid://dqonl1k36v0lx" path="res://Assets/fonts/Doto/Doto-VariableFont_ROND,wght.ttf" id="1_qlvy0"]
+
+[resource]
+default_font = ExtResource("1_qlvy0")

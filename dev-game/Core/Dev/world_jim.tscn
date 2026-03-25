@@ -2,7 +2,8 @@
 
 [ext_resource type="Script" uid="uid://bivbri8k5yp3h" path="res://Core/World/World.cs" id="1_e3c1y"]
 [ext_resource type="MeshLibrary" uid="uid://gfduo2egy61g" path="res://Core/World/MapAssets/Tiles/tile_resources.tres" id="2_5plbv"]
-[ext_resource type="PackedScene" uid="uid://cue46vlh7h8q8" path="res://Core/World/CharacterModel/Character.tscn" id="3_e3c1y"]
+[ext_resource type="PackedScene" uid="uid://pyyf2q46j574" path="res://Core/World/CharacterModel/Player.tscn" id="3_e3c1y"]
+[ext_resource type="PackedScene" uid="uid://bqm28efgwql4h" path="res://Core/UI/Debug/debug.tscn" id="4_uskl1"]
 
 [sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_uskl1"]
 
@@ -56,11 +57,6 @@ compositor = SubResource("Compositor_cctn4")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=2135924290]
 transform = Transform3D(1, 0, 0, 0, 0.70710677, 0.70710677, 0, -0.70710677, 0.70710677, 0, 5, 0)
-
-[node name="Player" parent="." unique_id=1298834634 instance=ExtResource("3_e3c1y")]
-
-[node name="Camera3D" type="Camera3D" parent="." unique_id=899323474]
-transform = Transform3D(0.8660254, 0, 0.5, 0, 1, 0, -0.5, 0, 0.8660254, 0.9052132, 0.4570483, 1.2242526)
 
 [node name="TestCol" type="StaticBody3D" parent="." unique_id=687671996]
 
@@ -162,3 +158,8 @@ collision_mask = 4
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="TestCol/MeshInstance3D4/StaticBody3D" unique_id=500809687]
 shape = SubResource("ConcavePolygonShape3D_uskl1")
+
+[node name="Player" parent="." unique_id=1298834634 instance=ExtResource("3_e3c1y")]
+
+[node name="Debug" parent="." unique_id=752801447 node_paths=PackedStringArray("_player") instance=ExtResource("4_uskl1")]
+_player = NodePath("../Player")
