@@ -4,44 +4,44 @@ using Core.Network;
 
 public partial class World : Node3D
 {
-    private readonly Dictionary<int, Character> _characters = new();
-    private PackedScene? _remoteCharacterScene;
+	private readonly Dictionary<int, Character> _characters = new();
+	private PackedScene? _remoteCharacterScene;
 
-    public override void _Ready()
-    {
-        _remoteCharacterScene = GD.Load<PackedScene>("res://Core/World/CharacterModel/RemoteCharacter.tscn");
+	public override void _Ready()
+	{
+		_remoteCharacterScene = GD.Load<PackedScene>("res://Core/World/CharacterModel/RemoteCharacter.tscn");
 
-        var net = NetworkManager.Instance;
+		var net = NetworkManager.Instance;
 
-        if (net.IsServer)
-        {
-            GD.Print("[World] Dedicated server — no local player spawned.");
-            return;
-        }
+		if (net.IsServer)
+		{
+			GD.Print("[World] Dedicated server — no local player spawned.");
+			return;
+		}
 
-        net.PeerJoined    += OnPeerJoined;
-        net.PeerLeft      += OnPeerLeft;
-        net.StateReceived += OnStateReceived;
+		net.PeerJoined    += OnPeerJoined;
+		net.PeerLeft      += OnPeerLeft;
+		net.StateReceived += OnStateReceived;
 
-        if (net.IsAutoConnecting)
-            net.LocalConnected += () => SpawnLocalPlayer(net.LocalPeerId);
-        else
-            SpawnLocalPlayer(net.LocalPeerId);
-    }
+		if (net.IsAutoConnecting)
+			net.LocalConnected += () => SpawnLocalPlayer(net.LocalPeerId);
+		else
+			SpawnLocalPlayer(net.LocalPeerId);
+	}
 
-    private void SpawnLocalPlayer(int peerId)
-    {
-        var scene  = GD.Load<PackedScene>("res://Core/World/CharacterModel/Player.tscn");
-        var player = scene.Instantiate<Player>();
-        player.PeerId = peerId;
-        AddChild(player);
-        _characters[peerId] = player;
-        NetworkManager.Instance.SetLocalPlayer(player);
-    }
+	private void SpawnLocalPlayer(int peerId)
+	{
+		var scene  = GD.Load<PackedScene>("res://Core/World/CharacterModel/Player.tscn");
+		var player = scene.Instantiate<Player>();
+		player.PeerId = peerId;
+		AddChild(player);
+		_characters[peerId] = player;
+		NetworkManager.Instance.SetLocalPlayer(player);
+	}
 
-    private void OnPeerJoined(int peerId)
-    {
-        // Don't spawn a RemoteCharacter for ourselves when the connection event echoes our own ID
+	private void OnPeerJoined(int peerId)
+	{
+		// Don't spawn a RemoteCharacter for ourselves when the connection event echoes our own ID
         var net = NetworkManager.Instance;
         if (net.IsClient && peerId == net.LocalPeerId) return;
         if (_characters.ContainsKey(peerId)) return;
