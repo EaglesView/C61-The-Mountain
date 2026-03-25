@@ -51,7 +51,7 @@ public partial class Player : Character
     private Vector3 _offsetTP = new Vector3(0, 0.1f, -1.25f);
     private Vector3 _currentCamOffset;
     //[Export] private Node3D _characterRig;
-
+    private bool _showDebug = false;
 
 
     //public void SetCamPos()
@@ -76,13 +76,13 @@ public partial class Player : Character
         if (Raycaster == null) Raycaster = _cameraMan.GetNode<RayCast3D>("SpringArm3D/PlayerCamera/RayCastTo");
         if (DisplayServer.GetName() != "headless")
             Input.MouseMode = Input.MouseModeEnum.Captured; //Cache le curseur à son controle
-                                                        //TODO: Mettre dans un médiateur de contrôle
-                                                        // pour permettre de lose control
+                                                            //TODO: Mettre dans un médiateur de contrôle
+                                                            // pour permettre de lose control
         if (PhysicsSkelton == null) PhysicsSkelton = GetNode<PhysicsSkeleton>("PhysicsRig/Armature/Skeleton3D");
         if (AnimPlayer == null) AnimPlayer = PhysicsSkelton.AnimPlayer;
         _animSkeleton = PhysicsSkelton.TargetSkeleton;
         speed = WalkSpeed;
-
+        AddToGroup("local_player");
 
     }
     public override void _Input(InputEvent @event)
@@ -113,12 +113,6 @@ public partial class Player : Character
             WalkSpeed *= RunMultiplier;
             AnimPlayer.SpeedScale *= RunMultiplier;
         }
-        if (Input.IsActionJustReleased("run"))
-        {
-            WalkSpeed /= RunMultiplier;
-            AnimPlayer.SpeedScale /= RunMultiplier;
-
-        }
 
         if (Input.IsActionJustPressed("interact"))
         {
@@ -126,32 +120,26 @@ public partial class Player : Character
             GetObjectTypeFromRaycast(Raycaster);
             //TEMPORAIRE : Changer la camera a third person pour voir le rig
             //_currentCamOffset = (_currentCamOffset == _offsetFP)?_offsetTP:_offsetFP;
-            currentEmoteState = EmoteState.Pointing; //temporary
-
-        }
-        if (Input.IsActionJustReleased("interact"))
-        {
             PhysicsSkelton.Aiming = false;
             currentEmoteState = EmoteState.None; //temporary
 
         }
+
         if (Input.IsActionJustPressed("show_sign"))
         {
             PhysicsSkelton.ArmsUp = true;
         }
-        if (Input.IsActionJustReleased("show_sign"))
-        {
-            PhysicsSkelton.ArmsUp = false;
-        }
+
         // Basic movements from the godot boilerplate, to adapt to the game
         Vector2 aimDir = Input.GetVector("aim_left", "aim_right", "aim_up", "aim_down");
         Vector2 inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");
         Vector3 direction = (Transform.Basis * new Vector3(-inputDir.X, 0, -inputDir.Y)).Normalized();
         //Gérer le aiming (controller ou souris)
-        moveVec = -direction;
-        aimVec = -direction;
+        moveVec = direction;
+        aimVec = direction;
         base._PhysicsProcess(delta);
-        if (currentEmoteState == EmoteState.Pointing){
+        if (currentEmoteState == EmoteState.Pointing)
+        {
             pointVec = _cameraMan.GetRaycastPointingVector();
 
         }
