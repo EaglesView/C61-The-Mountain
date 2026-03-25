@@ -56,10 +56,12 @@ public static class CharacterUtils
         None
     }
 
-
     ///<summary>
     /// Retournes l'état de mouvement du personnage selon ses vecteurs de mouvement et de direction.
     /// </summary>
+    /// <param name="InMoveDir">Le vecteur de déplacement du personnage. Zero implique Idle.</param>
+    /// <param name="InAimDir">Le vecteur de direction visée du personnage.</param>
+    /// <returns>Le <see cref="MovementState"/> correspondant aux vecteurs donnés.</returns>
     public static MovementState GetMovementStateFromMovement(Vector3 InMoveDir, Vector3 InAimDir)
     {
 
@@ -174,5 +176,23 @@ public static class CharacterUtils
         Transform3D parentGlobalTransform = InTargetSkeleton.GlobalTransform * InTargetSkeleton.GetBoneGlobalPose(parentBoneIdx);
         return parentGlobalTransform.Basis.Inverse() * InWorldAimDir.Normalized();
     }
+
+    ///<summary>
+    ///   Permet de recevoir la pose en Transform3D de la tête du personnage en world space.
+    /// </summary>
+    /// <param name="InTargetSkeleton">Le squelette animé dont on veut extraire la pose de la tête.</param>
+    /// <param name="InHeadBoneIdx">L'index du bone de la tête dans le squelette cible.</param>
+    /// <returns>La <see cref="Transform3D"/> de la tête en world space.</returns>
+    /// <remarks>
+    /// - Currently Unused
+    /// , Possibly to Delete / Deprecate
+    /// </remarks>
+    public static Transform3D GetHeadPoseFromIdx(Skeleton3D InTargetSkeleton, int InHeadBoneIdx)
+    {
+        return InTargetSkeleton.GlobalTransform * InTargetSkeleton.GetBoneGlobalPose(InHeadBoneIdx);
+    }
+
+
+
 
 }

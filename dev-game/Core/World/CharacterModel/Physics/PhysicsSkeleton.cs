@@ -40,10 +40,9 @@ public partial class PhysicsSkeleton : Skeleton3D
     [Export(PropertyHint.Range, "0.0f,200.0f,1,0f")] public float LinearSpringDamping = 40.0f;
     [Export(PropertyHint.Range, "0.0f,10000.0f,1,0f")] public float AngularSpringStiffness = 4000.0f;
     [Export(PropertyHint.Range, "0.0f,200.0f,1,0f")] public float AngularSpringDamping = 80.0f;
+    ///<summary>Définit si le personnage est en ragdoll ou pas</summary>
     [Export] public bool IsRagdoll = false;
 
-    public enum ArmGesture { None, Pointing, Raising }// for future me
-    public ArmGesture CurrentGesture = ArmGesture.None;
     private float _gestureBlend = 0f;
 
 
@@ -67,28 +66,20 @@ public partial class PhysicsSkeleton : Skeleton3D
     public Vector3 ArmUpDir = Vector3.Up;
     [Export] public required AnimationPlayer AnimPlayer;
 
-    /// <summary>
-    /// Oriente la tête du personnage selon l'angle vertical de la caméra.
-    /// xAngle en radians.
-    /// </summary>
-    public void SetHeadPose(float InHeadXAngle)
+
+    private void _SetHeadPose(Skeleton3D InPhysicsSkeleton, float InHeadXAngle)
     {
         var headRot = new Quaternion(Vector3.Right, -InHeadXAngle);
         var mouthRot = new Quaternion(Vector3.Right, -InHeadXAngle + (MathF.PI / 2.0f));
-        SetBonePoseRotation(_headBoneIdx, headRot);
-        SetBonePoseRotation(_mouthBoneIdx, mouthRot);
+        InPhysicsSkeleton.SetBonePoseRotation(_headBoneIdx, headRot);
+        InPhysicsSkeleton.SetBonePoseRotation(_mouthBoneIdx, mouthRot);
     }
-    public Transform3D GetHeadPose()
+    private void _SetSpinePoseFromHead(Skeleton3D InTargetSkeleton, float InHeadXAngle)
     {
-        return TargetSkeleton.GlobalTransform * TargetSkeleton.GetBoneGlobalPose(_headBoneIdx);
+        InTargetSkeleton.SetBonePoseRotation(_spine3BoneIdx, new Quaternion(Vector3.Right, -InHeadXAngle * 1.0f));
+        InTargetSkeleton.SetBonePoseRotation(_spine4BoneIdx, new Quaternion(Vector3.Right, -InHeadXAngle * 0.4f));
     }
-    public void SetSpinePoseFromHead(float InHeadXAngle)
-    {
-        TargetSkeleton.SetBonePoseRotation(_spine3BoneIdx, new Quaternion(Vector3.Right, -InHeadXAngle * 1.0f));
-        TargetSkeleton.SetBonePoseRotation(_spine4BoneIdx, new Quaternion(Vector3.Right, -InHeadXAngle * 0.4f));
-    }
-
-    public void ArmPoint(double InDelta)
+    private void _ArmPoint(double InDelta)
     {
         Vector3 localDir = GetLocalAimDir(TargetSkeleton, ArmPointDir, _arm1ParentIdx);
 
@@ -98,7 +89,7 @@ public partial class PhysicsSkeleton : Skeleton3D
         TargetSkeleton.SetBonePoseRotation(_arm1RIdx, blended);
         _gestureBlend = Mathf.MoveToward(_gestureBlend, Aiming ? 1f : 0f, 30f * (float)InDelta);
     }
-    public void ArmsRaise(double InDelta)
+    private void _ArmsRaise(double InDelta)
     {
         // Get body-relative up from the spine
         Transform3D spineWorld = TargetSkeleton.GlobalTransform * TargetSkeleton.GetBoneGlobalPose(_spine3BoneIdx);
@@ -210,7 +201,13 @@ public partial class PhysicsSkeleton : Skeleton3D
         }
 
     }
-
+    ///<summary>
+    ///     Permet de Prendre la pose de la tête du personnage
+    /// </summary>
+    public Transform3D GetHeadPose()
+    {
+        return GetHeadPoseFromIdx(TargetSkeleton, _headBoneIdx);
+    }
     // Called every frame. 'delta' is the elapsed time since the previous frame.
     public override void _Process(double delta)
     {
@@ -220,10 +217,10 @@ public partial class PhysicsSkeleton : Skeleton3D
 
 
 
-        if (Aiming) ArmPoint(delta);
-        if (ArmsUp) ArmsRaise(delta);
-        SetHeadPose(HeadAngle);
-        SetSpinePoseFromHead(HeadAngle);
+        if (Aiming) _ArmPoint(delta);
+        if (ArmsUp) _ArmsRaise(delta);
+        _SetHeadPose(this, HeadAngle);
+        _SetSpinePoseFromHead(TargetSkeleton, HeadAngle);
 
 
     }
