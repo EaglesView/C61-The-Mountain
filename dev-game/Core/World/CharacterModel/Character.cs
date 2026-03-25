@@ -28,28 +28,31 @@ public partial class Character : CharacterBody3D
     /// :|___/_/\_|_|  \___/|_|_\ |_| |___/:
     /// ····································
     [ExportGroup("Character Nodes")]
-    [Export] protected  AnimationPlayer AnimPlayer;
-    [Export] protected  PhysicsSkeleton PhysicsSkelton;
+    [Export] protected AnimationPlayer AnimPlayer;
+    [Export] protected PhysicsSkeleton PhysicsSkelton;
 
     protected float speed;
     protected float jumpVelocity = 5.0f;
-    protected Vector3 velocity=Vector3.Zero;
+    protected Vector3 velocity = Vector3.Zero;
     protected Vector3 moveVec = Vector3.Zero;
     protected Vector3 aimVec = Vector3.Zero;
     protected Vector3 pointVec = Vector3.Forward;
     protected MovementState currentMovementState = MovementState.Idle;
     protected EmoteState currentEmoteState = EmoteState.None;
-    protected float prevHeadAngle,headAngle = 0.0f;
+    protected float prevHeadAngle, headAngle = 0.0f;
 
 
-    public void RotateHead(float InXAngle){
+    public void RotateHead(float InXAngle)
+    {
         prevHeadAngle = headAngle;
         headAngle = InXAngle;
     }
-    public void PointAt(Vector3 InDirection){
+    public void PointAt(Vector3 InDirection)
+    {
         PhysicsSkelton.ArmPointDir = InDirection;
     }
-    public Vector3 GetHeadBonePosition(){
+    public Vector3 GetHeadBonePosition()
+    {
         return PhysicsSkelton.GetHeadPose().Origin;
     }
     public float GetHeadAngle() => headAngle;
@@ -70,29 +73,39 @@ public partial class Character : CharacterBody3D
 
     public virtual void ApplyNetworkState(PlayerNetState state)
     {
-        GlobalPosition             = state.Position;
-        velocity                   = state.Velocity;
-        Rotation                   = new Vector3(Rotation.X, state.BodyYaw, Rotation.Z);
+        GlobalPosition = state.Position;
+        velocity = state.Velocity;
+        Rotation = new Vector3(Rotation.X, state.BodyYaw, Rotation.Z);
         RotateHead(state.HeadPitch);
         PhysicsSkelton.ArmPointDir = state.ArmPointDir;
-        PhysicsSkelton.Aiming      = state.Aiming;
-        PhysicsSkelton.ArmsUp      = state.ArmsUp;
-        currentMovementState       = state.MoveState;
-        currentEmoteState          = state.EmoteState;
+        PhysicsSkelton.Aiming = state.Aiming;
+        PhysicsSkelton.ArmsUp = state.ArmsUp;
+        currentMovementState = state.MoveState;
+        currentEmoteState = state.EmoteState;
     }
-    public void ComputeEmotePhysics(){
-        switch(currentEmoteState){
+    public void ComputeEmotePhysics()
+    {
+        switch (currentEmoteState)
+        {
             case EmoteState.None:
-            break;
+                break;
             case EmoteState.Pointing:
-            PointAt(pointVec);
-            break;
+                PointAt(pointVec);
+                break;
             case EmoteState.ArmsUp:
-            break;
+                break;
             case EmoteState.ShowSign:
-            break;
+                break;
         }
     }
+
+    /// ···········································
+    /// : _    ___ ___ ___ _____   _____ _    ___ :
+    /// :| |  |_ _| __| __/ __\ \ / / __| |  | __|:
+    /// :| |__ | || _|| _| (__ \ V | (__| |__| _| :
+    /// :|____|___|_| |___\___| |_| \___|____|___|:
+    /// ···········································
+
     public override void _PhysicsProcess(double delta)
     {
         //velocity = Velocity;
@@ -121,10 +134,10 @@ public partial class Character : CharacterBody3D
     }
     public override void _Process(double delta)
     {
-        MovementState newMovementState = GetMovementStateFromMovement(moveVec,aimVec);
-        if(currentMovementState == newMovementState) return;
+        MovementState newMovementState = GetMovementStateFromMovement(moveVec, aimVec);
+        if (currentMovementState == newMovementState) return;
         currentMovementState = newMovementState;
-        PlayAnimationFromMovement(newMovementState,AnimPlayer);
+        PlayAnimationFromMovement(newMovementState, AnimPlayer);
 
     }
 }
