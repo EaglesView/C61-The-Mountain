@@ -50,6 +50,8 @@ public partial class Player : Character
     private Vector3 _offsetFP = new Vector3(0, 0.05f, 0.25f);
     private Vector3 _offsetTP = new Vector3(0, 0.1f, -1.25f);
     private Vector3 _currentCamOffset;
+    private string? _currentAnim;
+    private Interactable? _highlightedInteractable;
     //[Export] private Node3D _characterRig;
     private bool _showDebug = false;
 
@@ -128,6 +130,8 @@ public partial class Player : Character
         if (Input.IsActionJustPressed("show_sign"))
         {
             PhysicsSkelton.ArmsUp = true;
+            var interactable = GetInteractableFromRaycast(Raycaster);
+            interactable?.Interact(this);
         }
 
         // Basic movements from the godot boilerplate, to adapt to the game
@@ -150,5 +154,16 @@ public partial class Player : Character
     {
         base._Process(delta);
         //SetCamPos();
+        int boneIdx = PhysicsSkelton.FindBone("Head.001");
+        Transform3D headWorld = PhysicsSkelton.GlobalTransform * PhysicsSkelton.GetBoneGlobalPose(boneIdx);
+        _cam.GlobalPosition = headWorld.Origin + headWorld.Basis * new Vector3(0, 0.05f, 0.25f); //TODO: mettre offset dans var
+
+        var interactable = GetInteractableFromRaycast(Raycaster);
+        if (interactable != _highlightedInteractable)
+        {
+            _highlightedInteractable?.OnUnhighlight();
+            _highlightedInteractable = interactable;
+            _highlightedInteractable?.OnHighlight();
+        }
     }
 }

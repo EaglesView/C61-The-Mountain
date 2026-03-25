@@ -13,4 +13,5 @@ public interface IAuthService
     Task SignOutAsync();
     User? CurrentUser { get; }
     bool IsAuthenticated { get; }
+    string? IdToken { get; }
 }
