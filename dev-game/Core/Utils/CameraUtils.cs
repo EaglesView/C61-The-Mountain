@@ -1,6 +1,9 @@
 using Godot;
 namespace Utils;
 
+///<summary>
+/// Classe statique d'utilitaires pour la caméra. Permet de simplifier le code de CameraMan.cs
+/// </summary>
 public static class CameraUtils
 {
     ///<summary>
@@ -9,9 +12,13 @@ public static class CameraUtils
     /// </summary>
     public enum CameraType
     {
+        ///<summary> Mode de vue première personne </summary>
         FirstPerson,
+        ///<summary> Mode de vue troisième personne </summary>
         ThirdPerson,
+        ///<summary> Mode de vue libre (FreeCam) </summary>
         FreeMode,
+        ///<summary> Mode spécial pour la caméra de "mort" </summary>
         Death
     };
 }
