@@ -44,6 +44,9 @@ public partial class CameraMan : Node3D
     private float _camDistance = 0.0f;
     private Vector3 _camOffset = new Vector3(0.0f, 0.0f, 0.001f);
 
+    ///<summary>
+    /// Permet de changer le type de camera à un type précis.
+    /// </summary>
     public void SetCameraType(CameraType InCamType)
     {
         _camType = InCamType;
@@ -58,9 +61,46 @@ public partial class CameraMan : Node3D
         }
         SpringArmThirdPerson.SpringLength = _camDistance;
     }
-    public void SetNextCamera()
+    ///<summary>
+    /// Permet de changer la caméra au prochain mode disponible. Les modes disponibles sont envoyés par paramètre, et changement
+    /// selon la caméra actuelle. Si la caméra actuelle n'est pas dans les paramètres, alors un erreur est lancé, a moins qu'on
+    /// ajoute le paramètre InOverrideCameraType a true, qui va donner la caméra a l'index 0 si la caméra actuelle n'est pas dans
+    /// la liste.
+    /// </summary>
+    public void SetNextCamera(CameraType[] InCameras, bool InOverrideCameraType = false)
     {
-
+        int index = 0; //list pas IEnumerable
+        bool found = false;
+        foreach (CameraType camera in InCameras)
+        {
+            if (_camType == camera)
+            {
+                found = true;
+                //la prochaine caméra doit être utilisé
+                // vérifier la fin de liste avant.
+                if (InCameras.Length <= index)
+                {
+                    _camType = InCameras[0]; //première cam si fin de liste
+                }
+                else
+                {
+                    _camType = InCameras[index + 1]; //la prochaine si pas fin de liste
+                }
+            }
+            index++;
+        }
+        //validation pour voir si la caméra a été trouvé
+        if (!found)
+        {
+            if (InOverrideCameraType)
+            {
+                _camType = InCameras[0]; //defaults a la premiere camera
+            }
+            else
+            {
+                GD.PrintErr("GAME_ERROR: AUCUNE CAMÉRA TROUVÉ COMPATIBLE AVEC LA CAMÉRA ACTUELLE DANS LA LISTE. Veuillez ajouter le paramètre InOverrideCameraType à true pour désactiver cette erreur.");
+            }
+        }
     }
     public Vector3 GetRaycastPointingVector()
     {
@@ -95,7 +135,7 @@ public partial class CameraMan : Node3D
 
     }
 
-	// Called every frame. 'delta' is the elapsed time since the previous frame.
+    // Called every frame. 'delta' is the elapsed time since the previous frame.
     public override void _Process(double delta)
     {
         ComputeCameraPosition((float)delta);
