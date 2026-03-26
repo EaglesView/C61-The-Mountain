@@ -94,6 +94,18 @@ public readonly struct PlayerNetState
     /// <param name="type">Le type de paquet à inscrire comme premier octet.</param>
     /// <param name="s">Le snapshot à sérialiser.</param>
     /// <returns>Un tableau de 52 octets en little-endian.</returns>
+    /// <summary>
+    /// Sérialise une notification de peer (5 octets) : <c>type(1) + peerId(4)</c>.
+    /// Utilisé pour <see cref="PacketType.SpawnReq"/> et <see cref="PacketType.DespawnNotify"/>.
+    /// </summary>
+    public static byte[] SerializePeerNotify(PacketType type, int peerId)
+    {
+        var data = new byte[5];
+        data[0] = (byte)type;
+        System.BitConverter.GetBytes(peerId).CopyTo(data, 1);
+        return data;
+    }
+
     public static byte[] Serialize(PacketType type, PlayerNetState s)
     {
         using var ms = new MemoryStream(52);

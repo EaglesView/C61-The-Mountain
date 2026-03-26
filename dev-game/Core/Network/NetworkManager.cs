@@ -21,6 +21,11 @@ public partial class NetworkManager : Node
     private INetworkProvider? _provider;
     private Character?        _localPlayer;
 
+    private readonly HashSet<int> _remotePeerIds = new();
+
+    /// <summary>Ensemble des peer IDs distants actuellement connus (reçus via SpawnReq ou connexion directe).</summary>
+    public IReadOnlyCollection<int> RemotePeerIds => _remotePeerIds;
+
     private float       _tickAccum  = 0f;
     private const float TickInterval = 1f / 20f; // 50ms
 
@@ -95,6 +100,15 @@ public partial class NetworkManager : Node
         {
             GD.Print($"[NetworkManager] Peer {id} disconnected. Active peers: {_lastKnownPos.Count - 1}");
             _lastKnownPos.Remove(id);
+
+            // Notify all remaining clients that this peer is gone
+            if (_provider?.Role == NetworkRole.Server)
+            {
+                var notify = PlayerNetState.SerializePeerNotify(PacketType.DespawnNotify, id);
+                _provider.BroadcastReliable(notify);
+            }
+
+            _remotePeerIds.Remove(id);
             PeerLeft?.Invoke(id);
         };
         _provider.PacketReceived   += OnPacketReceived;
@@ -128,11 +142,28 @@ public partial class NetworkManager : Node
     private void OnProviderPeerConnected(int id)
     {
         if (_provider?.Role == NetworkRole.Server)
+        {
             GD.Print($"[NetworkManager] Player {id} connected. Active peers: {Multiplayer.GetPeers().Length}");
+
+            // Tell all already-connected clients about the newcomer
+            var newNotify = PlayerNetState.SerializePeerNotify(PacketType.SpawnReq, id);
+            _provider.BroadcastReliable(newNotify, excludePeerId: id);
+
+            // Tell the newcomer about every peer already in the session
+            foreach (int existingId in Multiplayer.GetPeers())
+            {
+                if (existingId == id) continue;
+                var existingNotify = PlayerNetState.SerializePeerNotify(PacketType.SpawnReq, existingId);
+                _provider.SendReliable(id, existingNotify);
+            }
+        }
         else
+        {
             GD.Print($"[NetworkManager] Connected to server. Local peer ID: {id}");
+        }
 
         PeerJoined?.Invoke(id);
+        _remotePeerIds.Add(id);
         // Fire LocalConnected when our own client connection is confirmed
         if (_provider?.Role == NetworkRole.Client && id == _provider.LocalPeerId)
             LocalConnected?.Invoke();
@@ -155,7 +186,30 @@ public partial class NetworkManager : Node
     {
         if (data.Length < 1) return;
 
-        var (type, state) = PlayerNetState.Deserialize(data);
+        var type = (PacketType)data[0];
+
+        // Lightweight peer-notify packets (5 bytes): relay PeerJoined/PeerLeft on clients
+        if (type == PacketType.SpawnReq || type == PacketType.DespawnNotify)
+        {
+            if (_provider?.Role == NetworkRole.Client && data.Length >= 5)
+            {
+                int peerId = System.BitConverter.ToInt32(data, 1);
+                GD.Print($"[NetworkManager] Got {type} for peer {peerId}");
+                if (type == PacketType.SpawnReq)
+                {
+                    _remotePeerIds.Add(peerId);
+                    PeerJoined?.Invoke(peerId);
+                }
+                else
+                {
+                    _remotePeerIds.Remove(peerId);
+                    PeerLeft?.Invoke(peerId);
+                }
+            }
+            return;
+        }
+
+        var (_, state) = PlayerNetState.Deserialize(data);
 
         if (_provider?.Role == NetworkRole.Server)
         {

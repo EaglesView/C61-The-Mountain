@@ -22,6 +22,12 @@ public partial class World : Node3D
 		net.PeerJoined    += OnPeerJoined;
 		net.PeerLeft      += OnPeerLeft;
 		net.StateReceived += OnStateReceived;
+		
+		foreach (int peerId in net.RemotePeerIds)
+		{
+			if (peerId != net.LocalPeerId)
+				OnPeerJoined(peerId);
+		}
 
 		if (net.IsAutoConnecting)
 			net.LocalConnected += () => SpawnLocalPlayer(net.LocalPeerId);
