@@ -28,13 +28,13 @@ using static Utils.CharacterUtils;
 public partial class Player : Character
 {
     /*
-    ····································
-    : _____  _____  ___  ___ _____ ___ :
-    :| __\ \/ | _ \/ _ \| _ |_   _/ __|:
-    :| _| >  <|  _| (_) |   / | | \__ \:
-    :|___/_/\_|_|  \___/|_|_\ |_| |___/:
-    ····································
-    */
+	····································
+	: _____  _____  ___  ___ _____ ___ :
+	:| __\ \/ | _ \/ _ \| _ |_   _/ __|:
+	:| _| >  <|  _| (_) |   / | | \__ \:
+	:|___/_/\_|_|  \___/|_|_\ |_| |___/:
+	····································
+	*/
 
     [ExportGroup("Player Settings")]
     ///<summary> La vitesse de marche du personnage joué</summary>
@@ -63,8 +63,8 @@ public partial class Player : Character
     private Interactable? _highlightedInteractable;
     //[Export] private Node3D _characterRig;
     private bool _showDebug = false;
-
-
+    private bool _playerFocused = false;
+    private bool _playerPaused = false;
     //public void SetCamPos()
     //{
     //    int boneIdx = PhysicsSkelton.FindBone("Head.001");
@@ -86,9 +86,9 @@ public partial class Player : Character
         _currentCamOffset = _offsetFP;
         if (Raycaster == null) Raycaster = _cameraMan.GetNode<RayCast3D>("SpringArm3D/PlayerCamera/RayCastTo");
         if (DisplayServer.GetName() != "headless")
-            Input.MouseMode = Input.MouseModeEnum.Captured; //Cache le curseur à son controle
-                                                            //TODO: Mettre dans un médiateur de contrôle
-                                                            // pour permettre de lose control
+            _playerFocused = ToggleCharacterFocus(_playerFocused);
+        //TODO: Mettre dans un médiateur de contrôle
+        // pour permettre de lose control
         if (PhysicsSkelton == null) PhysicsSkelton = GetNode<PhysicsSkeleton>("PhysicsRig/Armature/Skeleton3D");
         if (AnimPlayer == null) AnimPlayer = PhysicsSkelton.AnimPlayer;
         _animSkeleton = PhysicsSkelton.TargetSkeleton;
@@ -98,6 +98,9 @@ public partial class Player : Character
     }
     public override void _Input(InputEvent @event)
     {
+        // Bloque tout l'input du joueur quand le menu de pause est ouvert
+        if (GameMenu.IsPaused) return;
+
         if (@event is InputEventMouseMotion mouseMotion)
         {
             RotateY(-mouseMotion.Relative.X * _mouseSensitivity);
@@ -113,6 +116,14 @@ public partial class Player : Character
     {
         velocity = Velocity;
 
+        // En pause : on laisse la gravité tourner mais on bloque les inputs de mouvement
+        if (GameMenu.IsPaused)
+        {
+            moveVec = Vector3.Zero;
+            aimVec = Vector3.Zero;
+            base._PhysicsProcess(delta);
+            return;
+        }
 
         // Handle Jump.
         if (Input.IsActionJustPressed("jump") && IsOnFloor())
@@ -124,7 +135,12 @@ public partial class Player : Character
             WalkSpeed *= RunMultiplier;
             AnimPlayer.SpeedScale *= RunMultiplier;
         }
-
+        if (Input.IsActionJustPressed("pause_menu"))
+        {
+            _playerFocused = ToggleCharacterFocus(_playerFocused);
+            GD.Print("In Menus!");
+            GameMenu.Instance?.OpenMenu();
+        }
         if (Input.IsActionJustPressed("interact"))
         {
 
