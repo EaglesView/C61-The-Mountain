@@ -178,6 +178,15 @@ public static class CharacterUtils
     }
 
     ///<summary>
+    /// Permet de donner accès à la souris au joueur.
+    /// </summary>
+    public static bool ToggleCharacterFocus(bool InIsInFocus)
+    {
+        Input.MouseMode = InIsInFocus ? Input.MouseModeEnum.Visible : Input.MouseModeEnum.Captured;
+        return !InIsInFocus;
+    }
+
+    ///<summary>
     ///   Permet de recevoir la pose en Transform3D de la tête du personnage en world space.
     /// </summary>
     /// <param name="InTargetSkeleton">Le squelette animé dont on veut extraire la pose de la tête.</param>

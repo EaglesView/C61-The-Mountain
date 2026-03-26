@@ -63,8 +63,8 @@ public partial class CameraMan : Node3D
     }
     ///<summary>
     /// Permet de changer la caméra au prochain mode disponible. Les modes disponibles sont envoyés par paramètre, et changement
-    /// selon la caméra actuelle. Si la caméra actuelle n'est pas dans les paramètres, alors un erreur est lancé, a moins qu'on
-    /// ajoute le paramètre InOverrideCameraType a true, qui va donner la caméra a l'index 0 si la caméra actuelle n'est pas dans
+	/// selon la caméra actuelle. Si la caméra actuelle n'est pas dans les paramètres, alors un erreur est lancé, a moins qu'on
+	/// ajoute le paramètre InOverrideCameraType a true, qui va donner la caméra a l'index 0 si la caméra actuelle n'est pas dans
     /// la liste.
     /// </summary>
     public void SetNextCamera(CameraType[] InCameras, bool InOverrideCameraType = false)
@@ -135,7 +135,7 @@ public partial class CameraMan : Node3D
 
     }
 
-    // Called every frame. 'delta' is the elapsed time since the previous frame.
+	// Called every frame. 'delta' is the elapsed time since the previous frame.
     public override void _Process(double delta)
     {
         ComputeCameraPosition((float)delta);

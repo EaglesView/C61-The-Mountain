@@ -4,6 +4,7 @@
 [ext_resource type="MeshLibrary" uid="uid://gfduo2egy61g" path="res://Core/World/MapAssets/Tiles/tile_resources.tres" id="2_5plbv"]
 [ext_resource type="PackedScene" uid="uid://pyyf2q46j574" path="res://Core/World/CharacterModel/Player.tscn" id="3_e3c1y"]
 [ext_resource type="PackedScene" uid="uid://bqm28efgwql4h" path="res://Core/UI/Debug/debug.tscn" id="4_uskl1"]
+[ext_resource type="PackedScene" uid="uid://c6b388a8o2od" path="res://Core/UI/GameMenu/game_menu.tscn" id="5_cctn4"]
 
 [sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_uskl1"]
 
@@ -163,3 +164,5 @@ shape = SubResource("ConcavePolygonShape3D_uskl1")
 
 [node name="Debug" parent="." unique_id=752801447 node_paths=PackedStringArray("_player") instance=ExtResource("4_uskl1")]
 _player = NodePath("../Player")
+
+[node name="GameMenu" parent="." unique_id=1229459489 instance=ExtResource("5_cctn4")]
