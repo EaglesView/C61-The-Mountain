@@ -153,8 +153,8 @@ public partial class CameraMan : Node3D
 	/// </summary>
 	/// <param name="delta">Temps écoulé depuis la dernière frame en secondes.</param>
 	public void ComputeCameraPosition(float delta)
-    {
-        // --- Mise à jour du marqueur FP (suit l'os de la tête avec lissage) ---
+	{
+		// --- Mise à jour du marqueur FP (suit l'os de la tête avec lissage) ---
         Vector3 headPos = _player.GetHeadBonePosition();
         _fpCamMarker.GlobalPosition = _fpCamMarker.GlobalPosition.Lerp(
             headPos,
