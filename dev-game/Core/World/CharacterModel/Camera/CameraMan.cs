@@ -33,7 +33,7 @@ public partial class CameraMan : Node3D
     [Export] public required SpringArm3D SpringArmThirdPerson;
     [Export] private Marker3D _fpCamMarker;
     [Export] private Marker3D _tpCamMarker;
-
+    [Export] private Vector3 _fpCamOffset = new Vector3(0f, 0f, -0.15f);
     [ExportGroup("Camera Properties")]
     [Export] private CameraType _camType = CameraType.FirstPerson;
 
@@ -153,8 +153,8 @@ public partial class CameraMan : Node3D
 	/// </summary>
 	/// <param name="delta">Temps écoulé depuis la dernière frame en secondes.</param>
 	public void ComputeCameraPosition(float delta)
-	{
-		// --- Mise à jour du marqueur FP (suit l'os de la tête avec lissage) ---
+    {
+        // --- Mise à jour du marqueur FP (suit l'os de la tête avec lissage) ---
         Vector3 headPos = _player.GetHeadBonePosition();
         _fpCamMarker.GlobalPosition = _fpCamMarker.GlobalPosition.Lerp(
             headPos,
@@ -181,7 +181,7 @@ public partial class CameraMan : Node3D
             : fpBasis;
 
         // --- Application à la caméra ---
-        _playerCamera.GlobalPosition = _fpCamMarker.GlobalPosition.Lerp(tpPos, _lerpT);
+        _playerCamera.GlobalPosition = (_fpCamMarker.GlobalPosition + fpBasis * _fpCamOffset).Lerp(tpPos, _lerpT);
         _playerCamera.GlobalBasis = fpBasis.Slerp(tpBasis, _lerpT);
     }
 
