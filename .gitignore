@@ -11,6 +11,7 @@ export_credentials.cfg
 # Imported translations (automatically generated from CSV files)
 *.translation
 .zed/*
+.zed/tasks.json
 .vscode/*
 # Mono-specific ignores
 .mono/
