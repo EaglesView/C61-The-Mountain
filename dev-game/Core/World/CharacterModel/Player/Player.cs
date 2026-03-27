@@ -194,7 +194,7 @@ public partial class Player : Character
         else
         {
             // FP : le mouvement est relatif au corps
-            direction = -(Transform.Basis * new Vector3(inputDir.X, 0, -inputDir.Y)).Normalized();
+            direction = -(Transform.Basis * new Vector3(-inputDir.X, 0, -inputDir.Y)).Normalized();
         }
 
         moveVec = direction;
