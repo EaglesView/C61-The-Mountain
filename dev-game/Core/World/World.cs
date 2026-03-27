@@ -9,7 +9,7 @@ public partial class World : Node3D
 
 	public override void _Ready()
 	{
-		_remoteCharacterScene = GD.Load<PackedScene>("res://Core/World/CharacterModel/RemoteCharacter.tscn");
+		_remoteCharacterScene = GD.Load<PackedScene>("res://Core/World/CharacterModel/Character/RemoteCharacter.tscn");
 
 		var net = NetworkManager.Instance;
 
@@ -19,8 +19,8 @@ public partial class World : Node3D
 			return;
 		}
 
-		net.PeerJoined    += OnPeerJoined;
-		net.PeerLeft      += OnPeerLeft;
+		net.PeerJoined += OnPeerJoined;
+		net.PeerLeft += OnPeerLeft;
 		net.StateReceived += OnStateReceived;
 
 		foreach (int peerId in net.RemotePeerIds)
@@ -37,7 +37,7 @@ public partial class World : Node3D
 
 	private void SpawnLocalPlayer(int peerId)
 	{
-		var scene  = GD.Load<PackedScene>("res://Core/World/CharacterModel/Player.tscn");
+		var scene = GD.Load<PackedScene>("res://Core/World/CharacterModel/Player/Player.tscn");
 		var player = scene.Instantiate<Player>();
 		player.PeerId = peerId;
 		AddChild(player);
@@ -48,28 +48,28 @@ public partial class World : Node3D
 	private void OnPeerJoined(int peerId)
 	{
 		// Don't spawn a RemoteCharacter for ourselves when the connection event echoes our own ID
-        var net = NetworkManager.Instance;
-        if (net.IsClient && peerId == net.LocalPeerId) return;
-        if (_characters.ContainsKey(peerId)) return;
-        var remote = _remoteCharacterScene!.Instantiate<RemoteCharacter>();
-        remote.PeerId = peerId;
-        AddChild(remote);
-        _characters[peerId] = remote;
-    }
+		var net = NetworkManager.Instance;
+		if (net.IsClient && peerId == net.LocalPeerId) return;
+		if (_characters.ContainsKey(peerId)) return;
+		var remote = _remoteCharacterScene!.Instantiate<RemoteCharacter>();
+		remote.PeerId = peerId;
+		AddChild(remote);
+		_characters[peerId] = remote;
+	}
 
-    private void OnPeerLeft(int peerId)
-    {
-        if (!_characters.TryGetValue(peerId, out var character)) return;
-        character.QueueFree();
-        _characters.Remove(peerId);
-    }
+	private void OnPeerLeft(int peerId)
+	{
+		if (!_characters.TryGetValue(peerId, out var character)) return;
+		character.QueueFree();
+		_characters.Remove(peerId);
+	}
 
-    private void OnStateReceived(PlayerNetState state)
-    {
-        if (!_characters.TryGetValue(state.PeerId, out var character)) return;
-        if (character is RemoteCharacter remote)
-            remote.PushSnapshot(state, Time.GetTicksMsec());
-    }
+	private void OnStateReceived(PlayerNetState state)
+	{
+		if (!_characters.TryGetValue(state.PeerId, out var character)) return;
+		if (character is RemoteCharacter remote)
+			remote.PushSnapshot(state, Time.GetTicksMsec());
+	}
 
-    public override void _Process(double delta) { }
+	public override void _Process(double delta) { }
 }

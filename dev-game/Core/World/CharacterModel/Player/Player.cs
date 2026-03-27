@@ -20,6 +20,7 @@ using Godot;
 using System;
 using static Utils.RayCastUtils;
 using static Utils.CharacterUtils;
+using static Utils.CameraUtils;
 /// <summary>
 /// Joueur principal du client, Permet de contrôler son propre personnage.
 /// Sera éventuellement séparé avec un Character Class, mais pour l'instant
@@ -28,13 +29,13 @@ using static Utils.CharacterUtils;
 public partial class Player : Character
 {
     /*
-    ····································
-    : _____  _____  ___  ___ _____ ___ :
-    :| __\ \/ | _ \/ _ \| _ |_   _/ __|:
-    :| _| >  <|  _| (_) |   / | | \__ \:
-    :|___/_/\_|_|  \___/|_|_\ |_| |___/:
-    ····································
-    */
+	····································
+	: _____  _____  ___  ___ _____ ___ :
+	:| __\ \/ | _ \/ _ \| _ |_   _/ __|:
+	:| _| >  <|  _| (_) |   / | | \__ \:
+	:|___/_/\_|_|  \___/|_|_\ |_| |___/:
+	····································
+	*/
 
     [ExportGroup("Player Settings")]
     ///<summary> La vitesse de marche du personnage joué</summary>
@@ -63,8 +64,8 @@ public partial class Player : Character
     private Interactable? _highlightedInteractable;
     //[Export] private Node3D _characterRig;
     private bool _showDebug = false;
-
-
+    private bool _playerFocused = false;
+    private bool _playerPaused = false;
     //public void SetCamPos()
     //{
     //    int boneIdx = PhysicsSkelton.FindBone("Head.001");
@@ -84,11 +85,11 @@ public partial class Player : Character
 
         if (_cameraMan == null) return;
         _currentCamOffset = _offsetFP;
-        if (Raycaster == null) Raycaster = _cameraMan.GetNode<RayCast3D>("SpringArm3D/PlayerCamera/RayCastTo");
+        if (Raycaster == null) Raycaster = _cameraMan.GetNode<RayCast3D>("PlayerCamera/RayCastTo");
         if (DisplayServer.GetName() != "headless")
-            Input.MouseMode = Input.MouseModeEnum.Captured; //Cache le curseur à son controle
-                                                            //TODO: Mettre dans un médiateur de contrôle
-                                                            // pour permettre de lose control
+            _playerFocused = ToggleCharacterFocus(_playerFocused);
+        //TODO: Mettre dans un médiateur de contrôle
+        // pour permettre de lose control
         if (PhysicsSkelton == null) PhysicsSkelton = GetNode<PhysicsSkeleton>("PhysicsRig/Armature/Skeleton3D");
         if (AnimPlayer == null) AnimPlayer = PhysicsSkelton.AnimPlayer;
         _animSkeleton = PhysicsSkelton.TargetSkeleton;
@@ -98,14 +99,28 @@ public partial class Player : Character
     }
     public override void _Input(InputEvent @event)
     {
+        // Bloque tout l'input du joueur quand le menu de pause est ouvert
+        if (GameMenu.IsPaused) return;
+
         if (@event is InputEventMouseMotion mouseMotion)
         {
-            RotateY(-mouseMotion.Relative.X * _mouseSensitivity);
+
+            if (_cameraMan?.CamType == CameraType.ThirdPerson)
+            {
+                // TP : la souris orbite la caméra, le corps reste indépendant
+                _cameraMan.RotateCameraTP(
+                    mouseMotion.Relative.X,
+                    -mouseMotion.Relative.Y,
+                    _mouseSensitivity
+                );
+            }
+            else
+            {
+                // FP : la souris tourne le corps et la tête
+                RotateY(-mouseMotion.Relative.X * _mouseSensitivity);
+            }
             float newAngle = headAngle + mouseMotion.Relative.Y * _mouseSensitivity;
             RotateHead(Mathf.Clamp(newAngle, Mathf.DegToRad(-80), Mathf.DegToRad(80)));
-        }
-        else if (@event is InputEventAction action)
-        {
 
         }
     }
@@ -113,6 +128,14 @@ public partial class Player : Character
     {
         velocity = Velocity;
 
+        // En pause : on laisse la gravité tourner mais on bloque les inputs de mouvement
+        if (GameMenu.IsPaused)
+        {
+            moveVec = Vector3.Zero;
+            aimVec = Vector3.Zero;
+            base._PhysicsProcess(delta);
+            return;
+        }
 
         // Handle Jump.
         if (Input.IsActionJustPressed("jump") && IsOnFloor())
@@ -124,7 +147,12 @@ public partial class Player : Character
             WalkSpeed *= RunMultiplier;
             AnimPlayer.SpeedScale *= RunMultiplier;
         }
-
+        if (Input.IsActionJustPressed("pause_menu"))
+        {
+            _playerFocused = ToggleCharacterFocus(_playerFocused);
+            GD.Print("In Menus!");
+            GameMenu.Instance?.OpenMenu();
+        }
         if (Input.IsActionJustPressed("interact"))
         {
 
@@ -142,12 +170,33 @@ public partial class Player : Character
             var interactable = GetInteractableFromRaycast(Raycaster);
             interactable?.Interact(this);
         }
+        if (Input.IsActionJustPressed("change_view"))
+        {
+            _cameraMan?.SetNextCamera([CameraType.FirstPerson, CameraType.ThirdPerson]);
+        }
 
-        // Basic movements from the godot boilerplate, to adapt to the game
         Vector2 aimDir = Input.GetVector("aim_left", "aim_right", "aim_up", "aim_down");
         Vector2 inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");
-        Vector3 direction = (Transform.Basis * new Vector3(-inputDir.X, 0, -inputDir.Y)).Normalized();
-        //Gérer le aiming (controller ou souris)
+        Vector3 direction;
+
+        if (_cameraMan?.CamType == CameraType.ThirdPerson)
+        {
+            // TP : le mouvement est relatif à la caméra, pas au corps
+            // //TODO: Ajouter les Axis Settings (inverse axis, etc.)
+            Vector3 camForward = _cameraMan.GetCameraForwardFlat();
+            Vector3 camRight = _cameraMan.GetCameraRightFlat();
+            direction = (camForward * -inputDir.Y + camRight * -inputDir.X).Normalized(); //Negatif pcq notre mesh est a l'envers, oops!
+
+            // Le corps se tourne vers la direction de déplacement
+            if (direction != Vector3.Zero)
+                Rotation = new Vector3(Rotation.X, Mathf.LerpAngle(Rotation.Y, Mathf.Atan2(-direction.X, -direction.Z), 0.15f), Rotation.Z);
+        }
+        else
+        {
+            // FP : le mouvement est relatif au corps
+            direction = -(Transform.Basis * new Vector3(inputDir.X, 0, -inputDir.Y)).Normalized();
+        }
+
         moveVec = direction;
         aimVec = direction;
         base._PhysicsProcess(delta);

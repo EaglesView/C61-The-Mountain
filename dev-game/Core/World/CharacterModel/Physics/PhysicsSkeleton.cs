@@ -208,7 +208,7 @@ public partial class PhysicsSkeleton : Skeleton3D
     {
         return GetHeadPoseFromIdx(TargetSkeleton, _headBoneIdx);
     }
-    // Called every frame. 'delta' is the elapsed time since the previous frame.
+	// Called every frame. 'delta' is the elapsed time since the previous frame.
     public override void _Process(double delta)
     {
         //Process roule apres physicsprocess(), et a cause de

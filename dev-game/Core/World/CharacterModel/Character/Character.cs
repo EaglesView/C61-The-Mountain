@@ -127,7 +127,7 @@ public partial class Character : CharacterBody3D
             velocity.X = Mathf.MoveToward(Velocity.X, 0, speed);
             velocity.Z = Mathf.MoveToward(Velocity.Z, 0, speed);
         }
-        PhysicsSkelton.HeadAngle = headAngle;
+        PhysicsSkelton.HeadAngle = -headAngle;
         ComputeEmotePhysics();
         Velocity = velocity;
         MoveAndSlide();
