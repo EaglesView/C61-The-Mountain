@@ -161,14 +161,19 @@ public partial class Player : Character
             //_currentCamOffset = (_currentCamOffset == _offsetFP)?_offsetTP:_offsetFP;
             PhysicsSkelton.Aiming = false;
             currentEmoteState = EmoteState.None; //temporary
+            var interactable = GetInteractableFromRaycast(Raycaster);
+            interactable?.Interact(this);
 
         }
 
         if (Input.IsActionJustPressed("show_sign"))
         {
             PhysicsSkelton.ArmsUp = true;
-            var interactable = GetInteractableFromRaycast(Raycaster);
-            interactable?.Interact(this);
+
+        }
+        if (Input.IsActionJustReleased("show_sign"))
+        {
+            PhysicsSkelton.ArmsUp = false;
         }
         if (Input.IsActionJustPressed("change_view"))
         {
