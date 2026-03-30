@@ -50,7 +50,8 @@ public partial class MainMenu : Control
 
     private void OnPlayPressed()
     {
-        GetTree().ChangeSceneToFile("res://Core/Dev/world_jim.tscn");
+        // Local offline play — no LobbyState needed
+        GetTree().ChangeSceneToFile("res://Core/World/world.tscn");
     }
 
     private async void OnCreatePressed()

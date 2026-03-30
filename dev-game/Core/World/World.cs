@@ -1,15 +1,14 @@
 using Godot;
-using System.Collections.Generic;
 using Core.Network;
+using Core.Network.Rooms;
 
 public partial class World : Node3D
 {
-	private readonly Dictionary<int, Character> _characters = new();
-	private PackedScene? _remoteCharacterScene;
+	private PlayerSpawner _spawner = null!;
 
 	public override void _Ready()
 	{
-		_remoteCharacterScene = GD.Load<PackedScene>("res://Core/World/CharacterModel/Character/RemoteCharacter.tscn");
+		_spawner = GetNode<PlayerSpawner>("PlayerSpawner");
 
 		var net = NetworkManager.Instance;
 
@@ -29,44 +28,50 @@ public partial class World : Node3D
 				OnPeerJoined(peerId);
 		}
 
-		if (net.IsAutoConnecting && !net.IsRunning)
+		var lobby = LobbyState.Current;
+		LobbyState.Clear();
+
+		if (lobby != null)
+		{
+			// Came from UI (lobby or dev quick-connect): initiate connection now
+			GD.Print($"[World] Connecting to {lobby.ServerIp}:{lobby.ServerPort}...");
 			net.LocalConnected += () => SpawnLocalPlayer(net.LocalPeerId);
+			net.ConnectToServer(lobby.ServerIp, lobby.ServerPort);
+		}
+		else if (net.IsAutoConnecting && !net.IsRunning)
+		{
+			// --connect CLI flag, still connecting
+			net.LocalConnected += () => SpawnLocalPlayer(net.LocalPeerId);
+		}
 		else
+		{
+			// Offline / local play
 			SpawnLocalPlayer(net.LocalPeerId);
+		}
 	}
 
 	private void SpawnLocalPlayer(int peerId)
 	{
-		var scene = GD.Load<PackedScene>("res://Core/World/CharacterModel/Player/Player.tscn");
-		var player = scene.Instantiate<Player>();
-		player.PeerId = peerId;
-		AddChild(player);
-		_characters[peerId] = player;
-		NetworkManager.Instance.SetLocalPlayer(player);
+		var player = _spawner.SpawnPlayer(peerId, isLocal: true) as Player;
+		if (player != null)
+			NetworkManager.Instance.SetLocalPlayer(player);
 	}
 
 	private void OnPeerJoined(int peerId)
 	{
-		// Don't spawn a RemoteCharacter for ourselves when the connection event echoes our own ID
 		var net = NetworkManager.Instance;
 		if (net.IsClient && peerId == net.LocalPeerId) return;
-		if (_characters.ContainsKey(peerId)) return;
-		var remote = _remoteCharacterScene!.Instantiate<RemoteCharacter>();
-		remote.PeerId = peerId;
-		AddChild(remote);
-		_characters[peerId] = remote;
+		_spawner.SpawnPlayer(peerId, isLocal: false);
 	}
 
 	private void OnPeerLeft(int peerId)
 	{
-		if (!_characters.TryGetValue(peerId, out var character)) return;
-		character.QueueFree();
-		_characters.Remove(peerId);
+		_spawner.DespawnPlayer(peerId);
 	}
 
 	private void OnStateReceived(PlayerNetState state)
 	{
-		if (!_characters.TryGetValue(state.PeerId, out var character)) return;
+		if (!_spawner.Characters.TryGetValue(state.PeerId, out var character)) return;
 		if (character is RemoteCharacter remote)
 			remote.PushSnapshot(state, Time.GetTicksMsec());
 	}

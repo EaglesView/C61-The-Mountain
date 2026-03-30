@@ -100,8 +100,7 @@ public partial class LobbyScene : Control
         if (_leaving || !IsInsideTree()) return;
         _leaving = true;
         LobbyState.Clear();
-        // TODO: hardcoded scene — replace with actual game scene when ready
-        GetTree().ChangeSceneToFile("res://Core/Dev/world_jim.tscn");
+        GetTree().ChangeSceneToFile("res://Core/World/world.tscn");
     }
 
     private void RefreshPlayerList(RoomSnapshot snapshot)

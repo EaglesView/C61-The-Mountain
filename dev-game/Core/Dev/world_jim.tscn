@@ -37,6 +37,7 @@ data = PackedVector3Array(-0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0
 script = ExtResource("1_e3c1y")
 
 [node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=1617775627]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.049645305, 0)
 collision_layer = 2
 collision_mask = 5
 
