@@ -1,0 +1,21 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://dg1dfpe3w4018"]
+
+[ext_resource type="Texture2D" uid="uid://2ot2qj2t544d" path="res://Assets/Textures/Tiles/MetalWall01/textures/rusty_metal_04_diff_1k.jpg" id="1_aomhw"]
+[ext_resource type="Texture2D" uid="uid://bhcmju0e0b3e8" path="res://Assets/Textures/Tiles/MetalWall01/textures/rusty_metal_04_arm_1k.jpg" id="2_awi01"]
+[ext_resource type="Texture2D" uid="uid://dnb5vc1riclqm" path="res://Assets/Textures/Tiles/MetalWall01/textures/rusty_metal_04_nor_gl_1k.jpg" id="3_mnnuv"]
+
+[resource]
+resource_name = "rusty_metal_04"
+cull_mode = 2
+albedo_texture = ExtResource("1_aomhw")
+metallic = 1.0
+metallic_texture = ExtResource("2_awi01")
+metallic_texture_channel = 2
+roughness_texture = ExtResource("2_awi01")
+roughness_texture_channel = 1
+normal_enabled = true
+normal_texture = ExtResource("3_mnnuv")
+uv1_scale = Vector3(1.665, 1.665, 1.665)
+uv1_offset = Vector3(0, -0.09, 0)
+uv1_triplanar = true
+uv1_world_triplanar = true
