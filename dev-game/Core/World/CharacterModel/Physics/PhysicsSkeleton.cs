@@ -40,11 +40,14 @@ public partial class PhysicsSkeleton : Skeleton3D
     [Export(PropertyHint.Range, "0.0f,200.0f,1,0f")] public float LinearSpringDamping = 40.0f;
     [Export(PropertyHint.Range, "0.0f,10000.0f,1,0f")] public float AngularSpringStiffness = 4000.0f;
     [Export(PropertyHint.Range, "0.0f,200.0f,1,0f")] public float AngularSpringDamping = 80.0f;
+    [Export(PropertyHint.Range, "0.0f,5.0f,0,1f")] public float RagdollGraceTime = 1.0f;
+    private float _graceTime = 0.0f;
+    protected static float forceThreshold = 250.0f;
     ///<summary>Définit si le personnage est en ragdoll ou pas</summary>
     [Export] public bool IsRagdoll = false;
 
     private float _gestureBlend = 0f;
-
+    private Vector3 _displacementThreshold = new Vector3(forceThreshold, forceThreshold, forceThreshold);
 
 
     private PhysicalBoneSimulator3D? _boneSim;
@@ -158,13 +161,31 @@ public partial class PhysicsSkeleton : Skeleton3D
     }
     public override void _PhysicsProcess(double delta)
     {
-        if (IsRagdoll) return;
+        if (Input.IsActionJustPressed("jump"))
+        {
+            IsRagdoll = false;
+        }
         if (_physicsBones == null) return;
+
+        if (IsRagdoll)
+        {
+            _graceTime = RagdollGraceTime;
+            foreach (PhysicalBone3D bone in _physicsBones)
+            {
+                bone.LinearVelocity += bone.GetGravity() * (float)delta;
+            }
+        }
+        if (_graceTime > 0f)
+        {
+            _graceTime -= (float)delta;
+        }
         foreach (PhysicalBone3D bone in _physicsBones)
         {
+            Vector3 gravity = bone.GetGravity();
+            bone.LinearVelocity += gravity * (float)delta;
             //if (Aiming && bone.GetBoneId() == _arm1RIdx){
             //ignorer le bras droit pour linstant si aiming
-
+            if (IsRagdoll) continue;
             //continue;
             //}
             float LinStiff = bone.HasMeta("LinearStiffness") ? (float)bone.GetMeta("LinearStiffness") : LinearSpringStiffness;
@@ -179,6 +200,12 @@ public partial class PhysicsSkeleton : Skeleton3D
             Vector3 PositionDifference = TransformTarget.Origin - TransformCurrent.Origin;
 
             Vector3 Force = HookesLaw(PositionDifference, bone.LinearVelocity, LinStiff, LinDamp);
+            //On check la force selon un threshold, pour linstant juste print:
+            if (Force > _displacementThreshold && _graceTime <= 0f)
+            {
+                IsRagdoll = true;
+
+            }
             // LINEAR APPLY
             bone.LinearVelocity += Force * (float)delta; //linear
                                                          //ANGULAR START
@@ -199,15 +226,24 @@ public partial class PhysicsSkeleton : Skeleton3D
             Vector3 worldTorque = HookesLaw(angularDisplacement, bone.AngularVelocity, RotStiff, RotDamp);
             bone.AngularVelocity += worldTorque * (float)delta;
         }
+        if (IsRagdoll)
+        {
+            int rootBone = FindBone("Spine.001");
+            int ikBone = FindBone("Controller.IK");
+            Transform3D poseRoot = GetBoneGlobalPose(rootBone);
+            SetBoneGlobalPose(ikBone, poseRoot);
+        }
 
     }
     ///<summary>
     ///     Permet de Prendre la pose de la tête du personnage
     /// </summary>
-    public Transform3D GetHeadPose()
+    public Transform3D GetPoseTargetSkel(bool InIsPhysicsSkeleton = false)
     {
-        return GetHeadPoseFromIdx(TargetSkeleton, _headBoneIdx);
+        int physicBone = TargetSkeleton.FindBone("Head.001");
+        return GetPoseFromIdx(InIsPhysicsSkeleton ? this : TargetSkeleton, InIsPhysicsSkeleton ? physicBone : _headBoneIdx);
     }
+
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
     public override void _Process(double delta)
     {

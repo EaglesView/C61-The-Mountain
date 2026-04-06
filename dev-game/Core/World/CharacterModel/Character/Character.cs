@@ -29,7 +29,7 @@ public partial class Character : CharacterBody3D
 	/// ····································
 	[ExportGroup("Character Nodes")]
 	[Export] protected AnimationPlayer AnimPlayer;
-	[Export] protected PhysicsSkeleton PhysicsSkelton;
+	[Export] public PhysicsSkeleton PhysicsSkelton;
 
 	[ExportGroup("Fall Recovery")]
 	[Export] public float FallLimit = -50.0f;
@@ -43,7 +43,7 @@ public partial class Character : CharacterBody3D
 	protected MovementState currentMovementState = MovementState.Idle;
 	protected EmoteState currentEmoteState = EmoteState.None;
 	protected float prevHeadAngle, headAngle = 0.0f;
-
+	private bool _prevRagdoll = false;
 	public Vector3 SpawnPosition { get; set; } = Vector3.Zero;
 
 
@@ -58,7 +58,11 @@ public partial class Character : CharacterBody3D
 	}
 	public Vector3 GetHeadBonePosition()
 	{
-		return PhysicsSkelton.GetHeadPose().Origin;
+		return PhysicsSkelton.GetPoseTargetSkel().Origin;
+	}
+	public Vector3 GetPhysicsHeadBonePosition()
+	{
+		return PhysicsSkelton.GetPoseTargetSkel(true).Origin;
 	}
 	public float GetHeadAngle() => headAngle;
 
@@ -113,13 +117,27 @@ public partial class Character : CharacterBody3D
 
 	public override void _PhysicsProcess(double delta)
 	{
+		//  CheckIf Out of Bounds, si oui respawn
 		if (GlobalPosition.Y < FallLimit)
 		{
 			GlobalPosition = SpawnPosition;
 			velocity = Vector3.Zero;
 		}
+		if (PhysicsSkelton.IsRagdoll)
+		{
+			_prevRagdoll = true;
+			return; // CharacterBody3D stays put, physical bones simulate freely
+		}
 
-		//velocity = Velocity;
+		if (_prevRagdoll)
+		{
+			// Leaving ragdoll: snap character to where the spine landed
+			CollisionShape3D spineCollBox =
+	GetNode<CollisionShape3D>("PhysicsRig/Armature/Skeleton3D/PhysicalBoneSimulator3D/Physical Bone Spine_001/CollisionShape3D");
+			GlobalPosition = spineCollBox.GlobalPosition;
+			Rotation = new Vector3(0f, Rotation.Y, 0f);
+			_prevRagdoll = false;
+		}
 		// Add the gravity.
 		if (!IsOnFloor())
 		{
