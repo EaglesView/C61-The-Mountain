@@ -64,6 +64,17 @@ collision_mask = 5
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Floors/MeshInstance3D3/StaticBody3D" unique_id=3548580]
 shape = SubResource("ConcavePolygonShape3D_0q453")
 
+[node name="MeshInstance3D6" type="MeshInstance3D" parent="Floors" unique_id=2009566521]
+transform = Transform3D(2.1637466, -1.6970563, 0, 2.1637468, 1.6970564, 0, 0, 0, 1.0494052, 1.9117765, 2.343611, 0)
+mesh = SubResource("BoxMesh_43t52")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Floors/MeshInstance3D6" unique_id=1004152503]
+collision_layer = 2
+collision_mask = 5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floors/MeshInstance3D6/StaticBody3D" unique_id=1350787762]
+shape = SubResource("ConcavePolygonShape3D_0q453")
+
 [node name="MeshInstance3D5" type="MeshInstance3D" parent="Floors" unique_id=1294427690]
 transform = Transform3D(-1.1889497e-07, 0, -1.0494051, 0, 2.3999999, 0, 2.72, 0, -4.5870955e-08, -6, 0, 7.8)
 mesh = SubResource("BoxMesh_43t52")
@@ -99,6 +110,10 @@ shape = SubResource("ConcavePolygonShape3D_umd68")
 
 [node name="RotatingThing" parent="." unique_id=903562714 instance=ExtResource("3_c22ky")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 1.5000001, 2.5)
+RotationSpeed = 8.0
+
+[node name="RotatingThing2" parent="." unique_id=96242913 instance=ExtResource("3_c22ky")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2482233, 1.5000006, 5.651439)
 RotationSpeed = 8.0
 
 [node name="Walls" type="Node3D" parent="." unique_id=66575262]
