@@ -10,6 +10,7 @@ Raycaster = NodePath("PlayerCamera/RayCastTo")
 SpringArmThirdPerson = NodePath("SpringArm3D")
 _fpCamMarker = NodePath("FPCamMarker")
 _tpCamMarker = NodePath("SpringArm3D/TPCamMarker")
+_camDamping = 0.001
 
 [node name="SpringArm3D" type="SpringArm3D" parent="." unique_id=2073258390]
 collision_mask = 2

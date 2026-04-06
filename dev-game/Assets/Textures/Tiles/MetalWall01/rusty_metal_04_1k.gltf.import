@@ -1,0 +1,50 @@
+[remap]
+
+importer="scene"
+importer_version=1
+type="PackedScene"
+uid="uid://dmq8g6svigyd5"
+path="res://.godot/imported/rusty_metal_04_1k.gltf-cac53524671ec963c7499f7ced07180a.scn"
+
+[deps]
+
+source_file="res://Assets/Textures/Tiles/MetalWall01/rusty_metal_04_1k.gltf"
+dest_files=["res://.godot/imported/rusty_metal_04_1k.gltf-cac53524671ec963c7499f7ced07180a.scn"]
+
+[params]
+
+nodes/root_type=""
+nodes/root_name=""
+nodes/root_script=null
+nodes/apply_root_scale=true
+nodes/root_scale=1.0
+nodes/import_as_skeleton_bones=false
+nodes/use_name_suffixes=true
+nodes/use_node_type_suffixes=true
+meshes/ensure_tangents=true
+meshes/generate_lods=true
+meshes/create_shadow_meshes=true
+meshes/light_baking=1
+meshes/lightmap_texel_size=0.2
+meshes/force_disable_compression=false
+skins/use_named_skins=true
+animation/import=true
+animation/fps=30
+animation/trimming=false
+animation/remove_immutable_tracks=true
+animation/import_rest_as_RESET=false
+import_script/path=""
+materials/extract=0
+materials/extract_format=0
+materials/extract_path=""
+_subresources={
+"materials": {
+"rusty_metal_04": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Assets/Textures/Tiles/MetalWall01/rusty_metal_04.tres",
+"use_external/path": "uid://dg1dfpe3w4018"
+}
+}
+}
+gltf/naming_version=2
+gltf/embedded_image_handling=1

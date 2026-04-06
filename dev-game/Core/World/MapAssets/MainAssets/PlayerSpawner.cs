@@ -70,6 +70,7 @@ public partial class PlayerSpawner : Node3D
 
 		Vector3 spawnPos = position ?? GetNextSpawnPoint();
 		character.Position = spawnPos;
+		character.SpawnPosition = spawnPos;
 
 		AddChild(character);
 		Characters[peerId] = character;

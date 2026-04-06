@@ -36,7 +36,9 @@ public static class CharacterUtils
         ///<summary>L'état stationnaire du personnage</summary>
         Idle,
         ///<summary>L'état de glissage du personnage</summary>
-        Sliding
+        Sliding,
+        ///<summary>L'état ou le personnage se pitche partout n'importe comment</summary>
+        Ragdolling
     }
 
     ///<summary>
@@ -196,7 +198,7 @@ public static class CharacterUtils
     /// - Currently Unused
     /// , Possibly to Delete / Deprecate
     /// </remarks>
-    public static Transform3D GetHeadPoseFromIdx(Skeleton3D InTargetSkeleton, int InHeadBoneIdx)
+    public static Transform3D GetPoseFromIdx(Skeleton3D InTargetSkeleton, int InHeadBoneIdx)
     {
         return InTargetSkeleton.GlobalTransform * InTargetSkeleton.GetBoneGlobalPose(InHeadBoneIdx);
     }

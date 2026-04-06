@@ -54,7 +54,6 @@ public partial class Player : Character
     ///<summary> Le raycaster du joueur pour detecter les objets</summary>
     public RayCast3D Raycaster;
     //[Export] public required AnimationPlayer AnimPlayer;
-    //[Export] public required PhysicsSkeleton PhysicsSkelton;
     //[Export] private Camera3D? _cam;
     private Skeleton3D? _animSkeleton;
     private Vector3 _offsetFP = new Vector3(0, 0.05f, 0.25f);
@@ -66,6 +65,7 @@ public partial class Player : Character
     private bool _showDebug = false;
     private bool _playerFocused = false;
     private bool _playerPaused = false;
+    private CameraType _lastCamType;
     //public void SetCamPos()
     //{
     //    int boneIdx = PhysicsSkelton.FindBone("Head.001");
@@ -90,7 +90,7 @@ public partial class Player : Character
             _playerFocused = ToggleCharacterFocus(_playerFocused);
         //TODO: Mettre dans un médiateur de contrôle
         // pour permettre de lose control
-        if (PhysicsSkelton == null) PhysicsSkelton = GetNode<PhysicsSkeleton>("PhysicsRig/Armature/Skeleton3D");
+        if (PhysicsSkelton == null) return;
         if (AnimPlayer == null) AnimPlayer = PhysicsSkelton.AnimPlayer;
         _animSkeleton = PhysicsSkelton.TargetSkeleton;
         speed = WalkSpeed;
@@ -127,7 +127,12 @@ public partial class Player : Character
     public override void _PhysicsProcess(double delta)
     {
         velocity = Velocity;
-
+        if (PhysicsSkelton.IsRagdoll)
+        {
+            if (_cameraMan == null) return;
+            _lastCamType = _cameraMan.CamType;
+            _cameraMan.SetCameraType(CameraType.Death);
+        }
         // En pause : on laisse la gravité tourner mais on bloque les inputs de mouvement
         if (GameMenu.IsPaused)
         {
