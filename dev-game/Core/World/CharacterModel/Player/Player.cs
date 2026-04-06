@@ -28,7 +28,7 @@ using static Utils.CameraUtils;
 /// </summary>
 public partial class Player : Character
 {
-    /*
+	/*
 	····································
 	: _____  _____  ___  ___ _____ ___ :
 	:| __\ \/ | _ \/ _ \| _ |_   _/ __|:
@@ -37,69 +37,69 @@ public partial class Player : Character
 	····································
 	*/
 
-    [ExportGroup("Player Settings")]
-    ///<summary> La vitesse de marche du personnage joué</summary>
-    [Export(PropertyHint.Range, "0.0f,10.0f,0.1f")] public float WalkSpeed = 2.5f;
-    ///<summary> Le multiplicateur de vitesse de la course </summary>
-    [Export(PropertyHint.Range, "0.0f,10.0f,0.1f")] public float RunMultiplier = 2.0f;
-    ///<summary>La force de saut du personnage</summary>
-    [Export(PropertyHint.Range, "0.0f,10.0f,0.1f")] public float JumpVelocity = 4.5f;
+	[ExportGroup("Player Settings")]
+	///<summary> La vitesse de marche du personnage joué</summary>
+	[Export(PropertyHint.Range, "0.0f,10.0f,0.1f")] public float WalkSpeed = 2.5f;
+	///<summary> Le multiplicateur de vitesse de la course </summary>
+	[Export(PropertyHint.Range, "0.0f,10.0f,0.1f")] public float RunMultiplier = 2.0f;
+	///<summary>La force de saut du personnage</summary>
+	[Export(PropertyHint.Range, "0.0f,10.0f,0.1f")] public float JumpVelocity = 4.5f;
 
-    [ExportGroup("Controller Settings")]
-    [Export(PropertyHint.Range, "0.0f,0.1f,0.001f")] private float _mouseSensitivity = 0.002f;
-    [Export(PropertyHint.Range, "0.0f,5.0f,0.05f")] private float _controllerSensitivity = 2.5f; // radians / sec
-    [ExportGroup("Character Nodes")]
-    [Export] private CameraMan? _cameraMan;
-    [Export]
-    ///<summary> Le raycaster du joueur pour detecter les objets</summary>
-    public RayCast3D Raycaster;
-    //[Export] public required AnimationPlayer AnimPlayer;
-    //[Export] public required PhysicsSkeleton PhysicsSkelton;
-    //[Export] private Camera3D? _cam;
-    private Skeleton3D? _animSkeleton;
-    private Vector3 _offsetFP = new Vector3(0, 0.05f, 0.25f);
-    private Vector3 _offsetTP = new Vector3(0, 0.1f, -1.25f);
-    private Vector3 _currentCamOffset;
-    private string? _currentAnim;
-    private Interactable? _highlightedInteractable;
-    //[Export] private Node3D _characterRig;
-    private bool _showDebug = false;
-    private bool _playerFocused = false;
-    private bool _playerPaused = false;
-    //public void SetCamPos()
-    //{
-    //    int boneIdx = PhysicsSkelton.FindBone("Head.001");
-    //    Transform3D headWorld = PhysicsSkelton.GlobalTransform * PhysicsSkelton.GetBoneGlobalPose(boneIdx);
-    //    _cam.GlobalPosition = headWorld.Origin + headWorld.Basis * _currentCamOffset;
-    //}
+	[ExportGroup("Controller Settings")]
+	[Export(PropertyHint.Range, "0.0f,0.1f,0.001f")] private float _mouseSensitivity = 0.002f;
+	[Export(PropertyHint.Range, "0.0f,5.0f,0.05f")] private float _controllerSensitivity = 2.5f; // radians / sec
+	[ExportGroup("Character Nodes")]
+	[Export] private CameraMan? _cameraMan;
+	[Export]
+	///<summary> Le raycaster du joueur pour detecter les objets</summary>
+	public RayCast3D Raycaster;
+	//[Export] public required AnimationPlayer AnimPlayer;
+	//[Export] public required PhysicsSkeleton PhysicsSkelton;
+	//[Export] private Camera3D? _cam;
+	private Skeleton3D? _animSkeleton;
+	private Vector3 _offsetFP = new Vector3(0, 0.05f, 0.25f);
+	private Vector3 _offsetTP = new Vector3(0, 0.1f, -1.25f);
+	private Vector3 _currentCamOffset;
+	private string? _currentAnim;
+	private Interactable? _highlightedInteractable;
+	//[Export] private Node3D _characterRig;
+	private bool _showDebug = false;
+	private bool _playerFocused = false;
+	private bool _playerPaused = false;
+	//public void SetCamPos()
+	//{
+	//    int boneIdx = PhysicsSkelton.FindBone("Head.001");
+	//    Transform3D headWorld = PhysicsSkelton.GlobalTransform * PhysicsSkelton.GetBoneGlobalPose(boneIdx);
+	//    _cam.GlobalPosition = headWorld.Origin + headWorld.Basis * _currentCamOffset;
+	//}
 
-    /// ···········································
-    /// : _    ___ ___ ___ _____   _____ _    ___ :
-    /// :| |  |_ _| __| __/ __\ \ / / __| |  | __|:
-    /// :| |__ | || _|| _| (__ \ V | (__| |__| _| :
-    /// :|____|___|_| |___\___| |_| \___|____|___|:
-    /// ···········································
-    public override void _Ready()
-    {
-        PeerId = Multiplayer.GetUniqueId();
+	/// ···········································
+	/// : _    ___ ___ ___ _____   _____ _    ___ :
+	/// :| |  |_ _| __| __/ __\ \ / / __| |  | __|:
+	/// :| |__ | || _|| _| (__ \ V | (__| |__| _| :
+	/// :|____|___|_| |___\___| |_| \___|____|___|:
+	/// ···········································
+	public override void _Ready()
+	{
+		PeerId = Multiplayer.GetUniqueId();
 
-        if (_cameraMan == null) return;
-        _currentCamOffset = _offsetFP;
-        if (Raycaster == null) Raycaster = _cameraMan.GetNode<RayCast3D>("PlayerCamera/RayCastTo");
-        if (DisplayServer.GetName() != "headless")
-            _playerFocused = ToggleCharacterFocus(_playerFocused);
-        //TODO: Mettre dans un médiateur de contrôle
-        // pour permettre de lose control
-        if (PhysicsSkelton == null) PhysicsSkelton = GetNode<PhysicsSkeleton>("PhysicsRig/Armature/Skeleton3D");
-        if (AnimPlayer == null) AnimPlayer = PhysicsSkelton.AnimPlayer;
-        _animSkeleton = PhysicsSkelton.TargetSkeleton;
-        speed = WalkSpeed;
-        AddToGroup("local_player");
+		if (_cameraMan == null) return;
+		_currentCamOffset = _offsetFP;
+		if (Raycaster == null) Raycaster = _cameraMan.GetNode<RayCast3D>("PlayerCamera/RayCastTo");
+		if (DisplayServer.GetName() != "headless")
+			_playerFocused = ToggleCharacterFocus(_playerFocused);
+		//TODO: Mettre dans un médiateur de contrôle
+		// pour permettre de lose control
+		if (PhysicsSkelton == null) PhysicsSkelton = GetNode<PhysicsSkeleton>("PhysicsRig/Armature/Skeleton3D");
+		if (AnimPlayer == null) AnimPlayer = PhysicsSkelton.AnimPlayer;
+		_animSkeleton = PhysicsSkelton.TargetSkeleton;
+		speed = WalkSpeed;
+		AddToGroup("local_player");
 
-    }
-    public override void _Input(InputEvent @event)
-    {
-        // Bloque tout l'input du joueur quand le menu de pause est ouvert
+	}
+	public override void _Input(InputEvent @event)
+	{
+		// Bloque tout l'input du joueur quand le menu de pause est ouvert
         if (GameMenu.IsPaused) return;
 
         if (@event is InputEventMouseMotion mouseMotion)
@@ -190,43 +190,43 @@ public partial class Player : Character
             // //TODO: Ajouter les Axis Settings (inverse axis, etc.)
             Vector3 camForward = _cameraMan.GetCameraForwardFlat();
             Vector3 camRight = _cameraMan.GetCameraRightFlat();
-            direction = (camForward * -inputDir.Y + camRight * -inputDir.X).Normalized(); //Negatif pcq notre mesh est a l'envers, oops!
+			direction = (camForward * -inputDir.Y + camRight * -inputDir.X).Normalized(); //Negatif pcq notre mesh est a l'envers, oops!
 
-            // Le corps se tourne vers la direction de déplacement
-            if (direction != Vector3.Zero)
-                Rotation = new Vector3(Rotation.X, Mathf.LerpAngle(Rotation.Y, Mathf.Atan2(-direction.X, -direction.Z), 0.15f), Rotation.Z);
-        }
-        else
-        {
-            // FP : le mouvement est relatif au corps
-            direction = -(Transform.Basis * new Vector3(-inputDir.X, 0, -inputDir.Y)).Normalized();
-        }
+			// Le corps se tourne vers la direction de déplacement
+			if (direction != Vector3.Zero)
+				Rotation = new Vector3(Rotation.X, Mathf.LerpAngle(Rotation.Y, Mathf.Atan2(-direction.X, -direction.Z), 0.15f), Rotation.Z);
+		}
+		else
+		{
+			// FP : le mouvement est relatif au corps
+			direction = -(Transform.Basis * new Vector3(-inputDir.X, 0, -inputDir.Y)).Normalized();
+		}
 
-        moveVec = direction;
-        aimVec = direction;
-        base._PhysicsProcess(delta);
-        if (currentEmoteState == EmoteState.Pointing)
-        {
-            pointVec = _cameraMan.GetRaycastPointingVector();
+		moveVec = direction;
+		aimVec = direction;
+		base._PhysicsProcess(delta);
+		if (currentEmoteState == EmoteState.Pointing)
+		{
+			pointVec = _cameraMan.GetRaycastPointingVector();
 
-        }
-        //Velocity = velocity;
-        //MoveAndSlide();
-    }
-    public override void _Process(double delta)
-    {
-        base._Process(delta);
-        //SetCamPos();
-        int boneIdx = PhysicsSkelton.FindBone("Head.001");
-        Transform3D headWorld = PhysicsSkelton.GlobalTransform * PhysicsSkelton.GetBoneGlobalPose(boneIdx);
-        //_cam.GlobalPosition = headWorld.Origin + headWorld.Basis * new Vector3(0, 0.05f, 0.25f); //TODO: mettre offset dans var
+		}
+		//Velocity = velocity;
+		//MoveAndSlide();
+	}
+	public override void _Process(double delta)
+	{
+		base._Process(delta);
+		//SetCamPos();
+		int boneIdx = PhysicsSkelton.FindBone("Head.001");
+		Transform3D headWorld = PhysicsSkelton.GlobalTransform * PhysicsSkelton.GetBoneGlobalPose(boneIdx);
+		//_cam.GlobalPosition = headWorld.Origin + headWorld.Basis * new Vector3(0, 0.05f, 0.25f); //TODO: mettre offset dans var
 
-        var interactable = GetInteractableFromRaycast(Raycaster);
-        if (interactable != _highlightedInteractable)
-        {
-            _highlightedInteractable?.OnUnhighlight();
-            _highlightedInteractable = interactable;
-            _highlightedInteractable?.OnHighlight();
-        }
-    }
+		var interactable = GetInteractableFromRaycast(Raycaster);
+		if (interactable != _highlightedInteractable)
+		{
+			_highlightedInteractable?.OnUnhighlight();
+			_highlightedInteractable = interactable;
+			_highlightedInteractable?.OnHighlight();
+		}
+	}
 }
