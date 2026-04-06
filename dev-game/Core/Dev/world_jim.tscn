@@ -8,28 +8,14 @@
 [ext_resource type="PackedScene" uid="uid://bp0rj5s7re13t" path="res://Core/World/CharacterModel/Character/RemoteCharacter.tscn" id="7_fsox0"]
 [ext_resource type="PackedScene" uid="uid://bq4rndu6x2g14" path="res://Core/Dev/map_jm.tscn" id="7_jgda3"]
 
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_uotaa"]
-sky_top_color = Color(0.65411705, 0.33944482, 0.3737305, 1)
-sky_horizon_color = Color(0.69181097, 0.41628182, 0.308251, 1)
-sky_curve = 0.7647364
-sky_energy_multiplier = 0.5
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_fsox0"]
 
-[sub_resource type="Sky" id="Sky_snkrg"]
-sky_material = SubResource("ProceduralSkyMaterial_uotaa")
+[sub_resource type="Sky" id="Sky_jgda3"]
+sky_material = SubResource("ProceduralSkyMaterial_fsox0")
 
-[sub_resource type="Environment" id="Environment_h0htf"]
+[sub_resource type="Environment" id="Environment_qaqi3"]
 background_mode = 2
-sky = SubResource("Sky_snkrg")
-ambient_light_source = 3
-ambient_light_sky_contribution = 0.5
-reflected_light_source = 2
-glow_enabled = true
-glow_normalized = true
-fog_light_color = Color(0.5471892, 0.28108355, 0.09709514, 1)
-fog_sun_scatter = 0.5
-fog_sky_affect = 0.0
-volumetric_fog_enabled = true
-volumetric_fog_albedo = Color(0.6469187, 0.37782395, 0.12717384, 1)
+sky = SubResource("Sky_jgda3")
 
 [sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_xfmh7"]
 dof_blur_far_enabled = true
@@ -57,7 +43,7 @@ _spawnPoints = [NodePath("Marker3D")]
 [node name="Environment" type="Node3D" parent="." unique_id=395441633]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="Environment" unique_id=1571055516]
-environment = SubResource("Environment_h0htf")
+environment = SubResource("Environment_qaqi3")
 camera_attributes = SubResource("CameraAttributesPractical_xfmh7")
 compositor = SubResource("Compositor_8nmog")
 
