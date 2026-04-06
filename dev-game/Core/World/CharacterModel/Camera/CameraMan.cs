@@ -155,14 +155,14 @@ public partial class CameraMan : Node3D
 	public void ComputeCameraPosition(float delta)
 	{
 		// --- Mise à jour du marqueur FP (suit l'os de la tête avec lissage) ---
-        Vector3 headPos = _player.GetHeadBonePosition();
+        Vector3 headPos = _player.PhysicsSkelton.GetNode<CollisionShape3D>("PhysicalBoneSimulator3D/Physical Bone Spine_001/CollisionShape3D").GlobalPosition;
         _fpCamMarker.GlobalPosition = _fpCamMarker.GlobalPosition.Lerp(
             headPos,
             Mathf.Clamp(_camDamping * delta, 0f, 1f)
         );
 
         // --- Mise à jour du pivot du SpringArm (maintient le marqueur TP à jour en permanence) ---
-        SpringArmThirdPerson.GlobalPosition = _player.GlobalPosition + Vector3.Up * _tpHeightOffset;
+        SpringArmThirdPerson.GlobalPosition = headPos + Vector3.Up * _tpHeightOffset;
         SpringArmThirdPerson.GlobalRotation = new Vector3(_tpPitch, _tpYaw, 0f);
 
         // --- Avancement de la transition ---
