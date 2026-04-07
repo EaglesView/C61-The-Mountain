@@ -103,9 +103,9 @@ public partial class Player : Character
 			_playerFocused = ToggleCharacterFocus(_playerFocused);
 			GameMenu.Instance?.CloseMenu();
 		}
-		if (state == CharacterState.Recovering)
+		if (state == CharacterState.Recovering && _lastCamType == CameraType.FirstPerson)
 		{
-			_cameraMan?.SetCameraType(_lastCamType);
+			_cameraMan?.SetCameraType(CameraType.FirstPerson);
 		}
 	}
 
@@ -130,6 +130,27 @@ public partial class Player : Character
 	}
 	public override void _Input(InputEvent @event)
 	{
+		if (@event is InputEventMouseMotion mouseMotion)
+		{
+
+			if (_cameraMan?.CamType == CameraType.ThirdPerson)
+			{
+				// TP : la souris orbite la caméra, le corps reste indépendant
+				_cameraMan.RotateCameraTP(
+					mouseMotion.Relative.X,
+					-mouseMotion.Relative.Y,
+					_mouseSensitivity
+				);
+			}
+			else
+			{
+				// FP : la souris tourne le corps et la tête
+				RotateY(-mouseMotion.Relative.X * _mouseSensitivity);
+			}
+			float newAngle = headAngle + mouseMotion.Relative.Y * _mouseSensitivity;
+			RotateHead(Mathf.Clamp(newAngle, Mathf.DegToRad(-80), Mathf.DegToRad(80)));
+
+		}
 		// En ragdoll : seul le saut permet de se relever
 		if (_characterState == CharacterState.Ragdoll)
 		{
@@ -145,27 +166,7 @@ public partial class Player : Character
             return;
         }
 
-        if (@event is InputEventMouseMotion mouseMotion)
-        {
 
-            if (_cameraMan?.CamType == CameraType.ThirdPerson)
-            {
-                // TP : la souris orbite la caméra, le corps reste indépendant
-                _cameraMan.RotateCameraTP(
-                    mouseMotion.Relative.X,
-                    -mouseMotion.Relative.Y,
-                    _mouseSensitivity
-                );
-            }
-            else
-            {
-                // FP : la souris tourne le corps et la tête
-                RotateY(-mouseMotion.Relative.X * _mouseSensitivity);
-            }
-            float newAngle = headAngle + mouseMotion.Relative.Y * _mouseSensitivity;
-            RotateHead(Mathf.Clamp(newAngle, Mathf.DegToRad(-80), Mathf.DegToRad(80)));
-
-        }
     }
     public override void _PhysicsProcess(double delta)
     {
