@@ -16,6 +16,23 @@ sky_material = SubResource("ProceduralSkyMaterial_fsox0")
 [sub_resource type="Environment" id="Environment_qaqi3"]
 background_mode = 2
 sky = SubResource("Sky_jgda3")
+ambient_light_source = 3
+reflected_light_source = 2
+tonemap_mode = 3
+ssao_enabled = true
+ssil_enabled = true
+sdfgi_enabled = true
+glow_enabled = true
+glow_normalized = true
+glow_intensity = 0.4
+glow_strength = 0.92
+glow_bloom = 1.0
+glow_blend_mode = 0
+fog_enabled = true
+fog_light_color = Color(0.103219725, 0.07019778, 0.035033133, 1)
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.01
+volumetric_fog_length = 11.22
 
 [sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_xfmh7"]
 dof_blur_far_enabled = true
@@ -33,13 +50,12 @@ script = ExtResource("1_e3c1y")
 [node name="GameMenu" parent="." unique_id=1229459489 instance=ExtResource("5_cctn4")]
 
 [node name="PlayerSpawner" parent="." unique_id=1973612002 node_paths=PackedStringArray("_spawnPoints") instance=ExtResource("6_y36ud")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.295231, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.7944541, 2.6187654, 0)
 _playerScene = ExtResource("3_e3c1y")
 _remoteCharacterScene = ExtResource("7_fsox0")
 _spawnPoints = [NodePath("Marker3D")]
 
 [node name="Marker3D" type="Marker3D" parent="PlayerSpawner" unique_id=189181669]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.86144507, -4.012179, 0)
 
 [node name="Environment" type="Node3D" parent="." unique_id=395441633]
 
@@ -52,3 +68,4 @@ compositor = SubResource("Compositor_8nmog")
 transform = Transform3D(0.9659258, 0.1830127, 0.1830127, -0.25881907, 0.6830128, 0.6830128, 0, -0.7071068, 0.7071068, 0, 8.155859, 0)
 
 [node name="MapJm" parent="." unique_id=544405956 instance=ExtResource("7_jgda3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0030918121, 0, -0.0027985573)
