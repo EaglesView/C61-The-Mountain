@@ -42,9 +42,11 @@ public partial class PhysicsSkeleton : Skeleton3D
     [Export(PropertyHint.Range, "0.0f,200.0f,1,0f")] public float AngularSpringDamping = 80.0f;
     [Export(PropertyHint.Range, "0.0f,5.0f,0,1f")] public float RagdollGraceTime = 1.0f;
     private float _graceTime = 0.0f;
-    protected static float forceThreshold = 250.0f;
+    protected static float forceThreshold = 500.0f;
     ///<summary>Définit si le personnage est en ragdoll ou pas</summary>
     [Export] public bool IsRagdoll = false;
+    ///<summary>Flag levé par PhysicsSkeleton, lu et reset par Character._PhysicsProcess</summary>
+    public bool RagdollTriggered { get; set; } = false;
 
     private float _gestureBlend = 0f;
     private Vector3 _displacementThreshold = new Vector3(forceThreshold, forceThreshold, forceThreshold);
@@ -161,19 +163,11 @@ public partial class PhysicsSkeleton : Skeleton3D
     }
     public override void _PhysicsProcess(double delta)
     {
-        if (Input.IsActionJustPressed("jump"))
-        {
-            IsRagdoll = false;
-        }
         if (_physicsBones == null) return;
 
         if (IsRagdoll)
         {
             _graceTime = RagdollGraceTime;
-            foreach (PhysicalBone3D bone in _physicsBones)
-            {
-                bone.LinearVelocity += bone.GetGravity() * (float)delta;
-            }
         }
         if (_graceTime > 0f)
         {
@@ -201,10 +195,9 @@ public partial class PhysicsSkeleton : Skeleton3D
 
             Vector3 Force = HookesLaw(PositionDifference, bone.LinearVelocity, LinStiff, LinDamp);
             //On check la force selon un threshold, pour linstant juste print:
-            if (Force > _displacementThreshold && _graceTime <= 0f)
+            if (!IsRagdoll && Force > _displacementThreshold && _graceTime <= 0f)
             {
-                IsRagdoll = true;
-
+                RagdollTriggered = true;
             }
             // LINEAR APPLY
             bone.LinearVelocity += Force * (float)delta; //linear
@@ -244,7 +237,7 @@ public partial class PhysicsSkeleton : Skeleton3D
         return GetPoseFromIdx(InIsPhysicsSkeleton ? this : TargetSkeleton, InIsPhysicsSkeleton ? physicBone : _headBoneIdx);
     }
 
-	// Called every frame. 'delta' is the elapsed time since the previous frame.
+    // Called every frame. 'delta' is the elapsed time since the previous frame.
     public override void _Process(double delta)
     {
         //Process roule apres physicsprocess(), et a cause de

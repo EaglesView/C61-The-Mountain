@@ -79,8 +79,39 @@ public partial class Player : Character
 	/// :| |__ | || _|| _| (__ \ V | (__| |__| _| :
 	/// :|____|___|_| |___\___| |_| \___|____|___|:
 	/// ···········································
+	protected override void EnterState(CharacterState state)
+	{
+		base.EnterState(state);
+		if (state == CharacterState.Paused)
+		{
+			_playerFocused = ToggleCharacterFocus(_playerFocused);
+			GameMenu.Instance?.OpenMenu();
+		}
+		if (state == CharacterState.Ragdoll && _cameraMan != null)
+		{
+			_lastCamType = _cameraMan.CamType;
+			if (_cameraMan.CamType == CameraType.FirstPerson)
+				_cameraMan.SetCameraType(CameraType.ThirdPerson);
+		}
+	}
+
+	protected override void ExitState(CharacterState state)
+	{
+		base.ExitState(state);
+		if (state == CharacterState.Paused)
+		{
+			_playerFocused = ToggleCharacterFocus(_playerFocused);
+			GameMenu.Instance?.CloseMenu();
+		}
+		if (state == CharacterState.Recovering && _lastCamType == CameraType.FirstPerson)
+		{
+			_cameraMan?.SetCameraType(CameraType.FirstPerson);
+		}
+	}
+
 	public override void _Ready()
 	{
+		base._Ready();
 		PeerId = Multiplayer.GetUniqueId();
 
 		if (_cameraMan == null) return;
@@ -99,39 +130,57 @@ public partial class Player : Character
 	}
 	public override void _Input(InputEvent @event)
 	{
+		if (@event is InputEventMouseMotion mouseMotion)
+		{
+
+			if (_cameraMan?.CamType == CameraType.ThirdPerson)
+			{
+				// TP : la souris orbite la caméra, le corps reste indépendant
+				_cameraMan.RotateCameraTP(
+					mouseMotion.Relative.X,
+					-mouseMotion.Relative.Y,
+					_mouseSensitivity
+				);
+			}
+			else
+			{
+				// FP : la souris tourne le corps et la tête
+				RotateY(-mouseMotion.Relative.X * _mouseSensitivity);
+			}
+			float newAngle = headAngle + mouseMotion.Relative.Y * _mouseSensitivity;
+			RotateHead(Mathf.Clamp(newAngle, Mathf.DegToRad(-80), Mathf.DegToRad(80)));
+
+		}
+		// En ragdoll : seul le saut permet de se relever
+		if (_characterState == CharacterState.Ragdoll)
+		{
+			if (@event.IsActionPressed("jump"))
+				TransitionTo(CharacterState.Recovering);
+			return;
+		}
 		// Bloque tout l'input du joueur quand le menu de pause est ouvert
-        if (GameMenu.IsPaused) return;
-
-        if (@event is InputEventMouseMotion mouseMotion)
+        if (_characterState == CharacterState.Paused)
         {
-
-            if (_cameraMan?.CamType == CameraType.ThirdPerson)
-            {
-                // TP : la souris orbite la caméra, le corps reste indépendant
-                _cameraMan.RotateCameraTP(
-                    mouseMotion.Relative.X,
-                    -mouseMotion.Relative.Y,
-                    _mouseSensitivity
-                );
-            }
-            else
-            {
-                // FP : la souris tourne le corps et la tête
-                RotateY(-mouseMotion.Relative.X * _mouseSensitivity);
-            }
-            float newAngle = headAngle + mouseMotion.Relative.Y * _mouseSensitivity;
-            RotateHead(Mathf.Clamp(newAngle, Mathf.DegToRad(-80), Mathf.DegToRad(80)));
-
+            if (@event.IsActionPressed("pause_menu"))
+                TransitionTo(_stateBeforePause);
+            return;
         }
+
+
     }
     public override void _PhysicsProcess(double delta)
     {
         velocity = Velocity;
         if (_cameraMan == null) return;
 
+        if (_characterState == CharacterState.Ragdoll)
+        {
+            base._PhysicsProcess(delta);
+            return;
+        }
 
         // En pause : on laisse la gravité tourner mais on bloque les inputs de mouvement
-        if (GameMenu.IsPaused)
+        if (_characterState == CharacterState.Paused)
         {
             moveVec = Vector3.Zero;
             aimVec = Vector3.Zero;
@@ -139,28 +188,31 @@ public partial class Player : Character
             return;
         }
 
-        // Handle Jump.
-        if (Input.IsActionJustPressed("jump") && IsOnFloor())
+        // wipee jumpy
+        if (Input.IsActionJustPressed("jump") && IsOnFloor()
+            && (_characterState == CharacterState.Idle || _characterState == CharacterState.Moving))
         {
             velocity.Y = JumpVelocity;
+            TransitionTo(CharacterState.Airborne);
         }
         if (Input.IsActionJustPressed("run"))
         {
-            WalkSpeed *= RunMultiplier;
+            speed *= RunMultiplier;
             AnimPlayer.SpeedScale *= RunMultiplier;
+        }
+        if (Input.IsActionJustReleased("run"))
+        {
+            speed /= RunMultiplier;
+            AnimPlayer.SpeedScale /= RunMultiplier;
         }
         if (Input.IsActionJustPressed("pause_menu"))
         {
-            _playerFocused = ToggleCharacterFocus(_playerFocused);
-            GD.Print("In Menus!");
-            GameMenu.Instance?.OpenMenu();
+            TransitionTo(CharacterState.Paused);
         }
         if (Input.IsActionJustPressed("interact"))
         {
 
             GetObjectTypeFromRaycast(Raycaster);
-            //TEMPORAIRE : Changer la camera a third person pour voir le rig
-            //_currentCamOffset = (_currentCamOffset == _offsetFP)?_offsetTP:_offsetFP;
             PhysicsSkelton.Aiming = false;
             currentEmoteState = EmoteState.None; //temporary
             var interactable = GetInteractableFromRaycast(Raycaster);

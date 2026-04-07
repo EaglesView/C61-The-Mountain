@@ -5,9 +5,9 @@
 /// |     |_| |_||_\___| |_|  |_\___/\_,_|_||_\__\__,_|_|_||_|    |
 /// |                                                             |
 /// |  ---------------------------------------------------------  |
-/// |  Fichier:               Player.cs                           |
+/// |  Fichier:               Character.cs                        |
 /// |  Auteur:           Jean-Marc Bouchard                       |
-/// |  Fonction: Permet de contrôler le personnage client         |
+/// |  Fonction: Classe de base du personnage — FSM + physique    |
 /// |  ---------------------------------------------------------  |
 /// |                                                             |
 /// |                                                             |
@@ -30,6 +30,7 @@ public partial class Character : CharacterBody3D
 	[ExportGroup("Character Nodes")]
 	[Export] protected AnimationPlayer AnimPlayer;
 	[Export] public PhysicsSkeleton PhysicsSkelton;
+	[Export] protected CollisionShape3D? _capsule;
 
 	[ExportGroup("Fall Recovery")]
 	[Export] public float FallLimit = -50.0f;
@@ -43,7 +44,10 @@ public partial class Character : CharacterBody3D
 	protected MovementState currentMovementState = MovementState.Idle;
 	protected EmoteState currentEmoteState = EmoteState.None;
 	protected float prevHeadAngle, headAngle = 0.0f;
-	private bool _prevRagdoll = false;
+	protected CharacterState _characterState = CharacterState.Idle;
+	protected CharacterState _stateBeforePause = CharacterState.Idle;
+	protected float _graceTime = 0f;
+	private CollisionShape3D? _spineCollBox;
 	public Vector3 SpawnPosition { get; set; } = Vector3.Zero;
 
 
@@ -108,6 +112,47 @@ public partial class Character : CharacterBody3D
 		}
 	}
 
+	// ── FSM ──────────────────────────────────────────────────────────────────
+
+	public void TransitionTo(CharacterState next)
+	{
+		if (_characterState == next) return;
+		if (next == CharacterState.Paused)
+			_stateBeforePause = _characterState;
+		ExitState(_characterState);
+		_characterState = next;
+		EnterState(_characterState);
+	}
+
+	protected virtual void EnterState(CharacterState state)
+	{
+		switch (state)
+		{
+			case CharacterState.Ragdoll:
+				if (_capsule != null) _capsule.Disabled = true;
+				PhysicsSkelton.IsRagdoll = true;
+				PhysicsSkelton.RagdollTriggered = false;
+				break;
+			case CharacterState.Recovering:
+				if (_spineCollBox != null)
+					GlobalPosition = _spineCollBox.GlobalPosition;
+				Rotation = new Vector3(0f, Rotation.Y, 0f);
+				_graceTime = PhysicsSkelton.RagdollGraceTime;
+				break;
+		}
+	}
+
+	protected virtual void ExitState(CharacterState state)
+	{
+		switch (state)
+		{
+			case CharacterState.Ragdoll:
+				PhysicsSkelton.IsRagdoll = false;
+				if (_capsule != null) _capsule.Disabled = false;
+				break;
+		}
+	}
+
 	/// ···········································
 	/// : _    ___ ___ ___ _____   _____ _    ___ :
 	/// :| |  |_ _| __| __/ __\ \ / / __| |  | __|:
@@ -115,41 +160,60 @@ public partial class Character : CharacterBody3D
 	/// :|____|___|_| |___\___| |_| \___|____|___|:
 	/// ···········································
 
+	public override void _Ready()
+	{
+		_spineCollBox = GetNodeOrNull<CollisionShape3D>(
+			"PhysicsRig/Armature/Skeleton3D/PhysicalBoneSimulator3D/Physical Bone Spine_001/CollisionShape3D");
+	}
+
 	public override void _PhysicsProcess(double delta)
 	{
-		//  CheckIf Out of Bounds, si oui respawn
 		if (GlobalPosition.Y < FallLimit)
 		{
 			GlobalPosition = SpawnPosition;
 			velocity = Vector3.Zero;
-		}
-		if (PhysicsSkelton.IsRagdoll)
-		{
-			_prevRagdoll = true;
-			return; // CharacterBody3D stays put, physical bones simulate freely
+			TransitionTo(CharacterState.Idle);
 		}
 
-		if (_prevRagdoll)
-		{
-			// Leaving ragdoll: snap character to where the spine landed
-			CollisionShape3D spineCollBox =
-	GetNode<CollisionShape3D>("PhysicsRig/Armature/Skeleton3D/PhysicalBoneSimulator3D/Physical Bone Spine_001/CollisionShape3D");
-			GlobalPosition = spineCollBox.GlobalPosition;
-			Rotation = new Vector3(0f, Rotation.Y, 0f);
-			_prevRagdoll = false;
-		}
-		// Add the gravity.
-		if (!IsOnFloor())
-		{
-			velocity += GetGravity() * (float)delta;
-		}
+		if (PhysicsSkelton.RagdollTriggered && _characterState != CharacterState.Ragdoll)
+			TransitionTo(CharacterState.Ragdoll);
 
-		Vector3 inputDir = moveVec;
-		Vector3 direction = aimVec;
-		if (direction != Vector3.Zero)
+		switch (_characterState)
 		{
-			velocity.X = direction.X * speed;
-			velocity.Z = direction.Z * speed;
+			case CharacterState.Ragdoll:
+				return;
+
+			case CharacterState.Recovering:
+				_graceTime -= (float)delta;
+				_PhysicsGrounded(delta);
+				_CheckRecoveringTransitions();
+				break;
+
+			case CharacterState.Paused:
+				if (!IsOnFloor()) velocity += GetGravity() * (float)delta;
+				Velocity = velocity;
+				MoveAndSlide();
+				break;
+
+			case CharacterState.Airborne:
+				_PhysicsAirborne(delta);
+				_CheckAirborneTransitions();
+				break;
+
+			default: // Idle, Moving
+				_PhysicsGrounded(delta);
+				_CheckGroundedTransitions();
+				break;
+		}
+	}
+
+	private void _PhysicsGrounded(double delta)
+	{
+		if (!IsOnFloor()) velocity += GetGravity() * (float)delta;
+		if (aimVec != Vector3.Zero)
+		{
+			velocity.X = aimVec.X * speed;
+			velocity.Z = aimVec.Z * speed;
 		}
 		else
 		{
@@ -161,12 +225,58 @@ public partial class Character : CharacterBody3D
 		Velocity = velocity;
 		MoveAndSlide();
 	}
+
+	private void _PhysicsAirborne(double delta)
+	{
+		velocity += GetGravity() * (float)delta;
+		if (aimVec != Vector3.Zero)
+		{
+			velocity.X = aimVec.X * speed;
+			velocity.Z = aimVec.Z * speed;
+		}
+		PhysicsSkelton.HeadAngle = -headAngle;
+		ComputeEmotePhysics();
+		Velocity = velocity;
+		MoveAndSlide();
+	}
+
+	private void _CheckGroundedTransitions()
+	{
+		if (!IsOnFloor())
+			TransitionTo(CharacterState.Airborne);
+		else if (moveVec != Vector3.Zero)
+			TransitionTo(CharacterState.Moving);
+		else
+			TransitionTo(CharacterState.Idle);
+	}
+
+	private void _CheckAirborneTransitions()
+	{
+		if (IsOnFloor())
+			TransitionTo(moveVec != Vector3.Zero ? CharacterState.Moving : CharacterState.Idle);
+	}
+
+	private void _CheckRecoveringTransitions()
+	{
+		if (_graceTime <= 0f && IsOnFloor())
+			TransitionTo(moveVec != Vector3.Zero ? CharacterState.Moving : CharacterState.Idle);
+	}
+
+	private MovementState _CharacterStateToMovementState()
+	{
+		return _characterState switch
+		{
+			CharacterState.Moving => MovementState.Walking,
+			CharacterState.Ragdoll or CharacterState.Recovering => MovementState.Ragdolling,
+			_ => MovementState.Idle
+		};
+	}
+
 	public override void _Process(double delta)
 	{
-		MovementState newMovementState = GetMovementStateFromMovement(moveVec, aimVec);
+		MovementState newMovementState = _CharacterStateToMovementState();
 		if (currentMovementState == newMovementState) return;
 		currentMovementState = newMovementState;
 		PlayAnimationFromMovement(newMovementState, AnimPlayer);
-
 	}
 }

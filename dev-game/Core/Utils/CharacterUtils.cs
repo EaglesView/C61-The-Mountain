@@ -25,7 +25,7 @@ namespace Utils;
 public static class CharacterUtils
 {
     ///<summary>
-    /// L'état de mouvement du personnage.
+    /// L'état de mouvement du personnage. À ne pas confondre avec le CharacterState qui gère tout.
     /// </summary>
     public enum MovementState
     {
@@ -39,6 +39,24 @@ public static class CharacterUtils
         Sliding,
         ///<summary>L'état ou le personnage se pitche partout n'importe comment</summary>
         Ragdolling
+    }
+    ///<summary>
+    /// Machine à états finis du personnage
+    ///</summary>
+    public enum CharacterState
+    {
+        ///<summary>Au sol, immobile</summary>
+        Idle,
+        ///<summary>Au sol, en déplacement</summary>
+        Moving,
+        ///<summary>En l'air (saut ou chute)</summary>
+        Airborne,
+        ///<summary>Ragdoll physique actif</summary>
+        Ragdoll,
+        ///<summary>Récupération post-ragdoll (grâce active)</summary>
+        Recovering,
+        ///<summary>Menu de pause ouvert</summary>
+        Paused
     }
 
     ///<summary>
