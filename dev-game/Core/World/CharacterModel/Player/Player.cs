@@ -87,6 +87,12 @@ public partial class Player : Character
 			_playerFocused = ToggleCharacterFocus(_playerFocused);
 			GameMenu.Instance?.OpenMenu();
 		}
+		if (state == CharacterState.Ragdoll && _cameraMan != null)
+		{
+			_lastCamType = _cameraMan.CamType;
+			if (_cameraMan.CamType == CameraType.FirstPerson)
+				_cameraMan.SetCameraType(CameraType.ThirdPerson);
+		}
 	}
 
 	protected override void ExitState(CharacterState state)
@@ -96,6 +102,10 @@ public partial class Player : Character
 		{
 			_playerFocused = ToggleCharacterFocus(_playerFocused);
 			GameMenu.Instance?.CloseMenu();
+		}
+		if (state == CharacterState.Recovering)
+		{
+			_cameraMan?.SetCameraType(_lastCamType);
 		}
 	}
 
