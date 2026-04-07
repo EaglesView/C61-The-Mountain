@@ -1,6 +1,7 @@
 # Godot 4+ specific ignores
 .godot/
 .nomedia
+.env
 
 # Godot-specific ignores
 .import/
@@ -9,7 +10,9 @@ export_credentials.cfg
 
 # Imported translations (automatically generated from CSV files)
 *.translation
-
+.zed/*
+.zed/tasks.json
+.vscode/*
 # Mono-specific ignores
 .mono/
 data_*/

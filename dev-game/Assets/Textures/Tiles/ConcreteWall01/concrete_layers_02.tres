@@ -1,0 +1,19 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://dv1iby3es4l1"]
+
+[ext_resource type="Texture2D" uid="uid://datdy8bwt7sag" path="res://Assets/Textures/Tiles/ConcreteWall01/textures/concrete_layers_02_diff_1k.jpg" id="1_pwehc"]
+[ext_resource type="Texture2D" uid="uid://dfkq77xomd1qw" path="res://Assets/Textures/Tiles/ConcreteWall01/textures/concrete_layers_02_arm_1k.jpg" id="2_r70ca"]
+[ext_resource type="Texture2D" uid="uid://cyg8sho8le4yu" path="res://Assets/Textures/Tiles/ConcreteWall01/textures/concrete_layers_02_nor_gl_1k.jpg" id="3_ofj4p"]
+
+[resource]
+resource_name = "concrete_layers_02"
+cull_mode = 2
+albedo_texture = ExtResource("1_pwehc")
+metallic_texture = ExtResource("2_r70ca")
+metallic_texture_channel = 2
+roughness_texture = ExtResource("2_r70ca")
+roughness_texture_channel = 1
+normal_enabled = true
+normal_texture = ExtResource("3_ofj4p")
+uv1_scale = Vector3(0.9, 0.9, 0.9)
+uv1_triplanar = true
+uv1_world_triplanar = true

@@ -14,3 +14,5 @@ roughness_texture = ExtResource("2_vtty6")
 roughness_texture_channel = 1
 normal_enabled = true
 normal_texture = ExtResource("3_1pvap")
+uv1_triplanar = true
+uv1_world_triplanar = true

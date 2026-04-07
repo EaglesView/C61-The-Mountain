@@ -1,11 +1,9 @@
 [gd_scene format=3 uid="uid://wiv6unu7g4eu"]
 
 [ext_resource type="Script" uid="uid://tsx8orx6evvg" path="res://Core/World/Interaction/BasicButtonInteractable.cs" id="1_button"]
+[ext_resource type="PackedScene" uid="uid://dp4iyypp3l3nu" path="res://Assets/Models/Interactables/button.glb" id="2_x7g7f"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_body"]
-size = Vector3(1, 0.25, 1)
-
-[sub_resource type="BoxMesh" id="BoxMesh_visual"]
 size = Vector3(1, 0.25, 1)
 
 [node name="BasicButtonInteractable" type="StaticBody3D" unique_id=1674657208]
@@ -13,8 +11,8 @@ transform = Transform3D(2.676521, 0, 0, 0, 6.256791, 0, 0, 0, 1, 0, 0, 0)
 script = ExtResource("1_button")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=865829160]
+transform = Transform3D(0.52877414, 0, 0, 0, 0.7674432, 0, 0, 0, 1.1336527, 0, 0.06118614, 0)
 shape = SubResource("BoxShape3D_body")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1262835061]
-transform = Transform3D(1, 0, 0, 0, 0.8996056, 0, 0, 0, 1, 0, 0, 0)
-mesh = SubResource("BoxMesh_visual")
+[node name="button" parent="." unique_id=521463273 instance=ExtResource("2_x7g7f")]
+transform = Transform3D(0.37361935, 0, 0, 0, 0.15982634, 0, 0, 0, 1, 0, 0, 0)

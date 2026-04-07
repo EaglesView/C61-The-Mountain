@@ -1,3 +1,6 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+
+# Secrets — copy .env.example to .env and fill in values
+.env

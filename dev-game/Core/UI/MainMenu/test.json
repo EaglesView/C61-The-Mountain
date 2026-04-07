@@ -1,0 +1,14 @@
+{
+  "code": "TEST123",
+  "hostUserId": "user1",
+  "serverIp": "5.78.190.227",
+  "serverPort": 7777,
+  "status": "waiting",
+  "maxPlayers": 8,
+  "players": {
+    "user1": {
+      "username": "Sam",
+      "isHost": true
+    }
+  }
+}
