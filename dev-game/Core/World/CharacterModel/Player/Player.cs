@@ -173,6 +173,12 @@ public partial class Player : Character
         velocity = Velocity;
         if (_cameraMan == null) return;
 
+        if (_characterState == CharacterState.Ragdoll)
+        {
+            base._PhysicsProcess(delta);
+            return;
+        }
+
         // En pause : on laisse la gravité tourner mais on bloque les inputs de mouvement
         if (_characterState == CharacterState.Paused)
         {
