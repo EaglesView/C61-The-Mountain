@@ -42,6 +42,12 @@ public partial class PressurePlate : Node3D
 		_isPressed = true;
 		if (Light != null)
 			Light.Visible = true;
+		var mesh = Button.GetNode<MeshInstance3D>("MeshInstance3D");
+		var mat = mesh.GetActiveMaterial(0) as StandardMaterial3D;
+		if (mat != null)
+		{
+			mat.EmissionEnabled = true;
+		}
 		var tween = CreateTween();
 		tween.TweenProperty(Button, "position", _buttonRestPosition + Vector3.Down * PressDepth, AnimationDuration);
 		EmitSignal(SignalName.Activated);
@@ -52,6 +58,10 @@ public partial class PressurePlate : Node3D
 		_isPressed = false;
 		if (Light != null)
 			Light.Visible = false;
+		var mesh = Button.GetNode<MeshInstance3D>("MeshInstance3D");
+		var mat = mesh.GetActiveMaterial(0) as StandardMaterial3D;
+		if (mat != null)
+			mat.EmissionEnabled = false;
 		var tween = CreateTween();
 		tween.TweenProperty(Button, "position", _buttonRestPosition, AnimationDuration);
 		EmitSignal(SignalName.Deactivated);

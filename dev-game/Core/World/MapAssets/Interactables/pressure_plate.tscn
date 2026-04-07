@@ -7,7 +7,6 @@ size = Vector2(1, 1)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fg0mt"]
 albedo_color = Color(1, 0, 0, 1)
-emission_enabled = true
 emission = Color(1, 0, 0, 1)
 emission_energy_multiplier = 39.95
 
@@ -35,7 +34,7 @@ collision_layer = 2
 collision_mask = 3
 sync_to_physics = false
 
-[node name="MeshInstance3D2" type="MeshInstance3D" parent="Button" unique_id=1500392338]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Button" unique_id=1500392338]
 mesh = SubResource("BoxMesh_21if1")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Button" unique_id=2074752447]
