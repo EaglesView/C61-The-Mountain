@@ -69,6 +69,7 @@ public partial class Character : CharacterBody3D
 		return PhysicsSkelton.GetPoseTargetSkel(true).Origin;
 	}
 	public float GetHeadAngle() => headAngle;
+	public CharacterState GetCurrentState() => _characterState;
 
 	// ── Network ──────────────────────────────────────────────────────────────
 
