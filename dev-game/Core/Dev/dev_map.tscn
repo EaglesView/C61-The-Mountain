@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://cxvenxb1m26wm"]
+
+[ext_resource type="Material" uid="uid://bx6qeabdhq2s" path="res://addons/kenney_prototype_tools/materials/dark/material_01.tres" id="1_8xl54"]
+[ext_resource type="PackedScene" uid="uid://w2vuvhf2iyy6" path="res://Core/World/MapAssets/MainAssets/vent_blower.tscn" id="2_ccc14"]
+[ext_resource type="PackedScene" uid="uid://3lj7a0stmiiv" path="res://Core/World/MapAssets/MainAssets/rotating_thing_animatable.tscn" id="3_ibgka"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_dguye"]
+material = ExtResource("1_8xl54")
+size = Vector2(500, 500)
+
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_ccc14"]
+
+[node name="DevMap" type="Node3D" unique_id=110067603]
+
+[node name="MainFloor" type="MeshInstance3D" parent="." unique_id=745499457]
+mesh = SubResource("PlaneMesh_dguye")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="MainFloor" unique_id=81730352]
+collision_layer = 2
+collision_mask = 5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="MainFloor/StaticBody3D" unique_id=669121185]
+shape = SubResource("WorldBoundaryShape3D_ccc14")
+
+[node name="VentBlower" parent="." unique_id=1091358536 instance=ExtResource("2_ccc14")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, 0)
+
+[node name="RotatingThing" parent="." unique_id=903562714 instance=ExtResource("3_ibgka")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, -8)
+
+[node name="RotatingThing2" parent="." unique_id=1454467726 instance=ExtResource("3_ibgka")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, 8)
+RotationSpeed = 2.0

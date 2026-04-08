@@ -6,33 +6,20 @@
 [ext_resource type="PackedScene" uid="uid://c6b388a8o2od" path="res://Core/UI/GameMenu/game_menu.tscn" id="5_cctn4"]
 [ext_resource type="PackedScene" uid="uid://d1fshm7mq3au7" path="res://Core/World/MapAssets/MainAssets/player_spawner.tscn" id="6_y36ud"]
 [ext_resource type="PackedScene" uid="uid://bp0rj5s7re13t" path="res://Core/World/CharacterModel/Character/RemoteCharacter.tscn" id="7_fsox0"]
-[ext_resource type="PackedScene" uid="uid://bq4rndu6x2g14" path="res://Core/Dev/map_jm.tscn" id="7_jgda3"]
+[ext_resource type="PackedScene" uid="uid://cxvenxb1m26wm" path="res://Core/Dev/dev_map.tscn" id="7_jgda3"]
 
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_fsox0"]
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_qaqi3"]
 
-[sub_resource type="Sky" id="Sky_jgda3"]
-sky_material = SubResource("ProceduralSkyMaterial_fsox0")
+[sub_resource type="Sky" id="Sky_kpm8b"]
+sky_material = SubResource("ProceduralSkyMaterial_qaqi3")
 
-[sub_resource type="Environment" id="Environment_qaqi3"]
+[sub_resource type="Environment" id="Environment_uotaa"]
 background_mode = 2
-sky = SubResource("Sky_jgda3")
-ambient_light_source = 3
-reflected_light_source = 2
-tonemap_mode = 3
+sky = SubResource("Sky_kpm8b")
+ssr_enabled = true
 ssao_enabled = true
 ssil_enabled = true
-sdfgi_enabled = true
 glow_enabled = true
-glow_normalized = true
-glow_intensity = 0.4
-glow_strength = 0.92
-glow_bloom = 1.0
-glow_blend_mode = 0
-fog_enabled = true
-fog_light_color = Color(0.103219725, 0.07019778, 0.035033133, 1)
-volumetric_fog_enabled = true
-volumetric_fog_density = 0.01
-volumetric_fog_length = 11.22
 
 [sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_xfmh7"]
 dof_blur_far_enabled = true
@@ -60,12 +47,11 @@ _spawnPoints = [NodePath("Marker3D")]
 [node name="Environment" type="Node3D" parent="." unique_id=395441633]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="Environment" unique_id=1571055516]
-environment = SubResource("Environment_qaqi3")
+environment = SubResource("Environment_uotaa")
 camera_attributes = SubResource("CameraAttributesPractical_xfmh7")
 compositor = SubResource("Compositor_8nmog")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="Environment" unique_id=953799062]
 transform = Transform3D(0.9659258, 0.1830127, 0.1830127, -0.25881907, 0.6830128, 0.6830128, 0, -0.7071068, 0.7071068, 0, 8.155859, 0)
 
-[node name="MapJm" parent="." unique_id=544405956 instance=ExtResource("7_jgda3")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0030918121, 0, -0.0027985573)
+[node name="DevMap" parent="." unique_id=110067603 instance=ExtResource("7_jgda3")]
