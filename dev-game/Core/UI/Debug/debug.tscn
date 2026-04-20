@@ -3,7 +3,7 @@
 [ext_resource type="Theme" uid="uid://barb3fnyyh5h7" path="res://Config/themes/debug_theme.tres" id="1_d6iev"]
 [ext_resource type="Script" uid="uid://vun14e1nnrxy" path="res://Core/UI/Debug/Debug.cs" id="1_u2dwp"]
 
-[node name="Debug" type="Control" unique_id=752801447 node_paths=PackedStringArray("_fpsValue", "_serverValue", "_responseTimeValue", "_playerAmtValue", "_pingValue", "_positionXLabel", "_positionYLabel", "_headAngleRadLabel", "_headAngleDegLabel", "_velocityLabel")]
+[node name="Debug" type="Control" unique_id=752801447 node_paths=PackedStringArray("_fpsValue", "_serverValue", "_responseTimeValue", "_playerAmtValue", "_pingValue", "_positionXLabel", "_positionYLabel", "_positionZLabel", "_headAngleRadLabel", "_headAngleDegLabel", "_velocityLabel", "_speedLabel", "_characterStateLabel", "_isOnFloorLabel", "_isRagdollLabel")]
 layout_mode = 3
 anchors_preset = 0
 offset_right = 40.0
@@ -18,9 +18,14 @@ _playerAmtValue = NodePath("PanelContainer/MarginContainer/VBoxContainer/PlayerA
 _pingValue = NodePath("PanelContainer/MarginContainer/VBoxContainer/Ping/ValueLabel")
 _positionXLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/PosX/ValueLabel")
 _positionYLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/PoxY/ValueLabel")
+_positionZLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/PosZ/ValueLabel")
 _headAngleRadLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/HeadAngleRad/ValueLabel")
 _headAngleDegLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/HeadAngleDeg/ValueLabel")
 _velocityLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/Velocity/ValueLabel")
+_speedLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/Speed/ValueLabel")
+_characterStateLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/CharacterState/ValueLabel")
+_isOnFloorLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/IsOnFloor/ValueLabel")
+_isRagdollLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/IsRagdoll/ValueLabel")
 
 [node name="PanelContainer" type="PanelContainer" parent="." unique_id=370331976]
 layout_mode = 0
@@ -103,6 +108,23 @@ theme = ExtResource("1_d6iev")
 theme_override_font_sizes/font_size = 8
 text = "0.000000000000"
 
+[node name="PosZ" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=311111101]
+layout_mode = 2
+alignment = 1
+
+[node name="PosZLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/PosZ" unique_id=311111102]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "Z:"
+
+[node name="ValueLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/PosZ" unique_id=311111103]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "0.000"
+
 [node name="Velocity" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=811955158]
 layout_mode = 2
 alignment = 1
@@ -153,6 +175,81 @@ layout_mode = 2
 theme = ExtResource("1_d6iev")
 theme_override_font_sizes/font_size = 8
 text = "0.0000"
+
+[node name="Speed" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=311111104]
+layout_mode = 2
+alignment = 1
+
+[node name="SpeedLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/Speed" unique_id=311111105]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "Speed:"
+
+[node name="ValueLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/Speed" unique_id=311111106]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "0.00"
+
+[node name="CharacterStateTitleLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=311111107]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_type_variation = &"HeaderLarge"
+theme_override_font_sizes/font_size = 10
+text = "-~-CHARACTER STATE-~-"
+
+[node name="CharacterState" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=311111108]
+layout_mode = 2
+alignment = 1
+
+[node name="CharacterStateLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/CharacterState" unique_id=311111109]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "State:"
+
+[node name="ValueLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/CharacterState" unique_id=311111110]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "Idle"
+
+[node name="IsOnFloor" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=311111111]
+layout_mode = 2
+alignment = 1
+
+[node name="IsOnFloorLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/IsOnFloor" unique_id=311111112]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "On Floor:"
+
+[node name="ValueLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/IsOnFloor" unique_id=311111113]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "False"
+
+[node name="IsRagdoll" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=311111114]
+layout_mode = 2
+alignment = 1
+
+[node name="IsRagdollLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/IsRagdoll" unique_id=311111115]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "Ragdoll:"
+
+[node name="ValueLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/IsRagdoll" unique_id=311111116]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "False"
 
 [node name="ServerPerformanceLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=1207138300]
 layout_mode = 2

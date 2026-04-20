@@ -103,6 +103,11 @@ public partial class Player : Character
 			_playerFocused = ToggleCharacterFocus(_playerFocused);
 			GameMenu.Instance?.CloseMenu();
 		}
+		if (state == CharacterState.Ragdoll)
+		{
+			speed = WalkSpeed;
+			AnimPlayer.SpeedScale = 1.0f;
+		}
 		if (state == CharacterState.Recovering && _lastCamType == CameraType.FirstPerson)
 		{
 			_cameraMan?.SetCameraType(CameraType.FirstPerson);
