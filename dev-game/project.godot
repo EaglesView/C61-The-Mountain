@@ -11,13 +11,18 @@ config_version=5
 [application]
 
 config/name="dev-game"
-run/main_scene="uid://gxttws0oc2ur"
+run/main_scene="uid://dkamu4ttxalu"
 config/features=PackedStringArray("4.6", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
 [autoload]
 
 NetworkManager="*res://Core/Network/NetworkManager.cs"
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
 
 [dotnet]
 
