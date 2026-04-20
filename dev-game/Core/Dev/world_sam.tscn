@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://pyyf2q46j574" path="res://Core/World/CharacterModel/Player/Player.tscn" id="5_bm08a"]
 [ext_resource type="PackedScene" uid="uid://bp0rj5s7re13t" path="res://Core/World/CharacterModel/Character/RemoteCharacter.tscn" id="6_3g1lu"]
 [ext_resource type="PackedScene" uid="uid://7f5ysctvudb8" path="res://Core/World/Interaction/fan/Fan.tscn" id="7_1dyim"]
+[ext_resource type="PackedScene" uid="uid://w0vh0lann51y" path="res://Core/World/Interaction/convoyer/ConveyorBelt.tscn" id="8_5l2lx"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_fsox0"]
 
@@ -84,4 +85,14 @@ collision_mask = 5
 shape = SubResource("BoxShape3D_lwm54")
 
 [node name="Fan" parent="." unique_id=1376072467 instance=ExtResource("7_1dyim")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.1622658, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6931572, 0, 0)
+
+[node name="ConveyorBelt" parent="." unique_id=117061207 instance=ExtResource("8_5l2lx")]
+BeltForce = 2.0
+StartPosition = Vector3(0, 0, -2.91)
+EndPosition = Vector3(3.867, 2.554, -3.005)
+
+[node name="ConveyorBelt2" parent="." unique_id=377241579 instance=ExtResource("8_5l2lx")]
+BeltForce = 2.0
+StartPosition = Vector3(3.42, 2.68, -4.18)
+EndPosition = Vector3(0.242, 4.464, -4.6)
