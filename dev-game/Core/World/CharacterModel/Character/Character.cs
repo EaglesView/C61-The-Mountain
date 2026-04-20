@@ -69,6 +69,7 @@ public partial class Character : CharacterBody3D
 		return PhysicsSkelton.GetPoseTargetSkel(true).Origin;
 	}
 	public float GetHeadAngle() => headAngle;
+	public CharacterState GetCurrentState() => _characterState;
 
 	// ── Network ──────────────────────────────────────────────────────────────
 
@@ -138,6 +139,8 @@ public partial class Character : CharacterBody3D
 					GlobalPosition = _spineCollBox.GlobalPosition;
 				Rotation = new Vector3(0f, Rotation.Y, 0f);
 				_graceTime = PhysicsSkelton.RagdollGraceTime;
+				velocity = Vector3.Zero;
+				Velocity = Vector3.Zero;
 				break;
 		}
 	}
