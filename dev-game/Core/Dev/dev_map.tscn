@@ -2,13 +2,49 @@
 
 [ext_resource type="Material" uid="uid://bx6qeabdhq2s" path="res://addons/kenney_prototype_tools/materials/dark/material_01.tres" id="1_8xl54"]
 [ext_resource type="PackedScene" uid="uid://w2vuvhf2iyy6" path="res://Core/World/MapAssets/MainAssets/vent_blower.tscn" id="2_ccc14"]
+[ext_resource type="PackedScene" uid="uid://w0vh0lann51y" path="res://Core/World/Interaction/convoyer/ConveyorBelt.tscn" id="2_dqtda"]
 [ext_resource type="PackedScene" uid="uid://3lj7a0stmiiv" path="res://Core/World/MapAssets/MainAssets/rotating_thing_animatable.tscn" id="3_ibgka"]
+[ext_resource type="PackedScene" uid="uid://7f5ysctvudb8" path="res://Core/World/Interaction/fan/Fan.tscn" id="5_dqtda"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_dguye"]
 material = ExtResource("1_8xl54")
 size = Vector2(500, 500)
 
 [sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_ccc14"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_fsox0"]
+
+[sub_resource type="Sky" id="Sky_jgda3"]
+sky_material = SubResource("ProceduralSkyMaterial_fsox0")
+
+[sub_resource type="Environment" id="Environment_qaqi3"]
+background_mode = 2
+sky = SubResource("Sky_jgda3")
+ambient_light_source = 3
+reflected_light_source = 2
+tonemap_mode = 3
+ssao_enabled = true
+ssil_enabled = true
+sdfgi_enabled = true
+glow_enabled = true
+glow_normalized = true
+glow_intensity = 0.4
+glow_strength = 0.92
+glow_bloom = 1.0
+glow_blend_mode = 0
+fog_enabled = true
+fog_light_color = Color(0.103219725, 0.07019778, 0.035033133, 1)
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.01
+volumetric_fog_length = 11.22
+
+[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_xfmh7"]
+dof_blur_far_enabled = true
+dof_blur_far_distance = 7.02
+dof_blur_far_transition = 50.0
+dof_blur_near_enabled = true
+
+[sub_resource type="Compositor" id="Compositor_8nmog"]
 
 [node name="DevMap" type="Node3D" unique_id=110067603]
 
@@ -22,12 +58,33 @@ collision_mask = 5
 [node name="CollisionShape3D" type="CollisionShape3D" parent="MainFloor/StaticBody3D" unique_id=669121185]
 shape = SubResource("WorldBoundaryShape3D_ccc14")
 
+[node name="ConveyorBelt" parent="MainFloor" unique_id=117061207 instance=ExtResource("2_dqtda")]
+transform = Transform3D(0.8660254, -0.5, 0, 0.5, 0.8660254, 0, 0, 0, 1, -0.7756556, 0.2939024, 0)
+BeltForce = 2.0
+EndPosition = Vector3(3.867069, 0.0044801235, 0)
+
 [node name="VentBlower" parent="." unique_id=1091358536 instance=ExtResource("2_ccc14")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, 0)
 
 [node name="RotatingThing" parent="." unique_id=903562714 instance=ExtResource("3_ibgka")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, -8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.4, 5, -2.8)
 
 [node name="RotatingThing2" parent="." unique_id=1454467726 instance=ExtResource("3_ibgka")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, 8)
 RotationSpeed = 2.0
+
+[node name="Environment" type="Node3D" parent="." unique_id=185726486]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="Environment" unique_id=1496135378]
+environment = SubResource("Environment_qaqi3")
+camera_attributes = SubResource("CameraAttributesPractical_xfmh7")
+compositor = SubResource("Compositor_8nmog")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="Environment" unique_id=690121473]
+transform = Transform3D(0.9659258, 0.1830127, 0.1830127, -0.25881907, 0.6830128, 0.6830128, 0, -0.7071068, 0.7071068, 0, 8.155859, 0)
+
+[node name="fan" parent="." unique_id=1376072467 instance=ExtResource("5_dqtda")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.458977, 2.467836, 0)
+
+[node name="fan2" parent="." unique_id=1297668517 instance=ExtResource("5_dqtda")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.9807997, 4.637025, -3)
