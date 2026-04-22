@@ -45,6 +45,12 @@ public partial class Player : Character
 	///<summary>La force de saut du personnage</summary>
 	[Export(PropertyHint.Range, "0.0f,10.0f,0.1f")] public float JumpVelocity = 4.5f;
 
+	[ExportGroup("Player Physics Settings")]
+	///<summary>La vitesse requise avant le que le personnage se ragdoll</summary>
+	[Export(PropertyHint.Range, "0.1f,1000.0f,0.1f")] public float SpeedRagdollThreshold = 10.0f;
+	///<summary>L'angle en degrés du sol pour que le personnage se mette en ragdoll</summary>
+	[Export(PropertyHint.Range, "0.0f,360.0f,1.0f,suffix:deg")] public float FloorAngleRagdollThreshold = 60.0f;
+
 	[ExportGroup("Controller Settings")]
 	[Export(PropertyHint.Range, "0.0f,0.1f,0.001f")] private float _mouseSensitivity = 0.002f;
 	[Export(PropertyHint.Range, "0.0f,5.0f,0.05f")] private float _controllerSensitivity = 2.5f; // radians / sec
@@ -164,91 +170,106 @@ public partial class Player : Character
 			return;
 		}
 		// Bloque tout l'input du joueur quand le menu de pause est ouvert
-        if (_characterState == CharacterState.Paused)
-        {
-            if (@event.IsActionPressed("pause_menu"))
-                TransitionTo(_stateBeforePause);
-            return;
-        }
+		if (_characterState == CharacterState.Paused)
+		{
+			if (@event.IsActionPressed("pause_menu"))
+				TransitionTo(_stateBeforePause);
+			return;
+		}
 
 
-    }
-    public override void _PhysicsProcess(double delta)
-    {
-        velocity = Velocity;
-        if (_cameraMan == null) return;
+	}
 
-        if (_characterState == CharacterState.Ragdoll)
-        {
-            base._PhysicsProcess(delta);
-            return;
-        }
 
-        // En pause : on laisse la gravité tourner mais on bloque les inputs de mouvement
-        if (_characterState == CharacterState.Paused)
-        {
-            moveVec = Vector3.Zero;
-            aimVec = Vector3.Zero;
-            base._PhysicsProcess(delta);
-            return;
-        }
+	public override void _PhysicsProcess(double delta)
+	{
+		velocity = Velocity;
+		if (_cameraMan == null) return;
 
-        // wipee jumpy
-        if (Input.IsActionJustPressed("jump") && IsOnFloor()
-            && (_characterState == CharacterState.Idle || _characterState == CharacterState.Moving))
-        {
-            velocity.Y = JumpVelocity;
-            TransitionTo(CharacterState.Airborne);
-        }
-        if (Input.IsActionJustPressed("run"))
-        {
-            speed *= RunMultiplier;
-            AnimPlayer.SpeedScale *= RunMultiplier;
-        }
-        if (Input.IsActionJustReleased("run"))
-        {
-            speed /= RunMultiplier;
-            AnimPlayer.SpeedScale /= RunMultiplier;
-        }
-        if (Input.IsActionJustPressed("pause_menu"))
-        {
-            TransitionTo(CharacterState.Paused);
-        }
-        if (Input.IsActionJustPressed("interact"))
-        {
+		if (_characterState == CharacterState.Ragdoll)
+		{
+			base._PhysicsProcess(delta);
+			return;
+		}
+		GD.Print($"Floor Angle = {GetFloorAngle()}");
+		if (_characterState != CharacterState.Ragdoll &&
+			_characterState != CharacterState.Recovering &&
+			Velocity.Length() > SpeedRagdollThreshold)
+		{
+			TransitionTo(CharacterState.Ragdoll);
+		}
 
-            GetObjectTypeFromRaycast(Raycaster);
-            PhysicsSkelton.Aiming = false;
-            currentEmoteState = EmoteState.None; //temporary
-            var interactable = GetInteractableFromRaycast(Raycaster);
-            interactable?.Interact(this);
+		// En pause : on laisse la gravité tourner mais on bloque les inputs de mouvement
+		if (_characterState == CharacterState.Paused)
+		{
+			moveVec = Vector3.Zero;
+			aimVec = Vector3.Zero;
+			base._PhysicsProcess(delta);
+			return;
+		}
 
-        }
+		if (IsOnFloor() && GetFloorAngle() > Mathf.DegToRad(FloorAngleRagdollThreshold))
+		{
+			TransitionTo(CharacterState.Ragdoll);
+			return;
+		}
 
-        if (Input.IsActionJustPressed("show_sign"))
-        {
-            PhysicsSkelton.ArmsUp = true;
+		// wipee jumpy
+		if (Input.IsActionJustPressed("jump") && IsOnFloor()
+			&& (_characterState == CharacterState.Idle || _characterState == CharacterState.Moving))
+		{
+			velocity.Y = JumpVelocity;
+			TransitionTo(CharacterState.Airborne);
+		}
+		if (Input.IsActionJustPressed("run"))
+		{
+			speed *= RunMultiplier;
+			AnimPlayer.SpeedScale *= RunMultiplier;
+		}
+		if (Input.IsActionJustReleased("run"))
+		{
+			speed /= RunMultiplier;
+			AnimPlayer.SpeedScale /= RunMultiplier;
+		}
+		if (Input.IsActionJustPressed("pause_menu"))
+		{
+			TransitionTo(CharacterState.Paused);
+		}
+		if (Input.IsActionJustPressed("interact"))
+		{
 
-        }
-        if (Input.IsActionJustReleased("show_sign"))
-        {
-            PhysicsSkelton.ArmsUp = false;
-        }
-        if (Input.IsActionJustPressed("change_view"))
-        {
-            _cameraMan?.SetNextCamera([CameraType.FirstPerson, CameraType.ThirdPerson]);
-        }
+			GetObjectTypeFromRaycast(Raycaster);
+			PhysicsSkelton.Aiming = false;
+			currentEmoteState = EmoteState.None; //temporary
+			var interactable = GetInteractableFromRaycast(Raycaster);
+			interactable?.Interact(this);
 
-        Vector2 aimDir = Input.GetVector("aim_left", "aim_right", "aim_up", "aim_down");
-        Vector2 inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");
-        Vector3 direction;
+		}
 
-        if (_cameraMan?.CamType == CameraType.ThirdPerson)
-        {
-            // TP : le mouvement est relatif à la caméra, pas au corps
-            // //TODO: Ajouter les Axis Settings (inverse axis, etc.)
-            Vector3 camForward = _cameraMan.GetCameraForwardFlat();
-            Vector3 camRight = _cameraMan.GetCameraRightFlat();
+		if (Input.IsActionJustPressed("show_sign"))
+		{
+			PhysicsSkelton.ArmsUp = true;
+
+		}
+		if (Input.IsActionJustReleased("show_sign"))
+		{
+			PhysicsSkelton.ArmsUp = false;
+		}
+		if (Input.IsActionJustPressed("change_view"))
+		{
+			_cameraMan?.SetNextCamera([CameraType.FirstPerson, CameraType.ThirdPerson]);
+		}
+
+		Vector2 aimDir = Input.GetVector("aim_left", "aim_right", "aim_up", "aim_down");
+		Vector2 inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");
+		Vector3 direction;
+
+		if (_cameraMan?.CamType == CameraType.ThirdPerson)
+		{
+			// TP : le mouvement est relatif à la caméra, pas au corps
+			// //TODO: Ajouter les Axis Settings (inverse axis, etc.)
+			Vector3 camForward = _cameraMan.GetCameraForwardFlat();
+			Vector3 camRight = _cameraMan.GetCameraRightFlat();
 			direction = (camForward * -inputDir.Y + camRight * -inputDir.X).Normalized(); //Negatif pcq notre mesh est a l'envers, oops!
 
 			// Le corps se tourne vers la direction de déplacement
