@@ -25,6 +25,8 @@ public partial class Debug : Control
 	/// :|___/_/\_|_|  \___/|_|_\ |_| |___/:
 	/// ····································
 	private Player? _player;
+	private PlayerSpawner? _spawner;
+
 	[ExportCategory("Internal")]
 	[Export] private Label _fpsValue;
 
@@ -43,6 +45,13 @@ public partial class Debug : Control
 	[Export] private Label _characterStateLabel;
 	[Export] private Label _isOnFloorLabel;
 	[Export] private Label _isRagdollLabel;
+
+	// Replication section
+	[Export] private Label _remoteTrackedPeerLabel;
+	[Export] private Label _remotePosXLabel;
+	[Export] private Label _remotePosYLabel;
+	[Export] private Label _remotePosZLabel;
+	[Export] private Label _replicationDeltaLabel;
 
 	/// ···········································
 	/// : _    ___ ___ ___ _____   _____ _    ___ :
@@ -79,6 +88,35 @@ public partial class Debug : Control
 		_characterStateLabel.Text = _player.GetCurrentState().ToString();
 		_isOnFloorLabel.Text = _player.IsOnFloor().ToString();
 		_isRagdollLabel.Text = _player.PhysicsSkelton.IsRagdoll.ToString();
+
+		if (_spawner == null)
+			_spawner = GetTree().Root.FindChild("PlayerSpawner", true, false) as PlayerSpawner;
+
+		RemoteCharacter? remote = null;
+		if (_spawner != null)
+		{
+			foreach (var kvp in _spawner.Characters)
+			{
+				if (kvp.Value is RemoteCharacter rc) { remote = rc; break; }
+			}
+		}
+
+		if (remote != null)
+		{
+			_remoteTrackedPeerLabel.Text = remote.PeerId.ToString();
+			_remotePosXLabel.Text = remote.GlobalPosition.X.ToString("F3");
+			_remotePosYLabel.Text = remote.GlobalPosition.Y.ToString("F3");
+			_remotePosZLabel.Text = remote.GlobalPosition.Z.ToString("F3");
+			_replicationDeltaLabel.Text = _player!.GlobalPosition.DistanceTo(remote.GlobalPosition).ToString("F3");
+		}
+		else
+		{
+			_remoteTrackedPeerLabel.Text = "--";
+			_remotePosXLabel.Text = "--";
+			_remotePosYLabel.Text = "--";
+			_remotePosZLabel.Text = "--";
+			_replicationDeltaLabel.Text = "--";
+		}
 
 		var peer = Multiplayer.MultiplayerPeer;
 		bool connected = peer != null && peer.GetConnectionStatus() == MultiplayerPeer.ConnectionStatus.Connected;
