@@ -4,6 +4,8 @@
 [ext_resource type="PackedScene" uid="uid://pyyf2q46j574" path="res://Core/World/CharacterModel/Player/Player.tscn" id="3_e3c1y"]
 [ext_resource type="PackedScene" uid="uid://bqm28efgwql4h" path="res://Core/UI/Debug/debug.tscn" id="4_uskl1"]
 [ext_resource type="PackedScene" uid="uid://c6b388a8o2od" path="res://Core/UI/GameMenu/game_menu.tscn" id="5_cctn4"]
+[ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="6_jgda3"]
+[ext_resource type="PackedScene" uid="uid://gxttws0oc2ur" path="res://Core/UI/LoginTemp/login_temp.tscn" id="6_qaqi3"]
 [ext_resource type="PackedScene" uid="uid://d1fshm7mq3au7" path="res://Core/World/MapAssets/MainAssets/player_spawner.tscn" id="6_y36ud"]
 [ext_resource type="PackedScene" uid="uid://bp0rj5s7re13t" path="res://Core/World/CharacterModel/Character/RemoteCharacter.tscn" id="7_fsox0"]
 [ext_resource type="PackedScene" uid="uid://cxvenxb1m26wm" path="res://Core/Dev/dev_map.tscn" id="7_jgda3"]
@@ -32,12 +34,8 @@ dof_blur_near_enabled = true
 [node name="World" type="Node3D" unique_id=500049071]
 script = ExtResource("1_e3c1y")
 
-[node name="Debug" parent="." unique_id=752801447 instance=ExtResource("4_uskl1")]
-
-[node name="GameMenu" parent="." unique_id=1229459489 instance=ExtResource("5_cctn4")]
-
 [node name="PlayerSpawner" parent="." unique_id=1973612002 node_paths=PackedStringArray("_spawnPoints") instance=ExtResource("6_y36ud")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.7944541, 2.6187654, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.47551727, 0)
 _playerScene = ExtResource("3_e3c1y")
 _remoteCharacterScene = ExtResource("7_fsox0")
 _spawnPoints = [NodePath("Marker3D")]
@@ -55,3 +53,13 @@ compositor = SubResource("Compositor_8nmog")
 transform = Transform3D(0.9659258, 0.1830127, 0.1830127, -0.25881907, 0.6830128, 0.6830128, 0, -0.7071068, 0.7071068, 0, 8.155859, 0)
 
 [node name="DevMap" parent="." unique_id=110067603 instance=ExtResource("7_jgda3")]
+
+[node name="Control2" parent="." unique_id=1362554432 instance=ExtResource("6_qaqi3")]
+theme = ExtResource("6_jgda3")
+
+[node name="Debug" parent="Control2" unique_id=752801447 instance=ExtResource("4_uskl1")]
+layout_mode = 0
+theme = ExtResource("6_jgda3")
+
+[node name="GameMenu" parent="Control2" unique_id=1229459489 instance=ExtResource("5_cctn4")]
+layout_mode = 1

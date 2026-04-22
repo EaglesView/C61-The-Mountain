@@ -19,6 +19,9 @@ public partial class Login : Control
 
 	public override void _Ready()
 	{
+		if (OS.HasFeature("dedicated_server") || DisplayServer.GetName() == "headless")
+			return;
+
 		_auth = AuthServiceProvider.Instance;
 
 		_emailField    = GetNode<LineEdit>("VBoxContainer/EmailField");
