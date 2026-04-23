@@ -61,8 +61,8 @@ public partial class NetworkManager : Node
     /// </summary>
     public event Action<PlayerNetState>? StateReceived;
 
-    /// <summary>Déclenché une seule fois lorsque la connexion locale au serveur est confirmée (client seulement).</summary>
-    public event Action?                 LocalConnected;
+    /// <summary>Déclenché une seule fois lorsque la connexion locale au serveur est confirmée (client seulement). Paramètre : peerId assigné par le serveur.</summary>
+    public event Action<int>?            LocalConnected;
 
     /// <summary>
     /// Enregistre le personnage local pour que le tick client puisse sérialiser son état.
@@ -164,9 +164,9 @@ public partial class NetworkManager : Node
 
         PeerJoined?.Invoke(id);
         _remotePeerIds.Add(id);
-        // Fire LocalConnected when our own client connection is confirmed
+        // Fire LocalConnected when our own client connection is confirmed, passing the confirmed peer ID
         if (_provider?.Role == NetworkRole.Client && id == _provider.LocalPeerId)
-            LocalConnected?.Invoke();
+            LocalConnected?.Invoke(id);
     }
 
     public override void _Process(double delta)
@@ -187,6 +187,26 @@ public partial class NetworkManager : Node
         if (data.Length < 1) return;
 
         var type = (PacketType)data[0];
+
+        // Position correction from server: snap local player to authoritative position
+        if (type == PacketType.PositionCorrect)
+        {
+            if (_provider?.Role == NetworkRole.Client && data.Length >= 17 && _localPlayer != null)
+            {
+                int corrPeerId = System.BitConverter.ToInt32(data, 1);
+                if (corrPeerId == _provider.LocalPeerId)
+                {
+                    var correctedPos = new Vector3(
+                        System.BitConverter.ToSingle(data, 5),
+                        System.BitConverter.ToSingle(data, 9),
+                        System.BitConverter.ToSingle(data, 13)
+                    );
+                    GD.Print($"[NetworkManager] Server correction applied: {correctedPos}");
+                    _localPlayer.GlobalPosition = correctedPos;
+                }
+            }
+            return;
+        }
 
         // Lightweight peer-notify packets (5 bytes): relay PeerJoined/PeerLeft on clients
         if (type == PacketType.SpawnReq || type == PacketType.DespawnNotify)
@@ -219,7 +239,9 @@ public partial class NetworkManager : Node
                 float dist = lastPos.DistanceTo(state.Position);
                 if (dist > 20f)
                 {
-                    GD.Print($"[NetworkManager] Dropped packet from {fromPeerId}: delta {dist:F1} > 20");
+                    GD.Print($"[NetworkManager] Dropped packet from {fromPeerId}: delta {dist:F1} > 20 — sending correction");
+                    var correction = PlayerNetState.SerializeCorrection(fromPeerId, lastPos);
+                    _provider.SendReliable(fromPeerId, correction);
                     return;
                 }
             }

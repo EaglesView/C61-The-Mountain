@@ -11,11 +11,13 @@ namespace Core.Network;
 public enum PacketType : byte
 {
     /// <summary>Snapshot de l'état complet d'un joueur. Envoyé à 20 Hz en non-fiable.</summary>
-    StateUpdate   = 0x01,
+    StateUpdate     = 0x01,
     /// <summary>Requête de spawn d'un joueur. Envoyé en fiable à la connexion.</summary>
-    SpawnReq      = 0x02,
+    SpawnReq        = 0x02,
     /// <summary>Notification de despawn d'un joueur. Envoyé en fiable à la déconnexion.</summary>
-    DespawnNotify = 0x03,
+    DespawnNotify   = 0x03,
+    /// <summary>Correction de position envoyée par le serveur au client en cas de désync. 17 octets : type(1) peerId(4) pos(12).</summary>
+    PositionCorrect = 0x04,
 }
 
 /// <summary>
@@ -98,6 +100,20 @@ public readonly struct PlayerNetState
     /// Sérialise une notification de peer (5 octets) : <c>type(1) + peerId(4)</c>.
     /// Utilisé pour <see cref="PacketType.SpawnReq"/> et <see cref="PacketType.DespawnNotify"/>.
     /// </summary>
+    /// <summary>
+    /// Sérialise une correction de position serveur (17 octets) : <c>type(1) + peerId(4) + pos(12)</c>.
+    /// </summary>
+    public static byte[] SerializeCorrection(int peerId, Vector3 position)
+    {
+        var data = new byte[17];
+        data[0] = (byte)PacketType.PositionCorrect;
+        System.BitConverter.GetBytes(peerId).CopyTo(data, 1);
+        System.BitConverter.GetBytes(position.X).CopyTo(data, 5);
+        System.BitConverter.GetBytes(position.Y).CopyTo(data, 9);
+        System.BitConverter.GetBytes(position.Z).CopyTo(data, 13);
+        return data;
+    }
+
     public static byte[] SerializePeerNotify(PacketType type, int peerId)
     {
         var data = new byte[5];

@@ -35,13 +35,13 @@ public partial class World : Node3D
 		{
 			// Came from UI (lobby or dev quick-connect): initiate connection now
 			GD.Print($"[World] Connecting to {lobby.ServerIp}:{lobby.ServerPort}...");
-			net.LocalConnected += () => SpawnLocalPlayer(net.LocalPeerId);
+			net.LocalConnected += peerId => SpawnLocalPlayer(peerId);
 			net.ConnectToServer(lobby.ServerIp, lobby.ServerPort);
 		}
 		else if (net.IsAutoConnecting && !net.IsRunning)
 		{
 			// --connect CLI flag, still connecting
-			net.LocalConnected += () => SpawnLocalPlayer(net.LocalPeerId);
+			net.LocalConnected += peerId => SpawnLocalPlayer(peerId);
 		}
 		else
 		{

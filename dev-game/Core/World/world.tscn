@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://bivbri8k5yp3h" path="res://Core/World/World.cs" id="1_34ec0"]
 [ext_resource type="PackedScene" uid="uid://pyyf2q46j574" path="res://Core/World/CharacterModel/Player/Player.tscn" id="4_ei37a"]
 [ext_resource type="PackedScene" uid="uid://bqm28efgwql4h" path="res://Core/UI/Debug/debug.tscn" id="5_c3a17"]
+[ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="6_ku4un"]
 [ext_resource type="PackedScene" uid="uid://c6b388a8o2od" path="res://Core/UI/GameMenu/game_menu.tscn" id="6_w2q3g"]
 [ext_resource type="PackedScene" uid="uid://bq4rndu6x2g14" path="res://Core/Dev/map_jm.tscn" id="7_0xmi2"]
 [ext_resource type="PackedScene" uid="uid://d1fshm7mq3au7" path="res://Core/World/MapAssets/MainAssets/player_spawner.tscn" id="7_hn3nb"]
@@ -143,12 +144,6 @@ collision_mask = 4
 [node name="CollisionShape3D" type="CollisionShape3D" parent="TestCol/MeshInstance3D4/StaticBody3D" unique_id=416954678]
 shape = SubResource("ConcavePolygonShape3D_tt40f")
 
-[node name="Debug" parent="." unique_id=752801447 instance=ExtResource("5_c3a17")]
-metadata/_edit_use_anchors_ = true
-
-[node name="GameMenu" parent="." unique_id=1229459489 instance=ExtResource("6_w2q3g")]
-metadata/_edit_use_anchors_ = true
-
 [node name="PlayerSpawner" parent="." unique_id=1973612002 instance=ExtResource("7_hn3nb")]
 _playerScene = ExtResource("4_ei37a")
 _remoteCharacterScene = ExtResource("8_sqoqa")
@@ -157,3 +152,17 @@ _remoteCharacterScene = ExtResource("8_sqoqa")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5992945, -3.1238916)
 
 [node name="MapJm" parent="." unique_id=1295357754 instance=ExtResource("7_0xmi2")]
+
+[node name="Control" type="Control" parent="." unique_id=524275059]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+theme = ExtResource("6_ku4un")
+
+[node name="Debug" parent="Control" unique_id=752801447 instance=ExtResource("5_c3a17")]
+layout_mode = 0
+metadata/_edit_use_anchors_ = true
+
+[node name="GameMenu" parent="." unique_id=1229459489 instance=ExtResource("6_w2q3g")]
+metadata/_edit_use_anchors_ = true
