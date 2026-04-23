@@ -32,8 +32,9 @@ public readonly struct PlayerNetState
     public readonly EmoteState    EmoteState;
     public readonly byte    Flags;
 
-    public bool Aiming => (Flags & 0x01) != 0;
-    public bool ArmsUp => (Flags & 0x02) != 0;
+    public bool Aiming     => (Flags & 0x01) != 0;
+    public bool ArmsUp     => (Flags & 0x02) != 0;
+    public bool Recovering => (Flags & 0x04) != 0;
 
     public PlayerNetState(int peerId, Vector3 position, Vector3 velocity,
         float bodyYaw, float headPitch, Vector3 armPointDir,

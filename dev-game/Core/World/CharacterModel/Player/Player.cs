@@ -40,6 +40,7 @@ public partial class Player : Character
 	private int _head = 0;
 	private int _count = 0;
 	private MovementState _lastAnimatedState = MovementState.Idle;
+	private bool _remoteRagdoll = false;
 
 	public void PushSnapshot(PlayerNetState state, ulong timestampMsec)
 	{
@@ -280,6 +281,36 @@ public partial class Player : Character
 
 	private void RemotePhysicsProcess()
 	{
+		bool ragdolling = currentMovementState == MovementState.Ragdolling;
+		bool recovering = _count > 0 && _snapshots[(_head - 1 + BufferSize) % BufferSize].Recovering;
+		bool shouldRagdoll = ragdolling && !recovering;
+
+		if (shouldRagdoll != _remoteRagdoll)
+		{
+			_remoteRagdoll = shouldRagdoll;
+			PhysicsSkelton.IsRagdoll      = shouldRagdoll;
+			PhysicsSkelton.RemoteCorrection = shouldRagdoll;
+			if (_capsule != null) _capsule.Disabled = shouldRagdoll;
+
+			if (shouldRagdoll && _count > 0)
+				PhysicsSkelton.ApplyRagdollKick(
+					_snapshots[(_head - 1 + BufferSize) % BufferSize].Velocity);
+		}
+
+		if (_remoteRagdoll)
+		{
+			// Feed the latest authoritative spine + head data to PhysicsSkeleton
+			// so it can apply the gentle correction forces each physics tick.
+			if (_count > 0)
+			{
+				int latest = (_head - 1 + BufferSize) % BufferSize;
+				PhysicsSkelton.RemoteSpineTarget = _snapshots[latest].Position;
+				PhysicsSkelton.RemoteHeadPitch   = _snapshots[latest].HeadPitch;
+				PhysicsSkelton.RemoteHeadYaw     = _snapshots[latest].BodyYaw;
+			}
+			return;
+		}
+
 		if (_count < 1) return;
 
 		ulong nowMsec = Time.GetTicksMsec();
@@ -319,6 +350,7 @@ public partial class Player : Character
 		velocity = a.Velocity.Lerp(b.Velocity, t);
 		Rotation = new Vector3(Rotation.X, Mathf.LerpAngle(a.BodyYaw, b.BodyYaw, t), Rotation.Z);
 		RotateHead(Mathf.LerpAngle(a.HeadPitch, b.HeadPitch, t));
+		PhysicsSkelton.HeadAngle = -headAngle;
 		PhysicsSkelton.ArmPointDir = a.ArmPointDir.Lerp(b.ArmPointDir, t);
 
 		PlayerNetState snap = t >= 0.5f ? b : a;
