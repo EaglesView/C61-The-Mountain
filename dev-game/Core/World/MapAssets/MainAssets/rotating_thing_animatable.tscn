@@ -1,10 +1,8 @@
 [gd_scene format=3 uid="uid://3lj7a0stmiiv"]
 
 [ext_resource type="Script" uid="uid://2mxm5c0pp5da" path="res://Core/World/MapAssets/MainAssets/RotatingThing.cs" id="1_xmdw5"]
-[ext_resource type="Material" uid="uid://fyvygjjo7ysh" path="res://addons/kenney_prototype_tools/materials/red/material_02.tres" id="2_n142y"]
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_g2yqt"]
-material = ExtResource("2_n142y")
 top_radius = 0.2
 bottom_radius = 0.2
 height = 5.0

@@ -1,10 +1,8 @@
 [gd_scene format=3 uid="uid://w2vuvhf2iyy6"]
 
 [ext_resource type="Script" uid="uid://6qprs7qe5462" path="res://Core/World/MapAssets/MainAssets/VentBlower.cs" id="1_8t3sp"]
-[ext_resource type="Material" uid="uid://b7kc8jfs4fowj" path="res://addons/kenney_prototype_tools/materials/green/material_02.tres" id="1_gcfca"]
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_8t3sp"]
-material = ExtResource("1_gcfca")
 height = 1.0
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_3e5gg"]

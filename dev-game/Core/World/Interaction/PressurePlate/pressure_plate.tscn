@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bj2yb0mj346fv"]
 
-[ext_resource type="Script" uid="uid://bumc100wfkdpv" path="res://Core/World/MapAssets/Interactables/PressurePlate.cs" id="1_fg0mt"]
+[ext_resource type="Script" uid="uid://bumc100wfkdpv" path="res://Core/World/Interaction/PressurePlate/PressurePlate.cs" id="1_fg0mt"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_5fops"]
 size = Vector2(1, 1)
