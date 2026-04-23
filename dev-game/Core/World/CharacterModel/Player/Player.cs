@@ -100,6 +100,8 @@ public partial class Player : Character
 			if (PhysicsSkelton != null && AnimPlayer == null)
 				AnimPlayer = PhysicsSkelton.AnimPlayer;
 			speed = WalkSpeed;
+			if (SpawnPosition != Vector3.Zero)
+				GlobalPosition = SpawnPosition;
 			return;
 		}
 

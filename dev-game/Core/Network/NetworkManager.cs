@@ -39,9 +39,6 @@ public partial class NetworkManager : Node
     /// <summary>Identifiant unique de ce pair dans la session ENet.</summary>
     public int  LocalPeerId     => _provider?.LocalPeerId ?? 1;
 
-    /// <summary><c>true</c> si une connexion automatique via <c>--connect</c> est en cours.</summary>
-    public bool IsAutoConnecting { get; private set; }
-
     /// <summary>
     /// Déclenché à la réception d'un <see cref="PlayerNetState"/> validé.
     /// Côté serveur, ce snapshot a déjà été relayé aux autres pairs avant d'être émis ici.
@@ -50,6 +47,9 @@ public partial class NetworkManager : Node
 
     /// <summary>Déclenché une seule fois lorsque la connexion locale au serveur est confirmée (client seulement).</summary>
     public event Action<int>?            LocalConnected;
+
+    /// <summary>Déclenché si la connexion au serveur échoue.</summary>
+    public event Action<string>?         ConnectionFailed;
 
     /// <summary>
     /// Enregistre le personnage local pour que le tick client puisse sérialiser son état.
@@ -80,7 +80,11 @@ public partial class NetworkManager : Node
         };
         _provider.PacketReceived   += OnPacketReceived;
         _provider.ServerStarted    += ()  => GD.Print("[NetworkManager] Server started on port 7777.");
-        _provider.ConnectionFailed += msg => GD.PrintErr($"[NetworkManager] {msg}");
+        _provider.ConnectionFailed += msg =>
+        {
+            GD.PrintErr($"[NetworkManager] {msg}");
+            ConnectionFailed?.Invoke(msg);
+        };
 
         string[] args = OS.GetCmdlineArgs();
 
@@ -92,16 +96,6 @@ public partial class NetworkManager : Node
         {
             GD.Print("[NetworkManager] Headless mode — starting dedicated server.");
             _provider.StartServer(7777, 16);
-            return;
-        }
-
-        string? connectArg = System.Array.Find(args, a => a == "--connect" || a.StartsWith("--connect="));
-        if (connectArg != null)
-        {
-            IsAutoConnecting = true;
-            string address = connectArg.Contains('=') ? connectArg.Split('=')[1] : "127.0.0.1";
-            GD.Print($"[NetworkManager] Auto-connecting to {address}:7777");
-            _provider.ConnectToServer(address, 7777);
         }
     }
 

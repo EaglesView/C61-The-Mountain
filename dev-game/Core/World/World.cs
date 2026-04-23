@@ -23,14 +23,14 @@ public partial class World : Node3D
 		if (net.IsServer)
 		{
 			GD.Print("[World] Dedicated server — waiting for peers.");
-			Multiplayer.PeerConnected += id => ServerSpawnPeer((int)id);
 			Multiplayer.PeerDisconnected += id => ServerDespawnPeer((int)id);
 			return;
 		}
 
-		if (net.IsClient || net.IsAutoConnecting)
+		if (net.IsClient)
 		{
-			GD.Print("[World] Online client — server will spawn players.");
+			GD.Print("[World] Online client — requesting spawn from server.");
+			Rpc(MethodName.ClientReady);
 			return;
 		}
 
@@ -53,6 +53,15 @@ public partial class World : Node3D
 
 		GD.Print($"[World] SpawnPlayerNode: peerId={peerId}, pos={pos}, isLocal={player.IsMultiplayerAuthority()}");
 		return player;
+	}
+
+	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void ClientReady()
+	{
+		if (!Multiplayer.IsServer()) return;
+		int peerId = Multiplayer.GetRemoteSenderId();
+		GD.Print($"[World] ClientReady from peer {peerId}");
+		ServerSpawnPeer(peerId);
 	}
 
 	private void ServerSpawnPeer(int peerId)
