@@ -281,8 +281,11 @@ public partial class Player : Character
 
 	private void RemotePhysicsProcess()
 	{
-		bool ragdolling = currentMovementState == MovementState.Ragdolling;
-		bool recovering = _count > 0 && _snapshots[(_head - 1 + BufferSize) % BufferSize].Recovering;
+		if (_count < 1) return;
+
+		int latestIdx = (_head - 1 + BufferSize) % BufferSize;
+		bool ragdolling = _snapshots[latestIdx].MoveState == MovementState.Ragdolling;
+		bool recovering = _snapshots[latestIdx].Recovering;
 		bool shouldRagdoll = ragdolling && !recovering;
 
 		if (shouldRagdoll != _remoteRagdoll)
@@ -292,26 +295,17 @@ public partial class Player : Character
 			PhysicsSkelton.RemoteCorrection = shouldRagdoll;
 			if (_capsule != null) _capsule.Disabled = shouldRagdoll;
 
-			if (shouldRagdoll && _count > 0)
-				PhysicsSkelton.ApplyRagdollKick(
-					_snapshots[(_head - 1 + BufferSize) % BufferSize].Velocity);
+			if (shouldRagdoll)
+				PhysicsSkelton.ApplyRagdollKick(_snapshots[latestIdx].Velocity);
 		}
 
 		if (_remoteRagdoll)
 		{
-			// Feed the latest authoritative spine + head data to PhysicsSkeleton
-			// so it can apply the gentle correction forces each physics tick.
-			if (_count > 0)
-			{
-				int latest = (_head - 1 + BufferSize) % BufferSize;
-				PhysicsSkelton.RemoteSpineTarget = _snapshots[latest].Position;
-				PhysicsSkelton.RemoteHeadPitch   = _snapshots[latest].HeadPitch;
-				PhysicsSkelton.RemoteHeadYaw     = _snapshots[latest].BodyYaw;
-			}
+			PhysicsSkelton.RemoteSpineTarget = _snapshots[latestIdx].Position;
+			PhysicsSkelton.RemoteHeadPitch   = _snapshots[latestIdx].HeadPitch;
+			PhysicsSkelton.RemoteHeadYaw     = _snapshots[latestIdx].BodyYaw;
 			return;
 		}
-
-		if (_count < 1) return;
 
 		ulong nowMsec = Time.GetTicksMsec();
 		ulong renderTime = nowMsec - (ulong)(RenderDelay * 1000f);
