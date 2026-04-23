@@ -2,7 +2,7 @@
 set -e
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-EXPORT_PATH="$REPO_ROOT/dev-game/Export/PreAlpha/0.0.1"
+EXPORT_PATH="$REPO_ROOT/dev-game/Export/PreAlpha/0.0.2"
 REMOTE_DIR="~/server"
 
 # Load secrets
@@ -13,6 +13,8 @@ REMOTE="godotadmin@${SERVER_IP}"
 echo "==> Exporting server build..."
 ${GODOT_BIN:-godot} --headless --path "$REPO_ROOT/dev-game" \
     --export-release "Server Build" "$EXPORT_PATH/server.x86_64"
+
+
 
 echo "==> Uploading to $REMOTE..."
 ssh "$REMOTE" "mkdir -p $REMOTE_DIR"

@@ -4,77 +4,95 @@ using Core.Network.Rooms;
 
 public partial class World : Node3D
 {
-	private PlayerSpawner _spawner = null!;
+	[Export] private PackedScene _playerScene = null!;
+
+	private MultiplayerSpawner _spawner = null!;
+	private PlayerSpawner _playerSpawner = null!;
 
 	public override void _Ready()
 	{
-		_spawner = GetNode<PlayerSpawner>("PlayerSpawner");
+		_spawner = GetNode<MultiplayerSpawner>("MultiplayerSpawner");
+		_playerSpawner = GetNode<PlayerSpawner>("PlayerSpawner");
+		_spawner.SpawnFunction = Callable.From<Variant, GodotObject>(SpawnPlayerNode);
+
+		LobbyState.Clear();
 
 		var net = NetworkManager.Instance;
+		net.StateReceived += OnStateReceived;
 
 		if (net.IsServer)
 		{
-			GD.Print("[World] Dedicated server — no local player spawned.");
+			GD.Print("[World] Dedicated server — waiting for peers.");
+			Multiplayer.PeerConnected += id => ServerSpawnPeer((int)id);
+			Multiplayer.PeerDisconnected += id => ServerDespawnPeer((int)id);
 			return;
 		}
 
-		net.PeerJoined += OnPeerJoined;
-		net.PeerLeft += OnPeerLeft;
-		net.StateReceived += OnStateReceived;
-
-		foreach (int peerId in net.RemotePeerIds)
+		if (net.IsClient || net.IsAutoConnecting)
 		{
-			if (peerId != net.LocalPeerId)
-				OnPeerJoined(peerId);
+			GD.Print("[World] Online client — server will spawn players.");
+			return;
 		}
 
-		var lobby = LobbyState.Current;
-		LobbyState.Clear();
-
-		if (lobby != null)
-		{
-			// Came from UI (lobby or dev quick-connect): initiate connection now
-			GD.Print($"[World] Connecting to {lobby.ServerIp}:{lobby.ServerPort}...");
-			net.LocalConnected += peerId => SpawnLocalPlayer(peerId);
-			net.ConnectToServer(lobby.ServerIp, lobby.ServerPort);
-		}
-		else if (net.IsAutoConnecting && !net.IsRunning)
-		{
-			// --connect CLI flag, still connecting
-			net.LocalConnected += peerId => SpawnLocalPlayer(peerId);
-		}
-		else
-		{
-			// Offline / local play
-			SpawnLocalPlayer(net.LocalPeerId);
-		}
+		GD.Print("[World] Offline — spawning local player directly.");
+		SpawnOffline();
 	}
 
-	private void SpawnLocalPlayer(int peerId)
+	// Called on ALL peers by MultiplayerSpawner when server calls Spawn()
+	private GodotObject SpawnPlayerNode(Variant data)
 	{
-		var player = _spawner.SpawnPlayer(peerId, isLocal: true) as Player;
+		var dict = data.As<Godot.Collections.Dictionary>();
+		int peerId = dict["id"].As<int>();
+		Vector3 pos = dict["pos"].As<Vector3>();
+
+		var player = _playerScene.Instantiate<Player>();
+		player.Name = peerId.ToString();
+		player.PeerId = peerId;
+		player.SetMultiplayerAuthority(peerId);
+		player.SpawnPosition = pos;
+
+		GD.Print($"[World] SpawnPlayerNode: peerId={peerId}, pos={pos}, isLocal={player.IsMultiplayerAuthority()}");
+		return player;
+	}
+
+	private void ServerSpawnPeer(int peerId)
+	{
+		Vector3 spawnPos = _playerSpawner.GetNextSpawnPoint();
+		var data = new Godot.Collections.Dictionary { ["id"] = peerId, ["pos"] = spawnPos };
+		_spawner.Spawn(data);
+		GD.Print($"[World] Server spawned peer {peerId} at {spawnPos}");
+	}
+
+	private void ServerDespawnPeer(int peerId)
+	{
+		var players = GetNodeOrNull("Players");
+		var player = players?.GetNodeOrNull(peerId.ToString());
 		if (player != null)
-			NetworkManager.Instance.SetLocalPlayer(player);
+		{
+			((Node)player).QueueFree();
+			GD.Print($"[World] Server despawned peer {peerId}");
+		}
 	}
 
-	private void OnPeerJoined(int peerId)
+	private void SpawnOffline()
 	{
-		var net = NetworkManager.Instance;
-		if (net.IsClient && peerId == net.LocalPeerId) return;
-		_spawner.SpawnPlayer(peerId, isLocal: false);
-	}
-
-	private void OnPeerLeft(int peerId)
-	{
-		_spawner.DespawnPlayer(peerId);
+		var player = _playerScene.Instantiate<Player>();
+		player.Name = "1";
+		player.PeerId = 1;
+		player.SpawnPosition = _playerSpawner.GetNextSpawnPoint();
+		GetNode("Players").AddChild(player);
 	}
 
 	private void OnStateReceived(PlayerNetState state)
 	{
-		if (!_spawner.Characters.TryGetValue(state.PeerId, out var character)) return;
-		if (character is RemoteCharacter remote)
-			remote.PushSnapshot(state, Time.GetTicksMsec());
+		var players = GetNodeOrNull("Players");
+		var player = players?.GetNodeOrNull<Player>(state.PeerId.ToString());
+		if (player == null || player.IsMultiplayerAuthority()) return;
+		player.PushSnapshot(state, Time.GetTicksMsec());
 	}
 
-	public override void _Process(double delta) { }
+	public override void _ExitTree()
+	{
+		GD.Print("[World] _ExitTree called!");
+	}
 }

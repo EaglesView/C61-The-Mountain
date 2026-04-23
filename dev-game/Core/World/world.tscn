@@ -7,7 +7,6 @@
 [ext_resource type="PackedScene" uid="uid://c6b388a8o2od" path="res://Core/UI/GameMenu/game_menu.tscn" id="6_w2q3g"]
 [ext_resource type="PackedScene" uid="uid://bq4rndu6x2g14" path="res://Core/Dev/map_jm.tscn" id="7_0xmi2"]
 [ext_resource type="PackedScene" uid="uid://d1fshm7mq3au7" path="res://Core/World/MapAssets/MainAssets/player_spawner.tscn" id="7_hn3nb"]
-[ext_resource type="PackedScene" uid="uid://bp0rj5s7re13t" path="res://Core/World/CharacterModel/Character/RemoteCharacter.tscn" id="8_sqoqa"]
 
 [sub_resource type="Environment" id="Environment_qm4om"]
 ssr_enabled = true
@@ -34,6 +33,7 @@ data = PackedVector3Array(-0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0
 
 [node name="World" type="Node3D" unique_id=500049071]
 script = ExtResource("1_34ec0")
+_playerScene = ExtResource("4_ei37a")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1123871444]
 environment = SubResource("Environment_qm4om")
@@ -144,9 +144,12 @@ collision_mask = 4
 [node name="CollisionShape3D" type="CollisionShape3D" parent="TestCol/MeshInstance3D4/StaticBody3D" unique_id=416954678]
 shape = SubResource("ConcavePolygonShape3D_tt40f")
 
+[node name="Players" type="Node3D" parent="." unique_id=401840001]
+
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=401840002]
+spawn_path = NodePath("../Players")
+
 [node name="PlayerSpawner" parent="." unique_id=1973612002 instance=ExtResource("7_hn3nb")]
-_playerScene = ExtResource("4_ei37a")
-_remoteCharacterScene = ExtResource("8_sqoqa")
 
 [node name="Marker3D" type="Marker3D" parent="PlayerSpawner" unique_id=1016226400]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5992945, -3.1238916)

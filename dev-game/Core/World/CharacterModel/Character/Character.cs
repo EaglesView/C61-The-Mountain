@@ -80,7 +80,7 @@ public partial class Character : CharacterBody3D
 		byte flags = 0;
 		if (PhysicsSkelton.Aiming) flags |= 0x01;
 		if (PhysicsSkelton.ArmsUp) flags |= 0x02;
-		return new PlayerNetState(PeerId, GlobalPosition, velocity,
+		return new PlayerNetState(PeerId, GlobalPosition, Velocity,
 			Rotation.Y, headAngle, PhysicsSkelton.ArmPointDir,
 			(byte)currentMovementState, (byte)currentEmoteState, flags);
 	}
@@ -281,5 +281,11 @@ public partial class Character : CharacterBody3D
 		if (currentMovementState == newMovementState) return;
 		currentMovementState = newMovementState;
 		PlayAnimationFromMovement(newMovementState, AnimPlayer);
+	}
+
+	public override void _Notification(int what) { if (what == Node.NotificationExitTree) { GD.Print($"[Character] EXIT TREE: {Name}"); } else if (what == Node.NotificationEnterTree) { GD.Print($"[Character] ENTER TREE: {Name}"); } base._Notification(what); } public override void _ExitTree()
+	{
+		base._ExitTree();
+		GD.Print($"[Character] _ExitTree called on {Name} (PeerId={PeerId})");
 	}
 }
