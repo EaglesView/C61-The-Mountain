@@ -25,7 +25,6 @@ public partial class Debug : Control
 	/// :|___/_/\_|_|  \___/|_|_\ |_| |___/:
 	/// ····································
 	private Player? _player;
-	private PlayerSpawner? _spawner;
 
 	[ExportCategory("Internal")]
 	[Export] private Label _fpsValue;
@@ -89,15 +88,13 @@ public partial class Debug : Control
 		_isOnFloorLabel.Text = _player.IsOnFloor().ToString();
 		_isRagdollLabel.Text = _player.PhysicsSkelton.IsRagdoll.ToString();
 
-		if (_spawner == null)
-			_spawner = GetTree().Root.FindChild("PlayerSpawner", true, false) as PlayerSpawner;
-
-		RemoteCharacter? remote = null;
-		if (_spawner != null)
+		Player? remote = null;
+		var players = GetTree().Root.FindChild("Players", true, false);
+		if (players != null)
 		{
-			foreach (var kvp in _spawner.Characters)
+			foreach (var child in players.GetChildren())
 			{
-				if (kvp.Value is RemoteCharacter rc) { remote = rc; break; }
+				if (child is Player p && !p.IsMultiplayerAuthority()) { remote = p; break; }
 			}
 		}
 

@@ -20,7 +20,7 @@ public sealed class RoomRepository
         _getToken = getToken ?? throw new ArgumentNullException(nameof(getToken));
     }
 
-    public async Task CreateAsync(Room room)
+    public async Task CreateAsync(Room room, string? serverIpOverride = null)
     {
         var token = _getToken();
 
@@ -28,7 +28,7 @@ public sealed class RoomRepository
         {
             code       = room.Code,
             hostUserId = room.HostUserId,
-            serverIp   = Room.HardcodedServerIp,
+            serverIp   = serverIpOverride ?? Room.HardcodedServerIp,
             serverPort = Room.HardcodedServerPort,
             status     = Room.DefaultStatus,
             maxPlayers = Room.DefaultMaxPlayers,

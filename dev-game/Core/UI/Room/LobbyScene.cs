@@ -12,6 +12,7 @@ public partial class LobbyScene : Control
     private Button        _startButton  = null!;
 
     private bool _leaving = false;
+    private bool _wasHost = false;
     private const string Root         = "PanelContainer/MarginContainer/VBoxContainer";
     private const float  PollInterval = 4.0f;
 
@@ -99,8 +100,36 @@ public partial class LobbyScene : Control
     {
         if (_leaving || !IsInsideTree()) return;
         _leaving = true;
+        _wasHost = LobbyState.IsHost;
+
+        var serverIp   = LobbyState.Current?.ServerIp   ?? Core.Network.Rooms.Room.HardcodedServerIp;
+        var serverPort = LobbyState.Current?.ServerPort ?? Core.Network.Rooms.Room.HardcodedServerPort;
         LobbyState.Clear();
+
+        _statusValue.Text = "Connecting to server…";
+
+        var net = Core.Network.NetworkManager.Instance;
+        net.LocalConnected   += OnServerConnected;
+        net.ConnectionFailed += OnServerConnectionFailed;
+        net.ConnectToServer(serverIp, serverPort);
+    }
+
+    private void OnServerConnected(int _)
+    {
+        var net = Core.Network.NetworkManager.Instance;
+        net.LocalConnected   -= OnServerConnected;
+        net.ConnectionFailed -= OnServerConnectionFailed;
         GetTree().ChangeSceneToFile("res://Core/World/world.tscn");
+    }
+
+    private void OnServerConnectionFailed(string msg)
+    {
+        var net = Core.Network.NetworkManager.Instance;
+        net.LocalConnected   -= OnServerConnected;
+        net.ConnectionFailed -= OnServerConnectionFailed;
+        _leaving = false;
+        _statusValue.Text = $"Connection failed: {msg}";
+        if (_wasHost) _startButton.Disabled = false;
     }
 
     private void RefreshPlayerList(RoomSnapshot snapshot)

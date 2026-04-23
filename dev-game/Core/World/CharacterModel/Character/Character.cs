@@ -80,7 +80,26 @@ public partial class Character : CharacterBody3D
 		byte flags = 0;
 		if (PhysicsSkelton.Aiming) flags |= 0x01;
 		if (PhysicsSkelton.ArmsUp) flags |= 0x02;
-		return new PlayerNetState(PeerId, GlobalPosition, velocity,
+
+		if (_characterState == CharacterState.Ragdoll)
+		{
+			// Position and Velocity are repurposed: spine physics world position
+			// and velocity so remote players can anchor their local simulation.
+			// BodyYaw and HeadPitch carry the head physical bone's world rotation
+			// so the remote correction steers head orientation correctly.
+			var (headPitch, headYaw) = PhysicsSkelton.GetHeadPhysicsWorldAngles();
+			return new PlayerNetState(PeerId,
+				PhysicsSkelton.GetSpinePhysicsWorldPosition(),
+				PhysicsSkelton.GetSpinePhysicsLinearVelocity(),
+				headYaw, headPitch,
+				PhysicsSkelton.ArmPointDir,
+				(byte)currentMovementState, (byte)currentEmoteState, flags);
+		}
+
+		if (_characterState == CharacterState.Recovering)
+			flags |= 0x04;
+
+		return new PlayerNetState(PeerId, GlobalPosition, Velocity,
 			Rotation.Y, headAngle, PhysicsSkelton.ArmPointDir,
 			(byte)currentMovementState, (byte)currentEmoteState, flags);
 	}
@@ -91,6 +110,7 @@ public partial class Character : CharacterBody3D
 		velocity = state.Velocity;
 		Rotation = new Vector3(Rotation.X, state.BodyYaw, Rotation.Z);
 		RotateHead(state.HeadPitch);
+		PhysicsSkelton.HeadAngle = -headAngle;
 		PhysicsSkelton.ArmPointDir = state.ArmPointDir;
 		PhysicsSkelton.Aiming = state.Aiming;
 		PhysicsSkelton.ArmsUp = state.ArmsUp;
@@ -281,5 +301,11 @@ public partial class Character : CharacterBody3D
 		if (currentMovementState == newMovementState) return;
 		currentMovementState = newMovementState;
 		PlayAnimationFromMovement(newMovementState, AnimPlayer);
+	}
+
+	public override void _Notification(int what) { if (what == Node.NotificationExitTree) { GD.Print($"[Character] EXIT TREE: {Name}"); } else if (what == Node.NotificationEnterTree) { GD.Print($"[Character] ENTER TREE: {Name}"); } base._Notification(what); } public override void _ExitTree()
+	{
+		base._ExitTree();
+		GD.Print($"[Character] _ExitTree called on {Name} (PeerId={PeerId})");
 	}
 }

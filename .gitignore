@@ -23,3 +23,7 @@ dev/
 *.xlsx#
 *.docx#
 dev-game/.config/dotnet-tools.json
+dev-game/Export/
+*.*.orig
+*.old
+*.old.*

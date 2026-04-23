@@ -53,7 +53,17 @@ public partial class PhysicsSkeleton : Skeleton3D
 
 
     private PhysicalBoneSimulator3D? _boneSim;
-    private List<PhysicalBone3D>? _physicsBones;
+    private List<PhysicalBone3D>?    _physicsBones;
+    private PhysicalBone3D?          _spinePhysBone;
+    private PhysicalBone3D?          _headPhysBone;
+
+    // ── Remote ragdoll correction (set by remote Player each tick) ────────────
+    public bool    RemoteCorrection  = false;
+    public Vector3 RemoteSpineTarget = Vector3.Zero;
+    public float   RemoteHeadPitch   = 0f;
+    public float   RemoteHeadYaw     = 0f;
+    private const float SpineCorrectK = 15f;
+    private const float HeadCorrectK  = 8f;
     public bool Aiming = false;
     public bool ArmsUp = false;
     // SPECIAL BONES
@@ -155,11 +165,39 @@ public partial class PhysicsSkeleton : Skeleton3D
         var bonesToSimulate = new Godot.Collections.Array<StringName>();
         foreach (PhysicalBone3D bone in _physicsBones)
         {
-
-            bonesToSimulate.Add(new StringName(GetBoneName(bone.GetBoneId())));
-
+            string bname = GetBoneName(bone.GetBoneId());
+            bonesToSimulate.Add(new StringName(bname));
+            if (bname == "Spine.001") _spinePhysBone = bone;
+            if (bname == "Head.001")  _headPhysBone  = bone;
         }
         _boneSim.PhysicalBonesStartSimulation(bonesToSimulate);
+    }
+
+    // ── Snapshot helpers (called by authoritative Character.SnapshotState) ────
+
+    public Vector3 GetSpinePhysicsWorldPosition()
+    {
+        if (_spinePhysBone == null) return GlobalPosition;
+        return (_spinePhysBone.GlobalTransform * _spinePhysBone.BodyOffset.AffineInverse()).Origin;
+    }
+
+    public Vector3 GetSpinePhysicsLinearVelocity()
+        => _spinePhysBone?.LinearVelocity ?? Vector3.Zero;
+
+    public (float pitch, float yaw) GetHeadPhysicsWorldAngles()
+    {
+        if (_headPhysBone == null) return (HeadAngle, 0f);
+        Vector3 euler = (_headPhysBone.GlobalTransform * _headPhysBone.BodyOffset.AffineInverse())
+                        .Basis.GetEuler();
+        return (euler.X, euler.Y);
+    }
+
+    // Kick all bones with the authoritative spine velocity when ragdoll starts remotely
+    public void ApplyRagdollKick(Vector3 spineVelocity)
+    {
+        if (_physicsBones == null) return;
+        foreach (var bone in _physicsBones)
+            bone.LinearVelocity = spineVelocity;
     }
     public override void _PhysicsProcess(double delta)
     {
@@ -227,6 +265,31 @@ public partial class PhysicsSkeleton : Skeleton3D
             SetBoneGlobalPose(ikBone, poseRoot);
         }
 
+        // Remote correction: gently steer spine position and head rotation
+        // toward the authoritative values without overriding local physics.
+        if (IsRagdoll && RemoteCorrection)
+        {
+            if (_spinePhysBone != null)
+            {
+                Transform3D cur = _spinePhysBone.GlobalTransform * _spinePhysBone.BodyOffset.AffineInverse();
+                _spinePhysBone.LinearVelocity +=
+                    (RemoteSpineTarget - cur.Origin) * SpineCorrectK * (float)delta;
+            }
+
+            if (_headPhysBone != null)
+            {
+                Transform3D cur = _headPhysBone.GlobalTransform * _headPhysBone.BodyOffset.AffineInverse();
+                Quaternion target  = Quaternion.FromEuler(new Vector3(RemoteHeadPitch, RemoteHeadYaw, 0f));
+                Quaternion current = cur.Basis.GetRotationQuaternion().Normalized();
+                if (target.Dot(current) < 0f) current = -current;
+                Quaternion diff = (target * current.Inverse()).Normalized();
+                if (diff.W < 0f) diff = -diff;
+                float angle = diff.GetAngle();
+                if (angle > 1e-4f)
+                    _headPhysBone.AngularVelocity += diff.GetAxis() * angle * HeadCorrectK * (float)delta;
+            }
+        }
+
     }
     ///<summary>
     ///     Permet de Prendre la pose de la tête du personnage
@@ -237,7 +300,7 @@ public partial class PhysicsSkeleton : Skeleton3D
         return GetPoseFromIdx(InIsPhysicsSkeleton ? this : TargetSkeleton, InIsPhysicsSkeleton ? physicBone : _headBoneIdx);
     }
 
-    // Called every frame. 'delta' is the elapsed time since the previous frame.
+	// Called every frame. 'delta' is the elapsed time since the previous frame.
     public override void _Process(double delta)
     {
         //Process roule apres physicsprocess(), et a cause de
