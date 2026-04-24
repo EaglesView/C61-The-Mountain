@@ -15,6 +15,7 @@ public partial class World : Node3D
 		_playerSpawner = GetNode<PlayerSpawner>("PlayerSpawner");
 		_spawner.SpawnFunction = Callable.From<Variant, GodotObject>(SpawnPlayerNode);
 
+		_LoadMap(LobbyState.SelectedMapId);
 		LobbyState.Clear();
 
 		var net = NetworkManager.Instance;
@@ -98,6 +99,19 @@ public partial class World : Node3D
 		var player = players?.GetNodeOrNull<Player>(state.PeerId.ToString());
 		if (player == null || player.IsMultiplayerAuthority()) return;
 		player.PushSnapshot(state, Time.GetTicksMsec());
+	}
+
+	private void _LoadMap(string mapId)
+	{
+		var def = MapRegistry.Get(mapId) ?? MapRegistry.All[0];
+		var scene = ResourceLoader.Load<PackedScene>(def.ScenePath);
+		if (scene == null)
+		{
+			GD.PrintErr($"[World] Map scene not found: {def.ScenePath}");
+			return;
+		}
+		GetNode("MapContainer").AddChild(scene.Instantiate());
+		GD.Print($"[World] Loaded map '{def.DisplayName}' ({def.Id})");
 	}
 
 	public override void _ExitTree()

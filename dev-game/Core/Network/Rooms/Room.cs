@@ -11,6 +11,7 @@ public sealed class Room
     public const string DefaultStatus        = "waiting";
     public const int    DefaultMaxPlayers    = 8;
     public const string SharedLobbyCode      = "MAIN";
+    public const string DefaultMapId         = MapRegistry.DefaultMapId;
 
     public string Code          { get; }
     public string HostUserId    { get; }

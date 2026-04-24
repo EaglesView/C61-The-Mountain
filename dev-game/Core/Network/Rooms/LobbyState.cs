@@ -4,6 +4,10 @@ public static class LobbyState
 {
     public static RoomSnapshot? Current { get; private set; }
     public static bool IsHost { get; private set; }
+    // Survives Clear() so World._Ready can read it after LobbyState is torn down
+    public static string SelectedMapId { get; private set; } = MapRegistry.DefaultMapId;
+
+    public static void SetSelectedMap(string mapId) => SelectedMapId = mapId;
 
     public static void Set(RoomSnapshot snapshot, bool isHost)
     {

@@ -3,6 +3,8 @@
 [ext_resource type="PackedScene" uid="uid://cxvenxb1m26wm" path="res://Core/Dev/dev_map.tscn" id="2_c22ky"]
 [ext_resource type="PackedScene" uid="uid://d1fshm7mq3au7" path="res://Core/World/MapAssets/MainAssets/player_spawner.tscn" id="3_0q453"]
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_c4q17"]
+
 [node name="MapJm" type="Node3D" unique_id=544405956]
 
 [node name="DevMap" parent="." unique_id=110067603 instance=ExtResource("2_c22ky")]
@@ -12,3 +14,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -166.47108, 7.940194, 4.76837
 _spawnPoints = [NodePath("Marker3D")]
 
 [node name="Marker3D" type="Marker3D" parent="PlayerSpawner" unique_id=268163963]
+
+[node name="Area3D" type="Area3D" parent="." unique_id=1671869068]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D" unique_id=468062880]
+shape = SubResource("BoxShape3D_c4q17")

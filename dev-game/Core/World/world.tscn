@@ -5,144 +5,34 @@
 [ext_resource type="PackedScene" uid="uid://bqm28efgwql4h" path="res://Core/UI/Debug/debug.tscn" id="5_c3a17"]
 [ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="6_ku4un"]
 [ext_resource type="PackedScene" uid="uid://c6b388a8o2od" path="res://Core/UI/GameMenu/game_menu.tscn" id="6_w2q3g"]
-[ext_resource type="PackedScene" uid="uid://bq4rndu6x2g14" path="res://Core/Dev/map_jm.tscn" id="7_0xmi2"]
 [ext_resource type="PackedScene" uid="uid://d1fshm7mq3au7" path="res://Core/World/MapAssets/MainAssets/player_spawner.tscn" id="7_hn3nb"]
 
-[sub_resource type="Environment" id="Environment_qm4om"]
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_7tpyy"]
+
+[sub_resource type="Sky" id="Sky_u8372"]
+sky_material = SubResource("ProceduralSkyMaterial_7tpyy")
+
+[sub_resource type="Environment" id="Environment_0xmi2"]
+background_mode = 2
+sky = SubResource("Sky_u8372")
 ssr_enabled = true
-ssao_enabled = true
-glow_enabled = true
 fog_enabled = true
-fog_mode = 1
-fog_light_energy = 8.42
-fog_sun_scatter = 0.56
-fog_density = 0.1485
-fog_height = -401.15
-fog_height_density = 12.866
+fog_light_energy = 2.65
+fog_sun_scatter = 0.08
 volumetric_fog_enabled = true
 volumetric_fog_density = 0.01
+volumetric_fog_emission = Color(1, 1, 1, 1)
 
-[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_cdgdc"]
+[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_ku4un"]
 
-[sub_resource type="Compositor" id="Compositor_j214j"]
-
-[sub_resource type="BoxMesh" id="BoxMesh_rbvxo"]
-
-[sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_tt40f"]
-data = PackedVector3Array(-0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5)
+[sub_resource type="Compositor" id="Compositor_ei37a"]
 
 [node name="World" type="Node3D" unique_id=500049071]
 script = ExtResource("1_34ec0")
 _playerScene = ExtResource("4_ei37a")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1123871444]
-environment = SubResource("Environment_qm4om")
-camera_attributes = SubResource("CameraAttributesPractical_cdgdc")
-compositor = SubResource("Compositor_j214j")
-
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=245978912]
 transform = Transform3D(1, 0, 0, 0, 0.70710677, 0.70710677, 0, -0.70710677, 0.70710677, 0, 5, 0)
-
-[node name="TestCol" type="StaticBody3D" parent="." unique_id=1213235912]
-
-[node name="MeshInstance3D8" type="MeshInstance3D" parent="TestCol" unique_id=1570654073]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.11055517, 0.024489522, 1.0842457, 1.5097327)
-mesh = SubResource("BoxMesh_rbvxo")
-
-[node name="StaticBody3D" type="StaticBody3D" parent="TestCol/MeshInstance3D8" unique_id=1851165264]
-collision_layer = 8
-collision_mask = 4
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="TestCol/MeshInstance3D8/StaticBody3D" unique_id=1020877128]
-shape = SubResource("ConcavePolygonShape3D_tt40f")
-
-[node name="MeshInstance3D10" type="MeshInstance3D" parent="TestCol" unique_id=419606600]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.11055517, 0.024489522, 1.0842457, 1.1629605)
-mesh = SubResource("BoxMesh_rbvxo")
-
-[node name="StaticBody3D" type="StaticBody3D" parent="TestCol/MeshInstance3D10" unique_id=1659396291]
-collision_layer = 8
-collision_mask = 4
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="TestCol/MeshInstance3D10/StaticBody3D" unique_id=2083838976]
-shape = SubResource("ConcavePolygonShape3D_tt40f")
-
-[node name="MeshInstance3D9" type="MeshInstance3D" parent="TestCol" unique_id=1769460109]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.11055517, 0.024489522, 1.0842457, 1.8578575)
-mesh = SubResource("BoxMesh_rbvxo")
-
-[node name="StaticBody3D" type="StaticBody3D" parent="TestCol/MeshInstance3D9" unique_id=87420528]
-collision_layer = 8
-collision_mask = 4
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="TestCol/MeshInstance3D9/StaticBody3D" unique_id=1514609904]
-shape = SubResource("ConcavePolygonShape3D_tt40f")
-
-[node name="MeshInstance3D11" type="MeshInstance3D" parent="TestCol" unique_id=553639295]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.11055517, 0.024489522, 1.0842457, 2.2796602)
-mesh = SubResource("BoxMesh_rbvxo")
-
-[node name="StaticBody3D" type="StaticBody3D" parent="TestCol/MeshInstance3D11" unique_id=1813551170]
-collision_layer = 8
-collision_mask = 4
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="TestCol/MeshInstance3D11/StaticBody3D" unique_id=1664710457]
-shape = SubResource("ConcavePolygonShape3D_tt40f")
-
-[node name="MeshInstance3D12" type="MeshInstance3D" parent="TestCol" unique_id=1713253240]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.11055517, 0.02448976, 1.0704433, 2.6804101)
-mesh = SubResource("BoxMesh_rbvxo")
-
-[node name="StaticBody3D" type="StaticBody3D" parent="TestCol/MeshInstance3D12" unique_id=886853712]
-collision_layer = 8
-collision_mask = 4
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="TestCol/MeshInstance3D12/StaticBody3D" unique_id=1433228071]
-shape = SubResource("ConcavePolygonShape3D_tt40f")
-
-[node name="MeshInstance3D13" type="MeshInstance3D" parent="TestCol" unique_id=1338203213]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.11055517, 0.02448976, 1.0704433, 3.0824325)
-mesh = SubResource("BoxMesh_rbvxo")
-
-[node name="StaticBody3D" type="StaticBody3D" parent="TestCol/MeshInstance3D13" unique_id=1448116776]
-collision_layer = 8
-collision_mask = 4
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="TestCol/MeshInstance3D13/StaticBody3D" unique_id=610658788]
-shape = SubResource("ConcavePolygonShape3D_tt40f")
-
-[node name="MeshInstance3D14" type="MeshInstance3D" parent="TestCol" unique_id=1788921820]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.11055517, 0.02448976, 1.0704433, 3.4882758)
-mesh = SubResource("BoxMesh_rbvxo")
-
-[node name="StaticBody3D" type="StaticBody3D" parent="TestCol/MeshInstance3D14" unique_id=445542893]
-collision_layer = 8
-collision_mask = 4
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="TestCol/MeshInstance3D14/StaticBody3D" unique_id=1291535707]
-shape = SubResource("ConcavePolygonShape3D_tt40f")
-
-[node name="MeshInstance3D3" type="MeshInstance3D" parent="TestCol" unique_id=1995610823]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.024489403, 0.8888515, 4.7821097)
-mesh = SubResource("BoxMesh_rbvxo")
-
-[node name="StaticBody3D" type="StaticBody3D" parent="TestCol/MeshInstance3D3" unique_id=24968514]
-collision_layer = 8
-collision_mask = 4
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="TestCol/MeshInstance3D3/StaticBody3D" unique_id=1672269384]
-shape = SubResource("ConcavePolygonShape3D_tt40f")
-
-[node name="MeshInstance3D4" type="MeshInstance3D" parent="TestCol" unique_id=815512182]
-transform = Transform3D(1, 0, 0, 0, 0.70710677, 0.70710677, 0, -0.70710677, 0.70710677, -2.578847, 0.8888515, 4.7821097)
-mesh = SubResource("BoxMesh_rbvxo")
-
-[node name="StaticBody3D" type="StaticBody3D" parent="TestCol/MeshInstance3D4" unique_id=356966296]
-collision_layer = 8
-collision_mask = 4
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="TestCol/MeshInstance3D4/StaticBody3D" unique_id=416954678]
-shape = SubResource("ConcavePolygonShape3D_tt40f")
 
 [node name="Players" type="Node3D" parent="." unique_id=401840001]
 
@@ -150,11 +40,11 @@ shape = SubResource("ConcavePolygonShape3D_tt40f")
 spawn_path = NodePath("../Players")
 
 [node name="PlayerSpawner" parent="." unique_id=1973612002 instance=ExtResource("7_hn3nb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 4, -2)
 
 [node name="Marker3D" type="Marker3D" parent="PlayerSpawner" unique_id=1016226400]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5992945, -3.1238916)
 
-[node name="MapJm" parent="." unique_id=1295357754 instance=ExtResource("7_0xmi2")]
+[node name="MapContainer" type="Node3D" parent="." unique_id=1295357754]
 
 [node name="Control" type="Control" parent="." unique_id=524275059]
 layout_mode = 3
@@ -169,3 +59,13 @@ metadata/_edit_use_anchors_ = true
 
 [node name="GameMenu" parent="." unique_id=1229459489 instance=ExtResource("6_w2q3g")]
 metadata/_edit_use_anchors_ = true
+
+[node name="Environment" type="Node3D" parent="." unique_id=1102522184]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="Environment" unique_id=1163456692]
+environment = SubResource("Environment_0xmi2")
+camera_attributes = SubResource("CameraAttributesPractical_ku4un")
+compositor = SubResource("Compositor_ei37a")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="Environment" unique_id=432701520]
+transform = Transform3D(0.9659258, 0.1830127, 0.1830127, -0.25881907, 0.6830128, 0.6830128, 0, -0.7071068, 0.7071068, 0, 8.155859, 0)

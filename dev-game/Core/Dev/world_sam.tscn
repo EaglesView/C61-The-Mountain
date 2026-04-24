@@ -3,9 +3,6 @@
 [ext_resource type="Script" uid="uid://bivbri8k5yp3h" path="res://Core/World/World.cs" id="1_xujvb"]
 [ext_resource type="PackedScene" uid="uid://bqm28efgwql4h" path="res://Core/UI/Debug/debug.tscn" id="2_lwm54"]
 [ext_resource type="PackedScene" uid="uid://c6b388a8o2od" path="res://Core/UI/GameMenu/game_menu.tscn" id="3_1dyim"]
-[ext_resource type="PackedScene" uid="uid://d1fshm7mq3au7" path="res://Core/World/MapAssets/MainAssets/player_spawner.tscn" id="4_5l2lx"]
-[ext_resource type="PackedScene" uid="uid://pyyf2q46j574" path="res://Core/World/CharacterModel/Player/Player.tscn" id="5_bm08a"]
-[ext_resource type="PackedScene" uid="uid://bp0rj5s7re13t" path="res://Core/World/CharacterModel/Character/RemoteCharacter.tscn" id="6_3g1lu"]
 [ext_resource type="PackedScene" uid="uid://7f5ysctvudb8" path="res://Core/World/Interaction/fan/Fan.tscn" id="7_1dyim"]
 [ext_resource type="PackedScene" uid="uid://w0vh0lann51y" path="res://Core/World/Interaction/convoyer/ConveyorBelt.tscn" id="8_5l2lx"]
 
@@ -53,14 +50,6 @@ script = ExtResource("1_xujvb")
 [node name="Debug" parent="." unique_id=752801447 instance=ExtResource("2_lwm54")]
 
 [node name="GameMenu" parent="." unique_id=1229459489 instance=ExtResource("3_1dyim")]
-
-[node name="PlayerSpawner" parent="." unique_id=1973612002 node_paths=PackedStringArray("_spawnPoints") instance=ExtResource("4_5l2lx")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.7944541, 2.6187654, 0)
-_playerScene = ExtResource("5_bm08a")
-_remoteCharacterScene = ExtResource("6_3g1lu")
-_spawnPoints = [NodePath("Marker3D")]
-
-[node name="Marker3D" type="Marker3D" parent="PlayerSpawner" unique_id=189181669]
 
 [node name="Environment" type="Node3D" parent="." unique_id=395441633]
 
