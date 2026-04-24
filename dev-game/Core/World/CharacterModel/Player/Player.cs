@@ -209,8 +209,8 @@ public partial class Player : Character
 		}
 		if (Input.IsActionJustReleased("run"))
 		{
-			speed /= RunMultiplier;
-			AnimPlayer.SpeedScale /= RunMultiplier;
+			speed = WalkSpeed;
+			AnimPlayer.SpeedScale = 1.0f;
 		}
 		if (Input.IsActionJustPressed("pause_menu"))
 			TransitionTo(CharacterState.Paused);
@@ -224,7 +224,7 @@ public partial class Player : Character
 			interactable?.Interact(this);
 		}
 
-		if (Input.IsActionJustPressed("show_sign"))  PhysicsSkelton.ArmsUp = true;
+		if (Input.IsActionJustPressed("show_sign")) PhysicsSkelton.ArmsUp = true;
 		if (Input.IsActionJustReleased("show_sign")) PhysicsSkelton.ArmsUp = false;
 
 		if (Input.IsActionJustPressed("change_view"))
@@ -291,7 +291,7 @@ public partial class Player : Character
 		if (shouldRagdoll != _remoteRagdoll)
 		{
 			_remoteRagdoll = shouldRagdoll;
-			PhysicsSkelton.IsRagdoll      = shouldRagdoll;
+			PhysicsSkelton.IsRagdoll = shouldRagdoll;
 			PhysicsSkelton.RemoteCorrection = shouldRagdoll;
 			if (_capsule != null) _capsule.Disabled = shouldRagdoll;
 
@@ -302,8 +302,8 @@ public partial class Player : Character
 		if (_remoteRagdoll)
 		{
 			PhysicsSkelton.RemoteSpineTarget = _snapshots[latestIdx].Position;
-			PhysicsSkelton.RemoteHeadPitch   = _snapshots[latestIdx].HeadPitch;
-			PhysicsSkelton.RemoteHeadYaw     = _snapshots[latestIdx].BodyYaw;
+			PhysicsSkelton.RemoteHeadPitch = _snapshots[latestIdx].HeadPitch;
+			PhysicsSkelton.RemoteHeadYaw = _snapshots[latestIdx].BodyYaw;
 			return;
 		}
 
