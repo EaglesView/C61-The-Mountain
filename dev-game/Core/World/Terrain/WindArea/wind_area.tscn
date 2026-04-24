@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://bu7fsw23jtsu3" path="res://Assets/Textures/Particles/dingbats-518.png" id="2_2jfy3"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_4fx5k"]
-size = Vector3(4, 0.7, 4)
+size = Vector3(11, 0.7, 19)
 
 [sub_resource type="FogMaterial" id="FogMaterial_2jfy3"]
 
@@ -35,8 +35,9 @@ size = Vector2(0.1, 0.1)
 [node name="WindArea" type="Node3D" unique_id=883645092 node_paths=PackedStringArray("WindZone")]
 script = ExtResource("1_8umop")
 WindZone = NodePath("Zone")
-BoxSize = Vector2(10, 10)
-WindDirection = Vector3(1, 0, 0)
+BoxSize = Vector2(100, 50)
+DurationAreaTotal = 12.0
+WindDirection = Vector3(2, 0, 0)
 
 [node name="Zone" type="Area3D" parent="." unique_id=1062432939]
 

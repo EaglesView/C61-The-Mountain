@@ -9,7 +9,7 @@ public partial class WindZoneDcm : Node3D
 	[Export] public Vector3 WindDirection = new Vector3(0f, 0f, 6f);
 	[Export(PropertyHint.Range, "1.0f,120.0f,0.1f,suffix:sec")] public float DurationAreaTotal = 6.0f;
 	[Export(PropertyHint.Range, "0.0f,120.0f,0.1f,suffix:sec")] public float DurationAreaAggressive = 1.0f;
-	[Export(PropertyHint.Range, "1,32,1")] public int SpawnCount = 1;
+	[Export(PropertyHint.Range, "1,1024,1")] public int SpawnCount = 1;
 
 	private float _spawnTimer = 0f;
 	private float SubInterval => SpawnInterval / SpawnCount;
