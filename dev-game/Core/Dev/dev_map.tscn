@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://cekqp5iysbyxp" path="res://textures/snow-2/textures/snow_02_rough_1k.jpg" id="3_d0yof"]
 [ext_resource type="PackedScene" uid="uid://3lj7a0stmiiv" path="res://Core/World/MapAssets/MainAssets/rotating_thing_animatable.tscn" id="3_ibgka"]
 [ext_resource type="PackedScene" uid="uid://7f5ysctvudb8" path="res://Core/World/Interaction/fan/Fan.tscn" id="5_dqtda"]
+[ext_resource type="Texture2D" uid="uid://bu7fsw23jtsu3" path="res://Assets/Textures/Particles/dingbats-518.png" id="8_u8qu8"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pien6"]
 albedo_texture = ExtResource("1_0jqa6")
@@ -28,6 +29,30 @@ size = Vector2(500, 500)
 [sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_dqtda"]
 
 [sub_resource type="Compositor" id="Compositor_8nmog"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_d0yof"]
+lifetime_randomness = 0.1
+emission_shape = 3
+emission_box_extents = Vector3(2.17, 1.015, 2.275)
+initial_velocity_max = 0.099999994
+gravity = Vector3(0, -0.2, 0)
+linear_accel_min = -2.2351742e-06
+linear_accel_max = 0.49999776
+radial_accel_min = -1.0800022
+radial_accel_max = 1.0799978
+tangential_accel_min = -4.300002
+tangential_accel_max = 4.3099976
+damping_max = 2.6880002
+turbulence_noise_strength = 4.74
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6uykg"]
+transparency = 1
+shading_mode = 0
+albedo_texture = ExtResource("8_u8qu8")
+
+[sub_resource type="QuadMesh" id="QuadMesh_pien6"]
+material = SubResource("StandardMaterial3D_6uykg")
+size = Vector2(0.1, 0.1)
 
 [node name="DevMap" type="Node3D" unique_id=110067603]
 
@@ -93,3 +118,19 @@ WindForce = 25.0
 [node name="fan7" parent="." unique_id=81183830 instance=ExtResource("5_dqtda")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -61.512524, 19.299957, 4.8999987)
 WindForce = 25.0
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="." unique_id=1644409714]
+transform = Transform3D(135.09245, 0, 0, 0, 8.994269, 0, 0, 0, 20.621077, 0, 9.79924, 0)
+amount = 100000
+lifetime = 5.0
+transform_align = 1
+process_material = SubResource("ParticleProcessMaterial_d0yof")
+draw_pass_1 = SubResource("QuadMesh_pien6")
+
+[node name="GPUParticles3D2" type="GPUParticles3D" parent="." unique_id=1241658518]
+transform = Transform3D(135.09245, 0, 0, 0, 8.994269, 0, 0, 0, 20.621077, 0, 22.61409, 0)
+amount = 100000
+lifetime = 5.0
+transform_align = 1
+process_material = SubResource("ParticleProcessMaterial_d0yof")
+draw_pass_1 = SubResource("QuadMesh_pien6")
