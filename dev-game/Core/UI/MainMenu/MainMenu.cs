@@ -4,30 +4,33 @@ using Core.Network.Rooms;
 
 public partial class MainMenu : Control
 {
-    private Button _play    = null!;
-    private Button _local   = null!;
-    private Button _profile = null!;
-    private Button _credits = null!;
-    private Button _signOut = null!;
-    private Button _exit    = null!;
-    private Label  _status  = null!;
+    private Button _play     = null!;
+    private Button _local    = null!;
+    private Button _profile  = null!;
+    private Button _credits  = null!;
+    private Button _settings = null!;
+    private Button _signOut  = null!;
+    private Button _exit     = null!;
+    private Label  _status   = null!;
 
     public override void _Ready()
     {
-        _play    = GetNode<Button>("VBoxContainer/PlayButton");
-        _local   = GetNode<Button>("VBoxContainer/LocalButton");
-        _profile = GetNode<Button>("VBoxContainer/ProfileButton");
-        _credits = GetNode<Button>("VBoxContainer/CreditsButton");
-        _signOut = GetNode<Button>("VBoxContainer/SignOutButton");
-        _exit    = GetNode<Button>("VBoxContainer/ExitButton");
-        _status  = GetNode<Label>("VBoxContainer/StatusLabel");
+        _play     = GetNode<Button>("VBoxContainer/PlayButton");
+        _local    = GetNode<Button>("VBoxContainer/LocalButton");
+        _profile  = GetNode<Button>("VBoxContainer/ProfileButton");
+        _credits  = GetNode<Button>("VBoxContainer/CreditsButton");
+        _settings = GetNode<Button>("VBoxContainer/SettingsButton");
+        _signOut  = GetNode<Button>("VBoxContainer/SignOutButton");
+        _exit     = GetNode<Button>("VBoxContainer/ExitButton");
+        _status   = GetNode<Label>("VBoxContainer/StatusLabel");
 
-        _play.Pressed    += OnPlayPressed;
-        _local.Pressed   += OnLocalPressed;
-        _profile.Pressed += OnProfilePressed;
-        _credits.Pressed += OnCreditsPressed;
-        _signOut.Pressed += OnSignOutPressed;
-        _exit.Pressed    += OnExitPressed;
+        _play.Pressed     += OnPlayPressed;
+        _local.Pressed    += OnLocalPressed;
+        _profile.Pressed  += OnProfilePressed;
+        _credits.Pressed  += OnCreditsPressed;
+        _settings.Pressed += OnSettingsPressed;
+        _signOut.Pressed  += OnSignOutPressed;
+        _exit.Pressed     += OnExitPressed;
     }
 
     // ── Play Online — auto-join / create the shared lobby ────────────────────
@@ -106,7 +109,16 @@ public partial class MainMenu : Control
         GetTree().ChangeSceneToFile("res://Core/UI/Profile/profile.tscn");
     }
 
-    private void OnCreditsPressed() { }
+    private void OnCreditsPressed()
+    {
+        GetTree().ChangeSceneToFile("res://Core/UI/Splash/credits_splash.tscn");
+    }
+
+    private void OnSettingsPressed()
+    {
+        var settingsScene = GD.Load<PackedScene>("res://Core/UI/Settings/settings_menu.tscn");
+        AddChild(settingsScene.Instantiate<Control>());
+    }
 
     private async void OnSignOutPressed()
     {

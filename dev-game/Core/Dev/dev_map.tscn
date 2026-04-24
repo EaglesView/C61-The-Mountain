@@ -152,8 +152,10 @@ process_material = SubResource("ParticleProcessMaterial_d0yof")
 draw_pass_1 = SubResource("QuadMesh_pien6")
 
 [node name="WindZoneDCM" parent="." unique_id=1288385587 instance=ExtResource("9_pien6")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.387982, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -54.736214, 0.387982, 0)
 WindAreaScene = ExtResource("10_u8372")
-WindForce = 1.0
-WindDirection = Vector3(1, 0, 0)
-SpawnCount = 17
+SpawnInterval = 1.0
+WindDirection = Vector3(2, 0, 0)
+DurationAreaTotal = 5.0
+DurationAreaAggressive = 5.0
+SpawnCount = 1024

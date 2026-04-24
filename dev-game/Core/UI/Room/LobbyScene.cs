@@ -145,9 +145,19 @@ public partial class LobbyScene : Control
 
     private void AddPlayerRow(string username, bool isHost)
     {
-        var label = new Label();
-        label.Text = isHost ? $"  ★  {username}  (Host)" : $"  •  {username}";
-        _playersList.AddChild(label);
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 8);
+
+        var icon = new Label();
+        icon.Text = isHost ? "★" : "•";
+
+        var name = new Label();
+        name.Text = isHost ? $"{username}  (Hôte)" : username;
+        name.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+
+        row.AddChild(icon);
+        row.AddChild(name);
+        _playersList.AddChild(row);
     }
 
     private async void OnLeavePressed()
