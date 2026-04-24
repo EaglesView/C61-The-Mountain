@@ -20,6 +20,7 @@ _muteButton = NodePath("PanelContainer/PanelContainer/MarginContainer/VBoxContai
 _killCharacterButton = NodePath("PanelContainer/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/KillCharacterButton")
 
 [node name="PanelContainer" type="PanelContainer" parent="." unique_id=1061809706]
+z_index = -1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -28,6 +29,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="PanelContainer" type="PanelContainer" parent="PanelContainer" unique_id=1069168032]
+z_index = 1
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4

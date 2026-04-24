@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://bck0pfkhgila0" path="res://Core/World/Terrain/WindArea/WindZoneDcm.cs" id="1_thlch"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_jrkvc"]
+size = Vector3(129, 1, 96)
 
 [node name="WindZoneDCM" type="Node3D" unique_id=1288385587]
 script = ExtResource("1_thlch")
@@ -11,3 +12,4 @@ script = ExtResource("1_thlch")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="SpawnBoundary" unique_id=1394106655]
 shape = SubResource("BoxShape3D_jrkvc")
+debug_color = Color(0.16140959, 0.6441377, 3.85046e-07, 1)

@@ -23,24 +23,27 @@ tangential_accel_max = 4.3099976
 damping_max = 2.6880002
 turbulence_noise_strength = 4.74
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6uykg"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2jfy3"]
 transparency = 1
 shading_mode = 0
 albedo_texture = ExtResource("2_2jfy3")
 
 [sub_resource type="QuadMesh" id="QuadMesh_8umop"]
-material = SubResource("StandardMaterial3D_6uykg")
+material = SubResource("StandardMaterial3D_2jfy3")
 size = Vector2(0.1, 0.1)
 
 [node name="WindArea" type="Node3D" unique_id=883645092 node_paths=PackedStringArray("WindZone")]
 script = ExtResource("1_8umop")
 WindZone = NodePath("Zone")
+BoxSize = Vector2(10, 10)
+WindDirection = Vector3(1, 0, 0)
 
 [node name="Zone" type="Area3D" parent="." unique_id=1062432939]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Zone" unique_id=1237559174]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 0)
 shape = SubResource("BoxShape3D_4fx5k")
+debug_color = Color(0.99607843, 0, 0.20392157, 1)
 
 [node name="FogVolume" type="FogVolume" parent="Zone" unique_id=1118088143]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.55822754, 0, -0.35638428)

@@ -8,6 +8,8 @@
 [ext_resource type="PackedScene" uid="uid://3lj7a0stmiiv" path="res://Core/World/MapAssets/MainAssets/rotating_thing_animatable.tscn" id="3_ibgka"]
 [ext_resource type="PackedScene" uid="uid://7f5ysctvudb8" path="res://Core/World/Interaction/fan/Fan.tscn" id="5_dqtda"]
 [ext_resource type="Texture2D" uid="uid://bu7fsw23jtsu3" path="res://Assets/Textures/Particles/dingbats-518.png" id="8_u8qu8"]
+[ext_resource type="PackedScene" uid="uid://blchon3025mrj" path="res://Core/World/Terrain/WindArea/wind_zone_dcm.tscn" id="9_pien6"]
+[ext_resource type="PackedScene" uid="uid://cihs25qij1jtb" path="res://Core/World/Terrain/WindArea/wind_area.tscn" id="10_u8372"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pien6"]
 albedo_texture = ExtResource("1_0jqa6")
@@ -24,7 +26,21 @@ size = Vector2(500, 500)
 
 [sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_ccc14"]
 
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_pien6"]
+
+[sub_resource type="Sky" id="Sky_u8372"]
+sky_material = SubResource("ProceduralSkyMaterial_pien6")
+
 [sub_resource type="Environment" id="Environment_dqtda"]
+background_mode = 2
+sky = SubResource("Sky_u8372")
+ssr_enabled = true
+fog_enabled = true
+fog_light_energy = 2.65
+fog_sun_scatter = 0.08
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.01
+volumetric_fog_emission = Color(1, 1, 1, 1)
 
 [sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_dqtda"]
 
@@ -76,7 +92,7 @@ transform = Transform3D(-4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0, 1, -61.
 transform = Transform3D(-4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0, 1, -60.788704, 15.873955, 3.581654)
 
 [node name="VentBlower2" parent="." unique_id=411510862 instance=ExtResource("2_ccc14")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40.81698, 5.282113, -21.722837)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.7465515, -0.46965218, -6.4781704)
 
 [node name="RotatingThing" parent="." unique_id=903562714 instance=ExtResource("3_ibgka")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.4, 5, -2.8)
@@ -134,3 +150,10 @@ lifetime = 5.0
 transform_align = 1
 process_material = SubResource("ParticleProcessMaterial_d0yof")
 draw_pass_1 = SubResource("QuadMesh_pien6")
+
+[node name="WindZoneDCM" parent="." unique_id=1288385587 instance=ExtResource("9_pien6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.387982, 0)
+WindAreaScene = ExtResource("10_u8372")
+WindForce = 1.0
+WindDirection = Vector3(1, 0, 0)
+SpawnCount = 17

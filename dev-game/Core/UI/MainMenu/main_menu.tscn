@@ -2,6 +2,19 @@
 
 [ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="1_evkl0"]
 [ext_resource type="Script" uid="uid://ctldyxkgdthf5" path="res://Core/UI/MainMenu/MainMenu.cs" id="1_mainmenu"]
+[ext_resource type="PackedScene" uid="uid://cxvenxb1m26wm" path="res://Core/Dev/dev_map.tscn" id="3_rugc1"]
+[ext_resource type="FontFile" uid="uid://d3iekdubpmgvd" path="res://Assets/fonts/Gorditas/Gorditas-Bold.ttf" id="4_77frg"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_rugc1"]
+font = ExtResource("4_77frg")
+font_size = 64
+font_color = Color(0.20784314, 0.7294118, 0.9529412, 1)
+outline_size = 12
+outline_color = Color(0.11764706, 0.654902, 0.88235295, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_77frg"]
+font = ExtResource("4_77frg")
+font_color = Color(0, 0, 0, 1)
 
 [node name="MainMenu" type="Control" unique_id=712269285]
 layout_mode = 3
@@ -12,6 +25,22 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("1_evkl0")
 script = ExtResource("1_mainmenu")
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="." unique_id=1376351034]
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="SubViewportContainer" unique_id=1834833327]
+handle_input_locally = false
+size = Vector2i(1920, 1080)
+render_target_update_mode = 4
+
+[node name="DevMap" parent="SubViewportContainer/SubViewport" unique_id=110067603 instance=ExtResource("3_rugc1")]
+
+[node name="Camera3D" type="Camera3D" parent="SubViewportContainer/SubViewport/DevMap" unique_id=850588753]
+transform = Transform3D(0.1664177, 0.53348863, 0.8292738, -0.0032242627, 0.8412912, -0.54057264, -0.98605007, 0.08728706, 0.14172585, -123.18913, 0.55150414, 9.641663)
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=101640224]
 layout_mode = 1
@@ -29,7 +58,8 @@ grow_vertical = 2
 
 [node name="Title" type="Label" parent="VBoxContainer" unique_id=760004715]
 layout_mode = 2
-text = "Main Menu"
+text = "THE MOUNTAIN"
+label_settings = SubResource("LabelSettings_rugc1")
 horizontal_alignment = 1
 
 [node name="PlayButton" type="Button" parent="VBoxContainer" unique_id=1109665968]
@@ -60,7 +90,6 @@ layout_mode = 2
 text = "Play Local (Debug)"
 
 [node name="StatusLabel" type="Label" parent="VBoxContainer" unique_id=1007076799]
-visible = false
 layout_mode = 2
+label_settings = SubResource("LabelSettings_77frg")
 horizontal_alignment = 1
-autowrap_mode = 2
