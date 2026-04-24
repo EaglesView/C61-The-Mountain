@@ -95,7 +95,7 @@ public partial class Player : Character
 
 		if (!IsMultiplayerAuthority())
 		{
-			// Remote player: disable camera, set up animation
+			// Remote player: disable camera, set up animation, show name billboard
 			_cameraMan?.QueueFree();
 			_cameraMan = null;
 			if (PhysicsSkelton != null && AnimPlayer == null)
@@ -103,6 +103,16 @@ public partial class Player : Character
 			speed = WalkSpeed;
 			if (SpawnPosition != Vector3.Zero)
 				GlobalPosition = SpawnPosition;
+
+			var nameLabel = new Label3D();
+			nameLabel.Text = $"P{PeerId}";
+			nameLabel.Billboard = BaseMaterial3D.BillboardModeEnum.FixedY;
+			nameLabel.PixelSize = 0.005f;
+			nameLabel.FontSize = 48;
+			nameLabel.OutlineSize = 8;
+			nameLabel.Position = new Vector3(0f, 2.2f, 0f);
+			nameLabel.NoDepthTest = true;
+			AddChild(nameLabel);
 			return;
 		}
 
@@ -155,6 +165,11 @@ public partial class Player : Character
 		{
 			if (@event.IsActionPressed("pause_menu"))
 				TransitionTo(_stateBeforePause);
+			return;
+		}
+		if (@event.IsActionPressed("pause_menu"))
+		{
+			TransitionTo(CharacterState.Paused);
 			return;
 		}
 	}
@@ -212,9 +227,6 @@ public partial class Player : Character
 			speed = WalkSpeed;
 			AnimPlayer.SpeedScale = 1.0f;
 		}
-		if (Input.IsActionJustPressed("pause_menu"))
-			TransitionTo(CharacterState.Paused);
-
 		if (Input.IsActionJustPressed("interact"))
 		{
 			GetObjectTypeFromRaycast(Raycaster);
