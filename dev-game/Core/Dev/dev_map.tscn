@@ -10,6 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://bu7fsw23jtsu3" path="res://Assets/Textures/Particles/dingbats-518.png" id="8_u8qu8"]
 [ext_resource type="PackedScene" uid="uid://blchon3025mrj" path="res://Core/World/Terrain/WindArea/wind_zone_dcm.tscn" id="9_pien6"]
 [ext_resource type="PackedScene" uid="uid://cihs25qij1jtb" path="res://Core/World/Terrain/WindArea/wind_area.tscn" id="10_u8372"]
+[ext_resource type="Script" uid="uid://dds81g3nsewph" path="res://Core/World/MapAssets/MainAssets/SnowballSpawner.cs" id="11_u8372"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pien6"]
 albedo_texture = ExtResource("1_0jqa6")
@@ -75,6 +76,15 @@ albedo_texture = ExtResource("8_u8qu8")
 material = SubResource("StandardMaterial3D_6uykg")
 size = Vector2(0.1, 0.1)
 
+[sub_resource type="SphereMesh" id="SphereMesh_u8372"]
+radius = 2.0
+height = 4.0
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_s4n5g"]
+radius = 2.0
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_d6ibe"]
+
 [node name="DevMap" type="Node3D" unique_id=110067603]
 
 [node name="MainFloor" type="MeshInstance3D" parent="." unique_id=745499457]
@@ -89,7 +99,7 @@ physics_material_override = SubResource("PhysicsMaterial_pien6")
 shape = SubResource("WorldBoundaryShape3D_ccc14")
 
 [node name="map" parent="MainFloor" unique_id=532924581 instance=ExtResource("3_8ugvu")]
-transform = Transform3D(5.575803, 0, 0, 0, 5.575803, 0, 0, 0, 5.575803, -197.39993, 0, 0)
+transform = Transform3D(5.575803, 0, 0, 0, 5.575803, 0, 0, 0, 5.575803, -100.33055, 0, 0)
 
 [node name="VentBlower" parent="." unique_id=1091358536 instance=ExtResource("2_ccc14")]
 transform = Transform3D(-4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0, 1, -27.463543, 7.656494, -0.5700114)
@@ -165,3 +175,18 @@ WindForce = 1.0
 WindDirection = Vector3(1, 0, 0)
 DurationAreaTotal = 1.0
 SpawnCount = 10
+
+[node name="Node3D" type="Node3D" parent="." unique_id=1694646218]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -61.87784, 16.918518, 0)
+script = ExtResource("11_u8372")
+SpawnInterval = 0.1
+MaxBalls = 94
+BallMass = 199.97
+ThrowForce = 35.0
+ThrowDirection = Vector3(1, 0, 0.1)
+Spread = 0.329
+BallMesh = SubResource("SphereMesh_u8372")
+CollisionShape = SubResource("SphereShape3D_s4n5g")
+PhysicsMaterial = SubResource("PhysicsMaterial_d6ibe")
+CollisionLayer = 2
+CollisionMask = 7

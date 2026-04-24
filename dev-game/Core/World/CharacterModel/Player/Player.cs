@@ -32,6 +32,7 @@ public partial class Player : Character
 	private bool _playerFocused = false;
 	private bool _playerPaused = false;
 	private CameraType _lastCamType;
+	private Label3D? _nameLabel;
 
 	// ── Remote interpolation (non-authority players) ──────────────────────────
 	private const int BufferSize = 4;
@@ -105,15 +106,15 @@ public partial class Player : Character
 			if (SpawnPosition != Vector3.Zero)
 				GlobalPosition = SpawnPosition;
 
-			var nameLabel = new Label3D();
-			nameLabel.Text = $"P{PeerId}";
-			nameLabel.Billboard = BaseMaterial3D.BillboardModeEnum.FixedY;
-			nameLabel.PixelSize = 0.005f;
-			nameLabel.FontSize = 48;
-			nameLabel.OutlineSize = 8;
-			nameLabel.Position = new Vector3(0f, 2.2f, 0f);
-			nameLabel.NoDepthTest = true;
-			AddChild(nameLabel);
+			_nameLabel = new Label3D();
+			_nameLabel.Text = $"P{PeerId}";
+			_nameLabel.Billboard = BaseMaterial3D.BillboardModeEnum.FixedY;
+			_nameLabel.PixelSize = 0.005f;
+			_nameLabel.FontSize = 48;
+			_nameLabel.OutlineSize = 8;
+			_nameLabel.Position = new Vector3(0f, 2.2f, 0f);
+			_nameLabel.NoDepthTest = true;
+			AddChild(_nameLabel);
 			return;
 		}
 
@@ -272,6 +273,12 @@ public partial class Player : Character
 	{
 		if (!IsMultiplayerAuthority())
 		{
+			if (_nameLabel != null)
+			{
+				_nameLabel.GlobalPosition = currentMovementState == MovementState.Ragdolling
+					? PhysicsSkelton.GetSpinePhysicsWorldPosition() + Vector3.Up * 1.5f
+					: GlobalPosition + new Vector3(0f, 2.2f, 0f);
+			}
 			if (_lastAnimatedState == currentMovementState) return;
 			_lastAnimatedState = currentMovementState;
 			PlayAnimationFromMovement(currentMovementState, AnimPlayer);
