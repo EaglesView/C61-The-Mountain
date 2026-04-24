@@ -16,6 +16,8 @@ public partial class WindArea : Node3D
 	private float _timeToStop;
 	private WindState _currentState;
 	private readonly HashSet<Character> _bodiesInZone = new();
+	private CollisionShape3D? _collisionShape;
+	private FogVolume? _fogVolume;
 
 	public override void _Ready()
 	{
@@ -23,6 +25,18 @@ public partial class WindArea : Node3D
 		_timeToStop = DurationAreaTotal;
 		WindZone.BodyEntered += _OnZoneBodyEntered;
 		WindZone.BodyExited += _OnZoneBodyExited;
+
+		_collisionShape = WindZone.GetNodeOrNull<CollisionShape3D>("CollisionShape3D");
+		_fogVolume = WindZone.GetNodeOrNull<FogVolume>("FogVolume");
+		_ApplyBoxSize();
+	}
+
+	private void _ApplyBoxSize()
+	{
+		if (_collisionShape?.Shape is BoxShape3D box)
+			box.Size = new Vector3(BoxSize.X, box.Size.Y, BoxSize.Y);
+		if (_fogVolume != null)
+			_fogVolume.Size = new Vector3(BoxSize.X, _fogVolume.Size.Y, BoxSize.Y);
 	}
 
 	private void _OnZoneBodyEntered(Node3D body)

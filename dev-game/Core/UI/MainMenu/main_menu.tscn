@@ -2,7 +2,7 @@
 
 [ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="1_evkl0"]
 [ext_resource type="Script" uid="uid://ctldyxkgdthf5" path="res://Core/UI/MainMenu/MainMenu.cs" id="1_mainmenu"]
-[ext_resource type="PackedScene" uid="uid://cxvenxb1m26wm" path="res://Core/Dev/dev_map.tscn" id="3_rugc1"]
+[ext_resource type="PackedScene" uid="uid://jkkf34tk07o" path="res://Core/UI/MainMenu/MainMenuAnimatedScene.tscn" id="3_77frg"]
 [ext_resource type="FontFile" uid="uid://d3iekdubpmgvd" path="res://Assets/fonts/Gorditas/Gorditas-Bold.ttf" id="4_77frg"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_rugc1"]
@@ -26,21 +26,8 @@ grow_vertical = 2
 theme = ExtResource("1_evkl0")
 script = ExtResource("1_mainmenu")
 
-[node name="SubViewportContainer" type="SubViewportContainer" parent="." unique_id=1376351034]
+[node name="SubViewportContainer" parent="." unique_id=1476608370 instance=ExtResource("3_77frg")]
 layout_mode = 0
-offset_right = 1920.0
-offset_bottom = 1080.0
-stretch = true
-
-[node name="SubViewport" type="SubViewport" parent="SubViewportContainer" unique_id=1834833327]
-handle_input_locally = false
-size = Vector2i(1920, 1080)
-render_target_update_mode = 4
-
-[node name="DevMap" parent="SubViewportContainer/SubViewport" unique_id=110067603 instance=ExtResource("3_rugc1")]
-
-[node name="Camera3D" type="Camera3D" parent="SubViewportContainer/SubViewport/DevMap" unique_id=850588753]
-transform = Transform3D(0.1664177, 0.53348863, 0.8292738, -0.0032242627, 0.8412912, -0.54057264, -0.98605007, 0.08728706, 0.14172585, -123.18913, 0.55150414, 9.641663)
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=101640224]
 layout_mode = 1

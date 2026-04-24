@@ -2,6 +2,7 @@
 
 [ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="1_5w32i"]
 [ext_resource type="Script" uid="uid://b6li3g72816q6" path="res://Core/UI/LoginTemp/Login.cs" id="1_logea"]
+[ext_resource type="PackedScene" uid="uid://jkkf34tk07o" path="res://Core/UI/MainMenu/MainMenuAnimatedScene.tscn" id="3_0e8m3"]
 
 [node name="Control" type="Control" unique_id=1362554432]
 layout_mode = 3
@@ -12,6 +13,16 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("1_5w32i")
 script = ExtResource("1_logea")
+
+[node name="SubViewportContainer" parent="." unique_id=1476608370 instance=ExtResource("3_0e8m3")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 0.0
+offset_bottom = 0.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=101640224]
 layout_mode = 1

@@ -8,7 +8,7 @@
 [node name="DevMap" parent="." unique_id=110067603 instance=ExtResource("2_c22ky")]
 
 [node name="PlayerSpawner" parent="." unique_id=1973612002 node_paths=PackedStringArray("_spawnPoints") instance=ExtResource("3_0q453")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.1506941, 0.76405, 4.7683716e-07)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -166.47108, 7.940194, 4.7683716e-07)
 _spawnPoints = [NodePath("Marker3D")]
 
 [node name="Marker3D" type="Marker3D" parent="PlayerSpawner" unique_id=268163963]

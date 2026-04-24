@@ -14,6 +14,7 @@ public partial class Player : Character
 	[ExportGroup("Player Physics Settings")]
 	[Export(PropertyHint.Range, "0.1f,1000.0f,0.1f")] public float SpeedRagdollThreshold = 10.0f;
 	[Export(PropertyHint.Range, "0.0f,360.0f,1.0f,suffix:deg")] public float FloorAngleRagdollThreshold = 60.0f;
+	[Export(PropertyHint.Range, "0.0f,50.0f,0.1f")] public float RecoveryVelocityThreshold = 3.0f;
 
 	[ExportGroup("Controller Settings")]
 	[Export(PropertyHint.Range, "0.0f,0.1f,0.001f")] private float _mouseSensitivity = 0.002f;
@@ -157,7 +158,8 @@ public partial class Player : Character
 
 		if (_characterState == CharacterState.Ragdoll)
 		{
-			if (@event.IsActionPressed("jump"))
+			if (@event.IsActionPressed("jump") &&
+				PhysicsSkelton.GetSpinePhysicsLinearVelocity().Length() < RecoveryVelocityThreshold)
 				TransitionTo(CharacterState.Recovering);
 			return;
 		}
