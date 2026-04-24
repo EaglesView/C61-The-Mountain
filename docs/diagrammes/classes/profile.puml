@@ -1,0 +1,64 @@
+@startuml ClassesProfile
+!include ../style.iuml
+title The Mountain - Classes - Profil du joueur
+
+package "Core.Profile" {
+
+    package "Domain" {
+        class PlayerProfile <<Domain>> {
+            + UserId : string
+            + Username : string
+            --
+            + PlayerProfile(userId, username)
+            + UpdateUsername(name) : void
+        }
+
+        interface IPlayerProfileRepository <<Interface>> {
+            + GetByUserIdAsync(uid) : Task<PlayerProfile?>
+            + SaveAsync(profile) : Task
+        }
+    }
+
+    package "Application" {
+        class PlayerProfileUseCase {
+            - _repository : IPlayerProfileRepository
+            --
+            + GetOrCreateProfileAsync(uid, user) : Task<PlayerProfile>
+            + UpdateUsernameAsync(uid, name) : Task<PlayerProfile>
+        }
+    }
+
+    package "Infrastructure" {
+        class FirestorePlayerProfileRepository <<Infra>> {
+            - _client : FirestoreClient
+            - _getIdToken : Func<string>
+            --
+            + GetByUserIdAsync(uid) : Task<PlayerProfile?>
+            + SaveAsync(profile) : Task
+        }
+    }
+
+    class ProfileServiceProvider <<Static>> {
+        - {static} _instance : PlayerProfileUseCase?
+        --
+        + {static} Instance : PlayerProfileUseCase
+        + {static} Reset() : void
+    }
+}
+
+package "Core.Shared" {
+    class FirestoreClient <<Infra>> {
+        - _projectId : string
+        + GetDocumentAsync(...) : Task<JsonDocument?>
+        + SetDocumentAsync(...) : Task
+        + DeleteDocumentAsync(...) : Task
+    }
+}
+
+IPlayerProfileRepository <|.. FirestorePlayerProfileRepository
+PlayerProfileUseCase o--> IPlayerProfileRepository
+FirestorePlayerProfileRepository --> FirestoreClient : utilise
+ProfileServiceProvider ..> PlayerProfileUseCase : cree
+ProfileServiceProvider ..> FirestorePlayerProfileRepository : cree
+
+@enduml

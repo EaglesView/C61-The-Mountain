@@ -1,0 +1,36 @@
+@startuml EtatCameraFSM
+!include ../style.iuml
+title The Mountain - Etats - CameraType (CameraMan)
+
+[*] --> ThirdPerson : _Ready()
+
+state FirstPerson {
+    FirstPerson : suit l'os tete
+    FirstPerson : cache le modele
+}
+state ThirdPerson {
+    ThirdPerson : spring arm + raycast
+    ThirdPerson : _yaw/_pitch libres
+}
+state FreeMode {
+    FreeMode : camera libre\n(debug, non utilise)
+}
+state Death {
+    Death : vue speciale\n(non utilise)
+}
+
+ThirdPerson --> FirstPerson : SetCameraType(FP)\naction change_view
+FirstPerson --> ThirdPerson : SetCameraType(TP)\naction change_view
+ThirdPerson --> FreeMode : SetNextCamera(..)
+FirstPerson --> ThirdPerson : ragdoll force TP
+ThirdPerson --> Death : (reserve)
+Death --> ThirdPerson : (reserve)
+
+note right of ThirdPerson
+  Transitions interpolees via
+  _lerpT (8 u/s). Basis et
+  Position sont lerp entre les
+  cibles FP et TP.
+end note
+
+@enduml

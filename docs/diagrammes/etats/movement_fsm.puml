@@ -1,0 +1,42 @@
+@startuml EtatMovementFSM
+!include ../style.iuml
+title The Mountain - Etats - MovementState (animation)
+
+[*] --> Idle
+
+state Idle {
+    Idle : anim Idle
+}
+state Walking {
+    Walking : anim Walk
+}
+state Running {
+    Running : anim Run
+}
+state Sliding {
+    Sliding : anim Slide
+}
+state Ragdolling {
+    Ragdolling : pas d'anim (physique)
+}
+
+Idle --> Walking : vitesse plane > seuil_w
+Walking --> Running : vitesse plane > seuil_r
+Running --> Walking : vitesse < seuil_r
+Walking --> Idle : moveVec == 0
+Running --> Idle : vitesse ~ 0
+Walking --> Sliding : pente + vitesse
+Sliding --> Walking : sortie pente
+Idle --> Ragdolling : CharacterState = Ragdoll\nou Recovering
+Walking --> Ragdolling : idem
+Running --> Ragdolling : idem
+Sliding --> Ragdolling : idem
+Ragdolling --> Idle : retour a Idle/Moving
+
+note right of Ragdolling
+  Calcule via
+  CharacterUtils.
+  GetMovementStateFromMovement()
+end note
+
+@enduml

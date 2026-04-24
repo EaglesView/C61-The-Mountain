@@ -1,0 +1,58 @@
+' Fragment de style partage - a inclure avec !include ../style.iuml
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam classFontSize 12
+skinparam classAttributeIconSize 11
+
+skinparam class {
+    BackgroundColor<<Godot>> #FF7171
+    BorderColor<<Godot>> #FF2222
+    FontColor<<Godot>> #FFFFFF
+
+    BackgroundColor<<Interface>> #E3F2FD
+    BorderColor<<Interface>> #1E88E5
+
+    BackgroundColor<<Static>> #FFF3E0
+    BorderColor<<Static>> #FB8C00
+
+    BackgroundColor<<Domain>> #E8F5E9
+    BorderColor<<Domain>> #43A047
+
+    BackgroundColor<<Infra>> #F3E5F5
+    BorderColor<<Infra>> #8E24AA
+
+    BackgroundColor<<DTO>> #FAFAFA
+    BorderColor<<DTO>> #757575
+
+    BackgroundColor<<UI>> #FFFDE7
+    BorderColor<<UI>> #FBC02D
+}
+
+skinparam enum {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+}
+
+skinparam package {
+    BackgroundColor #F9F9F9
+    BorderColor #AAAAAA
+}
+
+skinparam abstractClass {
+    BackgroundColor #E8EAF6
+    BorderColor #5C6BC0
+}
+
+skinparam state {
+    BackgroundColor #E0F7FA
+    BorderColor #00838F
+    ArrowColor #00838F
+}
+
+skinparam sequence {
+    ArrowColor #37474F
+    ActorBorderColor #37474F
+    LifeLineBorderColor #90A4AE
+    ParticipantBorderColor #37474F
+    ParticipantBackgroundColor #ECEFF1
+}

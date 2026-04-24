@@ -1,0 +1,36 @@
+@startuml EtatEmoteFSM
+!include ../style.iuml
+title The Mountain - Etats - EmoteState
+
+[*] --> None
+
+state None {
+    None : bras libres
+}
+state Pointing {
+    Pointing : bras pointe vers\nArmPointDir (raycast camera)
+}
+state ArmsUp {
+    ArmsUp : bras leves
+}
+state ShowSign {
+    ShowSign : affiche la pancarte
+}
+
+None --> Pointing : action aim pressee
+Pointing --> None : action aim relachee
+None --> ArmsUp : action arms_up
+ArmsUp --> None : action arms_up relachee
+None --> ShowSign : action show_sign
+ShowSign --> None : action show_sign relachee
+Pointing --> ShowSign : transition directe
+ShowSign --> Pointing : transition directe
+ArmsUp --> ShowSign : transition directe
+
+note right of Pointing
+  ComputeEmotePhysics() pilote
+  les bones via HookesLaw pour
+  atteindre la pose cible.
+end note
+
+@enduml

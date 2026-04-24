@@ -1,0 +1,28 @@
+@startuml EtatWindFSM
+!include ../style.iuml
+title The Mountain - Etats - WindState (WindArea)
+
+[*] --> Normal : spawn par WindZoneDcm
+
+state Normal {
+    Normal : applique WindForce * WindDirection
+    Normal : aux Character dans la zone
+}
+
+state Aggressive {
+    Aggressive : ApplyRagdollKick
+    Aggressive : force TransitionTo(Ragdoll)
+    Aggressive : derniers instants de la zone
+}
+
+Normal --> Aggressive : _timeToStop <= DurationAreaAggressive
+Aggressive --> [*] : _timeToStop <= 0\nQueueFree()
+
+note right
+  WindZoneDcm engendre des
+  WindArea a intervalle
+  (SubInterval) dans une boite
+  de spawn.
+end note
+
+@enduml

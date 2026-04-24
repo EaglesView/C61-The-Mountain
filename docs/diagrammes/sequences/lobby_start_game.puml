@@ -1,0 +1,44 @@
+@startuml SequenceLobbyStartGame
+!include ../style.iuml
+title The Mountain - Sequence - Demarrer la partie (hote + client)
+
+actor Hote as H
+actor ClientJ as C
+participant "LobbyScene (hote)" as LobH
+participant "LobbyScene (client)" as LobC
+participant "RoomRepository" as Repo
+database "Firebase RTDB" as DB
+participant "NetworkManager" as NM
+participant "GodotENetProvider" as EN
+
+== Timer de polling 4s ==
+
+LobC -> Repo : GetAsync("MAIN")
+Repo -> DB : GET /rooms/MAIN.json
+DB --> Repo : Status = "waiting"
+Repo --> LobC : snapshot
+
+== Hote clique Start ==
+
+H -> LobH : OnStartPressed()
+LobH -> Repo : UpdateStatusAsync("MAIN", "started")
+Repo -> DB : PUT /rooms/MAIN/status.json
+DB --> Repo : 200 OK
+
+LobH -> NM : ConnectToServer(ip, port)
+NM -> EN : ConnectToServer(ip, port)
+EN --> NM : ConnectedToServer(id)
+NM -> LobH : LocalConnected
+LobH -> LobH : GoToGame -> world.tscn
+
+== Client detecte au prochain tick ==
+
+LobC -> Repo : GetAsync("MAIN")
+Repo --> LobC : Status = "started"
+LobC -> NM : ConnectToServer(ip, port)
+NM -> EN : ConnectToServer(ip, port)
+EN --> NM : ConnectedToServer(id)
+NM -> LobC : LocalConnected
+LobC -> LobC : GoToGame -> world.tscn
+
+@enduml

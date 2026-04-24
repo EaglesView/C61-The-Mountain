@@ -1,0 +1,35 @@
+@startuml EtatNetworkRoleFSM
+!include ../style.iuml
+title The Mountain - Etats - Role reseau (NetworkRole)
+
+[*] --> None : Ready
+
+state None {
+    None : aucun peer actif
+    None : mode solo possible
+}
+
+state Server {
+    Server : ENetMultiplayerPeer.CreateServer
+    Server : relaie / valide les snapshots
+    Server : spawn/despawn des joueurs
+}
+
+state Client {
+    Client : ENetMultiplayerPeer.CreateClient
+    Client : envoie snapshots @ 20 Hz
+    Client : recoit StateReceived
+}
+
+None --> Server : StartServer(port, max)\nou mode headless detecte
+None --> Client : ConnectToServer(ip, port)
+Client --> None : Disconnect()\nou ConnectionFailed
+Server --> None : Disconnect()\narret de l'hote
+
+note right of Server
+  Determine via
+  DisplayServer.GetName() == "headless"
+  ou --server en ligne de commande.
+end note
+
+@enduml

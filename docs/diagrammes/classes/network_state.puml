@@ -1,0 +1,61 @@
+@startuml ClassesNetworkState
+!include ../style.iuml
+title The Mountain - Classes - Protocole de replication
+
+package "Core.Network" {
+
+    enum PacketType <<byte>> {
+        StateUpdate     = 0x01
+        PositionCorrect = 0x04
+    }
+
+    class PlayerNetState <<Struct>> {
+        + PeerId : int
+        + Position : Vector3
+        + Velocity : Vector3
+        + BodyYaw : float
+        + HeadPitch : float
+        + ArmPointDir : Vector3
+        + MoveState : MovementState
+        + EmoteState : EmoteState
+        + Flags : byte
+        --
+        + Aiming : bool
+        + ArmsUp : bool
+        + Recovering : bool
+        --
+        + {static} Serialize(type, state) : byte[]
+        + {static} SerializeCorrection(peer, pos) : byte[]
+        + {static} Deserialize(bytes) : (PacketType, PlayerNetState)
+    }
+
+    note right of PlayerNetState
+      Taille ~52 octets.
+      Envoye en UDP non fiable a 20 Hz.
+      Les corrections sont envoyees
+      en mode fiable.
+    end note
+}
+
+package "Core.Utils" {
+    enum MovementState {
+        Walking
+        Running
+        Idle
+        Sliding
+        Ragdolling
+    }
+
+    enum EmoteState {
+        Pointing
+        ArmsUp
+        ShowSign
+        None
+    }
+}
+
+PlayerNetState --> MovementState
+PlayerNetState --> EmoteState
+PlayerNetState ..> PacketType : serialise avec
+
+@enduml

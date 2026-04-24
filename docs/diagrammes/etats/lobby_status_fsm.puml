@@ -1,0 +1,36 @@
+@startuml EtatLobbyStatusFSM
+!include ../style.iuml
+title The Mountain - Etats - Statut du salon (Room.Status)
+
+[*] --> Waiting : RoomRepository.CreateAsync()
+
+state Waiting {
+    Waiting : Status = "waiting"
+    Waiting : joueurs peuvent rejoindre
+    Waiting : polling Firebase 4s
+}
+
+state Started {
+    Started : Status = "started"
+    Started : plus d'entree possible
+    Started : clients chargent world.tscn
+}
+
+state Closed {
+    Closed : tout le monde a quitte
+    Closed : noeud supprime
+}
+
+Waiting --> Started : Host OnStartPressed()\nUpdateStatusAsync("started")
+Waiting --> Waiting : AddPlayerAsync / RemovePlayerAsync
+Started --> Closed : tous les joueurs\nse deconnectent
+Waiting --> Closed : derniere RemovePlayerAsync
+
+note right of Waiting
+  Si le salon "MAIN" est
+  "started" ou plein, le
+  MainMenu en cree un neuf
+  qui ecrase l'ancien.
+end note
+
+@enduml

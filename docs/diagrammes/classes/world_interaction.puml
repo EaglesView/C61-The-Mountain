@@ -1,0 +1,175 @@
+@startuml ClassesWorldInteraction
+!include ../style.iuml
+title The Mountain - Classes - Monde et objets interactifs
+
+class Node3D <<Godot>>
+class StaticBody3D <<Godot>>
+class AnimatableBody3D <<Godot>>
+class MeshInstance3D <<Godot>>
+
+package "Core.Interfaces" {
+    interface IInteractable <<Interface>> {
+        + Interact() : void
+        + Highlight(on) : void
+    }
+}
+
+package "Core.World.Interaction" {
+    interface IActivatable <<Interface>> {
+        + Activate() : void
+    }
+
+    abstract class Interactable <<Godot>> {
+        - originalMaterials : Dictionary<MeshInstance3D, Material>
+        --
+        + {abstract} Interact(caller) : void
+        # OnHighlight() : void
+        # OnUnhighlight() : void
+    }
+
+    class BasicButtonInteractable <<Godot>> {
+        + Target : Node3D?
+        --
+        + Interact(caller) : void
+    }
+
+    class Door <<Godot>> {
+        + Height : float
+        + Duration : float
+        - _isOpen : bool
+        --
+        + Activate() : void
+    }
+
+    class PressurePlate <<Godot>> {
+        + PressDepth : float
+        + AnimationDuration : float
+        - _bodiesInside : int
+        - _isPressed : bool
+        - _buttonRestPosition : Vector3
+        --
+        + _Ready() : void
+        - Press() : void
+        - Release() : void
+        .. signals ..
+        Activated
+        Deactivated
+    }
+
+    class ConveyorBelt <<Godot>> {
+        + StartPosition : Vector3
+        + EndPosition : Vector3
+        + Speed : float
+        + Force : float
+        - _uvOffset : float
+        - _bodiesInside : List<Node3D>
+    }
+
+    class Fan <<Godot>> {
+        + WindForce : float
+        + BladeSpeedMultiplier : float
+        - _bodiesInside : List<Node3D>
+    }
+
+    class ModelFan <<Godot>> {
+        - _blade : Blade
+        --
+        + SetBladeSpeed(s) : void
+    }
+
+    class Blade <<Godot>> {
+        + Speed : float
+    }
+}
+
+package "Core.World.MapAssets" {
+    class PlayerSpawner <<Godot>> {
+        - _spawnPoints : Array<Marker3D>
+        - _nextSpawnIndex : int
+        --
+        + GetNextSpawnPoint() : Vector3
+    }
+
+    class RotatingThing <<Godot>> {
+        + RotationSpeed : float
+        + SlowedSpeed : float
+        + RagdollForceThreshold : float
+        --
+        + SlowDown() : void
+        + ResumeSpeed() : void
+    }
+
+    class VentBlower <<Godot>> {
+        + BlowArea : Area3D
+        + BlowForce : float
+    }
+}
+
+package "Core.World.Terrain.WindArea" {
+    class WindArea <<Godot>> {
+        + WindZone : Node3D
+        + BoxSize : Vector3
+        + DurationAreaTotal : float
+        + DurationAreaAggressive : float
+        + WindForce : float
+        + WindDirection : Vector3
+        - _timeToStop : float
+        - _currentState : WindState
+        - _bodiesInZone : HashSet<Character>
+    }
+
+    class WindZoneDcm <<Godot>> {
+        + (params vent)
+        - _spawnTimer : float
+        - SubInterval : float
+        - _spawnBox : BoxShape3D
+        --
+        - _SpawnWindArea() : void
+    }
+
+    enum WindState {
+        Aggressive
+        Normal
+    }
+}
+
+class World <<Godot>> {
+    - _playerScene : PackedScene
+    - _spawner : MultiplayerSpawner
+    - _playerSpawner : PlayerSpawner
+    --
+    + _Ready() : void
+    - SpawnPlayerNode(data) : GodotObject
+    + ClientReady() : void  <<RPC>>
+    - ServerSpawnPeer(id) : void
+    - ServerDespawnPeer(id) : void
+    - SpawnOffline() : void
+    - OnStateReceived(s) : void
+}
+
+Node3D <|-- Interactable
+StaticBody3D <|-- Interactable
+Interactable <|-- BasicButtonInteractable
+Node3D <|-- Door
+Node3D <|-- PressurePlate
+Node3D <|-- ConveyorBelt
+Node3D <|-- Fan
+Node3D <|-- ModelFan
+MeshInstance3D <|-- Blade
+Node3D <|-- PlayerSpawner
+AnimatableBody3D <|-- RotatingThing
+StaticBody3D <|-- VentBlower
+Node3D <|-- WindArea
+Node3D <|-- WindZoneDcm
+Node3D <|-- World
+
+Door ..|> IActivatable
+BasicButtonInteractable ..> IActivatable : declenche
+PressurePlate ..> IActivatable : signal -> Activate
+ModelFan o-- Blade
+Fan o-- ModelFan
+WindZoneDcm ..> WindArea : instancie
+WindArea --> WindState
+World o-- PlayerSpawner
+
+@enduml

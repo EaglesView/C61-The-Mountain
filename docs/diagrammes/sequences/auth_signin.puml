@@ -1,0 +1,30 @@
+@startuml SequenceAuthSignIn
+!include ../style.iuml
+title The Mountain - Sequence - Connexion (Sign-In)
+
+actor Joueur
+participant "Login\n(Control)" as UI
+participant "AuthServiceProvider" as Prov
+participant "AuthUseCase" as UC
+participant "FirebaseAuthService" as FB
+database "Firebase Auth" as FirebaseAPI
+
+Joueur -> UI : saisit email + mot de passe
+UI -> UI : OnLoginPressed()
+UI -> Prov : Instance
+Prov --> UI : AuthUseCase
+UI -> UC : SignInAsync(email, pwd)
+UC -> UC : validation (longueur, etc.)
+UC -> FB : SignInAsync(email, pwd)
+FB -> FirebaseAPI : POST signInWithPassword
+FirebaseAPI --> FB : {idToken, localId, email}
+FB -> FB : _currentUser = new User(..)\n_idToken = ...
+FB --> UC : AuthResult.Ok(..)
+UC --> UI : AuthResult
+alt Success
+    UI -> UI : ChangeSceneToFile MainMenu
+else Failure
+    UI -> UI : ShowStatus(erreur)
+end
+
+@enduml

@@ -1,0 +1,136 @@
+@startuml ClassesUI
+!include ../style.iuml
+title The Mountain - Classes - Interface utilisateur
+
+class Control <<Godot>>
+
+package "Core.UI" {
+
+    package "MainMenu" {
+        class MainMenu <<UI>> {
+            - _playButton : Button
+            - _profileButton : Button
+            - _quitButton : Button
+            - _statusLabel : Label
+            --
+            + _Ready() : void
+            - OnPlayPressed() : Task
+            - OnProfilePressed() : void
+            - OnQuitPressed() : void
+            - ShowStatus(msg) : void
+        }
+    }
+
+    package "LoginTemp" {
+        class Login <<UI>> {
+            - _auth : AuthUseCase
+            - _email, _pwd, _user : LineEdit
+            - _loginBtn, _signupBtn : Button
+            --
+            + _Ready() : void
+            - OnLoginPressed() : Task
+            - OnSignUpPressed() : Task
+        }
+    }
+
+    package "Profile" {
+        class ProfileScene <<UI>> {
+            - _userId : string
+            - _usernameField : LineEdit
+            - _saveBtn, _backBtn : Button
+            --
+            + _Ready() : void
+            - LoadProfile() : Task
+            - OnSavePressed() : Task
+            - OnBackPressed() : void
+            - ShowStatus(msg, ok) : void
+        }
+    }
+
+    package "Room" {
+        class LobbyScene <<UI>> {
+            - _codeLabel : Label
+            - _playersList : VBoxContainer
+            - _startBtn, _leaveBtn : Button
+            - _statusLabel : Label
+            - {static} PollInterval = 4.0
+            --
+            + _Ready() : void
+            - OnPollTick() : Task
+            - OnStartPressed() : Task
+            - OnLeavePressed() : Task
+            - GoToGame() : void
+            - RefreshPlayerList() : void
+        }
+    }
+
+    package "GameMenu" {
+        class GameMenu <<UI>> {
+            + {static} Instance : GameMenu?
+            + {static} IsPaused : bool
+            - _resumeBtn : Button
+            - _quitBtn : Button
+            --
+            + _Ready() : void
+            + OpenMenu() : void
+            + CloseMenu() : void
+            + _Input(event) : void
+        }
+    }
+
+    package "Settings" {
+        class SettingsMenu <<UI>> {
+            - _tabs : TabContainer
+            - _configFile : ConfigFile
+            - _rebinding : bool
+            --
+            + _Ready() : void
+            - _BuildAudioTab() : void
+            - _BuildControlsTab() : void
+            + _Input(event) : void
+            + {static} ApplySettings() : void
+        }
+    }
+
+    package "Splash" {
+        class CreditsScene <<UI>> {
+            - _content : Control
+            - _viewportHeight : float
+            --
+            + _Ready() : void
+            + _Process(dt) : void
+            + _Input(event) : void
+            - GoBack() : void
+        }
+    }
+
+    package "Debug" {
+        class Debug <<UI>> {
+            - _player : Player?
+            .. exports Label ..
+            --
+            + _Ready() : void
+            + _Process(dt) : void
+            + _Input(event) : void
+        }
+    }
+}
+
+Control <|-- MainMenu
+Control <|-- Login
+Control <|-- ProfileScene
+Control <|-- LobbyScene
+Control <|-- GameMenu
+Control <|-- SettingsMenu
+Control <|-- CreditsScene
+Control <|-- Debug
+
+MainMenu ..> AuthServiceProvider : Instance
+MainMenu ..> RoomServiceProvider : Repository
+MainMenu ..> LobbyState : Set
+LobbyScene ..> RoomServiceProvider : polling
+LobbyScene ..> NetworkManager : ConnectToServer
+Login ..> AuthServiceProvider
+ProfileScene ..> ProfileServiceProvider
+
+@enduml
