@@ -23,7 +23,7 @@ public sealed partial class LobbyController : Node3D
     }
 
     // Called every frame. 'delta' is the elapsed time since the previous frame.
-    public override void _Process(double delta) => _fsm.Tick((float)delta);
+    //public override void _Process(double delta) => _fsm.Tick((float)delta);
 
     private void OnEnter(State s) { }
     private void OnExit(State s) { }

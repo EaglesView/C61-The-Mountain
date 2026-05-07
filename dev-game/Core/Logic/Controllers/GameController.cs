@@ -46,33 +46,15 @@ public sealed partial class GameController : Node3D, IPhase
     {
         if (_fsm.Is(SubState.Playing)) _mode.Exit();
     }
-
-    // Called when the node enters the scene tree for the first time.
-    public override void _Ready()
+    private void OnEnter(State s)
     {
-        _fsm = new StateMachine<State>(State.Init, OnEnter, OnExit);
-
-        // Transition tout les joueurs prets vers la partie en cours
-        _fsm.When(State.Init,
-        new PredicateCondition<State>(() => Init.Complete),
-        State.Waiting
-        );
-        _fsm.When(State.Init,
-        new PredicateCondition<State>(() => Init.Failure),
-        State.Failure
-        );
-        _fsm.When(State.Game,
-        new PredicateCondition<State>(() => Game.OnePlayerLeft),
-
-        );
-        _fsm.When(State.Lobby,
-        new PredicateCondition<State>(() => Init.Failure),
-        State.Failure
-        );
+        switch (s)
+        {
+            case State.Playing: _mode.Enter(); break;
+            case State.Resolving: _done = true;
+        }
     }
+    private void OnExit(State _) { }
 
-    // Called every frame. 'delta' is the elapsed time since the previous frame.
-    public override void _Process(double delta)
-    {
-    }
+
 }
