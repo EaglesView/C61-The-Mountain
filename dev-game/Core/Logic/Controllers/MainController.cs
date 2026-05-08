@@ -9,8 +9,7 @@ public sealed partial class MainController : Node3D
 {
 	[Export] private LobbyController _lobbyController;
 	[Export] private GameController _gameController;
-	// TODO: typer en WinningController quand cette classe existera.
-	[Export] private Node _winningController;
+	[Export] private WinningController _winningController;
 	public enum State { Lobby, Game, Winning, Loading }
 	private StateMachine<State> _fsm = null;
 	private IPhase _current = null;
@@ -20,7 +19,7 @@ public sealed partial class MainController : Node3D
 	{
 		_phases[State.Lobby] = _lobbyController;
 		_phases[State.Game] = _gameController;
-		_phases[State.Winning] = (IPhase)_winningController;
+		_phases[State.Winning] = _winningController;
 		_current = _phases[State.Lobby];
 
 		_fsm = new StateMachine<State>(State.Lobby, OnEnter, OnExit);
