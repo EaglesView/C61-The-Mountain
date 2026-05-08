@@ -1,6 +1,6 @@
 using Godot;
 
-public partial class WinningScene : Control
+public partial class WinningScene : Node3D
 {
 	/// <summary>
 	/// Émis quand le joueur (typiquement l'hôte) a confirmé qu'on relance une partie.

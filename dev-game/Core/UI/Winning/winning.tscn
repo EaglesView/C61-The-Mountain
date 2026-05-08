@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://ck012ohvrp6fh" path="res://Core/UI/Winning/WinningScene.cs" id="1_n0sox"]
 
 [node name="Winning_tscn" type="Node3D" unique_id=630693003]
+script = ExtResource("1_n0sox")
 
 [node name="Winning_UI" type="Control" parent="." unique_id=1724957998]
 layout_mode = 3
@@ -11,7 +12,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_n0sox")
 
 [node name="MarginContainer" type="MarginContainer" parent="Winning_UI" unique_id=1335668621]
 layout_mode = 1
