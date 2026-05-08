@@ -6,6 +6,11 @@ public static class MapRegistry
 	{
 		public string Id { get; init; } = "";
 		public string DisplayName { get; init; } = "";
+		/// <summary>
+		/// Chemin vers la scène du niveau. Le root de cette scène doit porter un
+		/// script qui implémente <c>IPhase</c> + <c>IGameMode</c> — c'est lui qui
+		/// sera consommé par le <c>GameController</c> comme mode de jeu actif.
+		/// </summary>
 		public string ScenePath { get; init; } = "";
 	}
 
@@ -20,9 +25,9 @@ public static class MapRegistry
 		},
 			new MapDefinition
 			{
-				Id = "arctic",
+				Id = "Jump The Barrel",
 				DisplayName = "Rotating Thing Contest",
-				ScenePath = "res://Core/Dev/map_jumpquest.tscn"
+				ScenePath = "res://Core/World/Maps/rotating_barrel.tscn"
 			}
 	];
 
