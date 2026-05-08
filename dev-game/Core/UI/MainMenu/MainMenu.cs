@@ -4,33 +4,33 @@ using Core.Network.Rooms;
 
 public partial class MainMenu : Control
 {
-    private Button _play     = null!;
-    private Button _local    = null!;
-    private Button _profile  = null!;
-    private Button _credits  = null!;
+    private Button _play = null!;
+    private Button _local = null!;
+    private Button _profile = null!;
+    private Button _credits = null!;
     private Button _settings = null!;
-    private Button _signOut  = null!;
-    private Button _exit     = null!;
-    private Label  _status   = null!;
+    private Button _signOut = null!;
+    private Button _exit = null!;
+    private Label _status = null!;
 
     public override void _Ready()
     {
-        _play     = GetNode<Button>("VBoxContainer/PlayButton");
-        _local    = GetNode<Button>("VBoxContainer/LocalButton");
-        _profile  = GetNode<Button>("VBoxContainer/ProfileButton");
-        _credits  = GetNode<Button>("VBoxContainer/CreditsButton");
+        _play = GetNode<Button>("VBoxContainer/PlayButton");
+        _local = GetNode<Button>("VBoxContainer/LocalButton");
+        _profile = GetNode<Button>("VBoxContainer/ProfileButton");
+        _credits = GetNode<Button>("VBoxContainer/CreditsButton");
         _settings = GetNode<Button>("VBoxContainer/SettingsButton");
-        _signOut  = GetNode<Button>("VBoxContainer/SignOutButton");
-        _exit     = GetNode<Button>("VBoxContainer/ExitButton");
-        _status   = GetNode<Label>("VBoxContainer/StatusLabel");
+        _signOut = GetNode<Button>("VBoxContainer/SignOutButton");
+        _exit = GetNode<Button>("VBoxContainer/ExitButton");
+        _status = GetNode<Label>("VBoxContainer/StatusLabel");
 
-        _play.Pressed     += OnPlayPressed;
-        _local.Pressed    += OnLocalPressed;
-        _profile.Pressed  += OnProfilePressed;
-        _credits.Pressed  += OnCreditsPressed;
+        _play.Pressed += OnPlayPressed;
+        _local.Pressed += OnLocalPressed;
+        _profile.Pressed += OnProfilePressed;
+        _credits.Pressed += OnCreditsPressed;
         _settings.Pressed += OnSettingsPressed;
-        _signOut.Pressed  += OnSignOutPressed;
-        _exit.Pressed     += OnExitPressed;
+        _signOut.Pressed += OnSignOutPressed;
+        _exit.Pressed += OnExitPressed;
     }
 
     // ── Play Online — auto-join / create the shared lobby ────────────────────
@@ -59,7 +59,7 @@ public partial class MainMenu : Control
                 await RoomServiceProvider.Repository.AddPlayerAsync(
                     Room.SharedLobbyCode, user.Id, user.Username);
                 snapshot.Players[user.Id] = new RoomSnapshot.PlayerEntry
-                    { Username = user.Username, IsHost = false };
+                { Username = user.Username, IsHost = false };
                 isHost = false;
             }
             else
@@ -69,23 +69,24 @@ public partial class MainMenu : Control
                 await RoomServiceProvider.Repository.CreateAsync(room, serverIp);
                 snapshot = new RoomSnapshot
                 {
-                    Code       = Room.SharedLobbyCode,
+                    Code = Room.SharedLobbyCode,
                     HostUserId = user.Id,
-                    ServerIp   = serverIp,
+                    ServerIp = serverIp,
                     ServerPort = Room.HardcodedServerPort,
-                    Status     = Room.DefaultStatus,
+                    Status = Room.DefaultStatus,
                     MaxPlayers = Room.DefaultMaxPlayers,
-                    Players    = new Dictionary<string, RoomSnapshot.PlayerEntry>
+                    Players = new Dictionary<string, RoomSnapshot.PlayerEntry>
                     {
                         [user.Id] = new RoomSnapshot.PlayerEntry
-                            { Username = user.Username, IsHost = true }
+                        { Username = user.Username, IsHost = true }
                     }
                 };
                 isHost = true;
             }
 
             LobbyState.Set(snapshot, isHost);
-            GetTree().ChangeSceneToFile("res://Core/UI/Room/lobby.tscn");
+            var err = GetTree().ChangeSceneToFile("res://Core/Logic/main_controller.tscn");
+            if (err != Error.Ok) ShowStatus($"Scene change failed: {err}");
         }
         catch (System.Exception ex)
         {
@@ -132,7 +133,7 @@ public partial class MainMenu : Control
 
     private void ShowStatus(string msg)
     {
-        _status.Text    = msg;
+        _status.Text = msg;
         _status.Visible = true;
     }
 }

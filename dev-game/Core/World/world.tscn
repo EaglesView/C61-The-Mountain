@@ -1,71 +1,11 @@
 [gd_scene format=3 uid="uid://y8cajmk108h3"]
 
 [ext_resource type="Script" uid="uid://bivbri8k5yp3h" path="res://Core/World/World.cs" id="1_34ec0"]
+[ext_resource type="PackedScene" uid="uid://gxttws0oc2ur" path="res://Core/UI/LoginTemp/login_temp.tscn" id="3_2u2as"]
 [ext_resource type="PackedScene" uid="uid://pyyf2q46j574" path="res://Core/World/CharacterModel/Player/Player.tscn" id="4_ei37a"]
-[ext_resource type="PackedScene" uid="uid://bqm28efgwql4h" path="res://Core/UI/Debug/debug.tscn" id="5_c3a17"]
-[ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="6_ku4un"]
-[ext_resource type="PackedScene" uid="uid://c6b388a8o2od" path="res://Core/UI/GameMenu/game_menu.tscn" id="6_w2q3g"]
-[ext_resource type="PackedScene" uid="uid://d1fshm7mq3au7" path="res://Core/World/MapAssets/MainAssets/player_spawner.tscn" id="7_hn3nb"]
-
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_7tpyy"]
-
-[sub_resource type="Sky" id="Sky_u8372"]
-sky_material = SubResource("ProceduralSkyMaterial_7tpyy")
-
-[sub_resource type="Environment" id="Environment_0xmi2"]
-background_mode = 2
-sky = SubResource("Sky_u8372")
-ssr_enabled = true
-fog_enabled = true
-fog_light_energy = 2.65
-fog_sun_scatter = 0.08
-volumetric_fog_enabled = true
-volumetric_fog_density = 0.01
-volumetric_fog_emission = Color(1, 1, 1, 1)
-
-[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_ku4un"]
-
-[sub_resource type="Compositor" id="Compositor_ei37a"]
 
 [node name="World" type="Node3D" unique_id=500049071]
 script = ExtResource("1_34ec0")
 _playerScene = ExtResource("4_ei37a")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=245978912]
-transform = Transform3D(1, 0, 0, 0, 0.70710677, 0.70710677, 0, -0.70710677, 0.70710677, 0, 5, 0)
-
-[node name="Players" type="Node3D" parent="." unique_id=401840001]
-
-[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=401840002]
-spawn_path = NodePath("../Players")
-
-[node name="PlayerSpawner" parent="." unique_id=1973612002 instance=ExtResource("7_hn3nb")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 4, -2)
-
-[node name="Marker3D" type="Marker3D" parent="PlayerSpawner" unique_id=1016226400]
-
-[node name="MapContainer" type="Node3D" parent="." unique_id=1295357754]
-
-[node name="Control" type="Control" parent="." unique_id=524275059]
-layout_mode = 3
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
-theme = ExtResource("6_ku4un")
-
-[node name="Debug" parent="Control" unique_id=752801447 instance=ExtResource("5_c3a17")]
-layout_mode = 0
-metadata/_edit_use_anchors_ = true
-
-[node name="GameMenu" parent="." unique_id=1229459489 instance=ExtResource("6_w2q3g")]
-metadata/_edit_use_anchors_ = true
-
-[node name="Environment" type="Node3D" parent="." unique_id=1102522184]
-
-[node name="WorldEnvironment" type="WorldEnvironment" parent="Environment" unique_id=1163456692]
-environment = SubResource("Environment_0xmi2")
-camera_attributes = SubResource("CameraAttributesPractical_ku4un")
-compositor = SubResource("Compositor_ei37a")
-
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="Environment" unique_id=432701520]
-transform = Transform3D(0.9659258, 0.1830127, 0.1830127, -0.25881907, 0.6830128, 0.6830128, 0, -0.7071068, 0.7071068, 0, 8.155859, 0)
+[node name="LoginScreen" parent="." unique_id=1362554432 instance=ExtResource("3_2u2as")]

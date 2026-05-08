@@ -3,38 +3,46 @@ using Core.Network.Rooms;
 
 public partial class LobbyScene : Control
 {
-    private Label         _codeValue    = null!;
-    private Label         _serverValue  = null!;
-    private Label         _statusValue  = null!;
-    private Label         _mapValue     = null!;
-    private Button        _mapPrevButton = null!;
-    private Button        _mapNextButton = null!;
-    private Label         _playersTitle = null!;
-    private VBoxContainer _playersList  = null!;
-    private Button        _leaveButton  = null!;
-    private Button        _startButton  = null!;
+    /// <summary>
+    /// Émis quand la connexion au serveur a réussi et que la scène est prête à
+    /// céder la main au <c>GameController</c>. Aucun changement de scène n'est
+    /// effectué côté lobby&#160;: c'est au <c>LobbyController</c> (parent) de
+    /// nettoyer cette UI via <c>Exit()</c> une fois la FSM avancée.
+    /// </summary>
+    [Signal] public delegate void GameStartRequestedEventHandler();
 
-    private bool _leaving  = false;
-    private bool _wasHost  = false;
-    private int  _mapIndex = 0;
-    private const string Root         = "PanelContainer/MarginContainer/VBoxContainer";
-    private const float  PollInterval = 4.0f;
+    private Label _codeValue = null!;
+    private Label _serverValue = null!;
+    private Label _statusValue = null!;
+    private Label _mapValue = null!;
+    private Button _mapPrevButton = null!;
+    private Button _mapNextButton = null!;
+    private Label _playersTitle = null!;
+    private VBoxContainer _playersList = null!;
+    private Button _leaveButton = null!;
+    private Button _startButton = null!;
+
+    private bool _leaving = false;
+    private bool _wasHost = false;
+    private int _mapIndex = 0;
+    private const string Root = "PanelContainer/MarginContainer/VBoxContainer";
+    private const float PollInterval = 4.0f;
 
     public override void _Ready()
     {
-        _codeValue     = GetNode<Label>($"{Root}/CodeBox/CodeValue");
-        _serverValue   = GetNode<Label>($"{Root}/ServerBox/ServerValue");
-        _statusValue   = GetNode<Label>($"{Root}/StatusBox/StatusValue");
-        _mapValue      = GetNode<Label>($"{Root}/MapBox/MapValue");
+        _codeValue = GetNode<Label>($"{Root}/CodeBox/CodeValue");
+        _serverValue = GetNode<Label>($"{Root}/ServerBox/ServerValue");
+        _statusValue = GetNode<Label>($"{Root}/StatusBox/StatusValue");
+        _mapValue = GetNode<Label>($"{Root}/MapBox/MapValue");
         _mapPrevButton = GetNode<Button>($"{Root}/MapBox/MapPrev");
         _mapNextButton = GetNode<Button>($"{Root}/MapBox/MapNext");
-        _playersTitle  = GetNode<Label>($"{Root}/PlayersTitle");
-        _playersList   = GetNode<VBoxContainer>($"{Root}/PlayersPanel/ScrollContainer/PlayersList");
-        _leaveButton   = GetNode<Button>($"{Root}/ButtonsBox/LeaveButton");
-        _startButton   = GetNode<Button>($"{Root}/ButtonsBox/StartButton");
+        _playersTitle = GetNode<Label>($"{Root}/PlayersTitle");
+        _playersList = GetNode<VBoxContainer>($"{Root}/PlayersPanel/ScrollContainer/PlayersList");
+        _leaveButton = GetNode<Button>($"{Root}/ButtonsBox/LeaveButton");
+        _startButton = GetNode<Button>($"{Root}/ButtonsBox/StartButton");
 
-        _leaveButton.Pressed   += OnLeavePressed;
-        _startButton.Pressed   += OnStartPressed;
+        _leaveButton.Pressed += OnLeavePressed;
+        _startButton.Pressed += OnStartPressed;
         _mapPrevButton.Pressed += OnMapPrev;
         _mapNextButton.Pressed += OnMapNext;
 
@@ -46,7 +54,7 @@ public partial class LobbyScene : Control
             return;
         }
 
-        _codeValue.Text   = snapshot.Code;
+        _codeValue.Text = snapshot.Code;
         _serverValue.Text = $"{snapshot.ServerIp}:{snapshot.ServerPort}";
         _statusValue.Text = snapshot.Status;
 
@@ -92,8 +100,12 @@ public partial class LobbyScene : Control
                 _RefreshMapDisplay();
             }
 
-            if (fresh.Status == "started")
-                GoToGame();
+            if (fresh.Status == "started" && !_leaving)
+            {
+                _leaving = true;
+                _wasHost = LobbyState.IsHost;
+                EmitSignal(SignalName.GameStartRequested);
+            }
         }
         catch (System.Exception ex)
         {
@@ -110,50 +122,16 @@ public partial class LobbyScene : Control
         try
         {
             await RoomServiceProvider.Repository.UpdateStatusAsync(snapshot.Code, "started");
-            GoToGame();
+            if (_leaving) return;
+            _leaving = true;
+            _wasHost = LobbyState.IsHost;
+            EmitSignal(SignalName.GameStartRequested);
         }
         catch (System.Exception ex)
         {
             GD.PrintErr($"[Lobby] Start failed: {ex.Message}");
             _startButton.Disabled = false;
         }
-    }
-
-    private void GoToGame()
-    {
-        if (_leaving || !IsInsideTree()) return;
-        _leaving = true;
-        _wasHost = LobbyState.IsHost;
-
-        var serverIp   = LobbyState.Current?.ServerIp   ?? Core.Network.Rooms.Room.HardcodedServerIp;
-        var serverPort = LobbyState.Current?.ServerPort ?? Core.Network.Rooms.Room.HardcodedServerPort;
-        LobbyState.SetSelectedMap(LobbyState.Current?.MapId ?? MapRegistry.DefaultMapId);
-        LobbyState.Clear();
-
-        _statusValue.Text = "Connecting to server…";
-
-        var net = Core.Network.NetworkManager.Instance;
-        net.LocalConnected   += OnServerConnected;
-        net.ConnectionFailed += OnServerConnectionFailed;
-        net.ConnectToServer(serverIp, serverPort);
-    }
-
-    private void OnServerConnected(int _)
-    {
-        var net = Core.Network.NetworkManager.Instance;
-        net.LocalConnected   -= OnServerConnected;
-        net.ConnectionFailed -= OnServerConnectionFailed;
-        GetTree().ChangeSceneToFile("res://Core/World/world.tscn");
-    }
-
-    private void OnServerConnectionFailed(string msg)
-    {
-        var net = Core.Network.NetworkManager.Instance;
-        net.LocalConnected   -= OnServerConnected;
-        net.ConnectionFailed -= OnServerConnectionFailed;
-        _leaving = false;
-        _statusValue.Text = $"Connection failed: {msg}";
-        if (_wasHost) _startButton.Disabled = false;
     }
 
     private void _RefreshMapDisplay()
@@ -187,14 +165,14 @@ public partial class LobbyScene : Control
             await RoomServiceProvider.Repository.UpdateMapAsync(snapshot.Code, newMapId);
             LobbyState.Set(new Core.Network.Rooms.RoomSnapshot
             {
-                Code       = snapshot.Code,
+                Code = snapshot.Code,
                 HostUserId = snapshot.HostUserId,
-                ServerIp   = snapshot.ServerIp,
+                ServerIp = snapshot.ServerIp,
                 ServerPort = snapshot.ServerPort,
-                Status     = snapshot.Status,
+                Status = snapshot.Status,
                 MaxPlayers = snapshot.MaxPlayers,
-                MapId      = newMapId,
-                Players    = snapshot.Players
+                MapId = newMapId,
+                Players = snapshot.Players
             }, LobbyState.IsHost);
         }
         catch (System.Exception ex)
@@ -242,7 +220,7 @@ public partial class LobbyScene : Control
         _leaveButton.Disabled = true;
 
         var snapshot = LobbyState.Current;
-        var me       = Core.Auth.AuthServiceProvider.Instance.CurrentUser;
+        var me = Core.Auth.AuthServiceProvider.Instance.CurrentUser;
         if (snapshot is not null && me is not null)
         {
             try
