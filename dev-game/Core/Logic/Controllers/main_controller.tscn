@@ -1,6 +1,0 @@
-[gd_scene format=3 uid="uid://u2cd78bbht28"]
-
-[ext_resource type="Script" uid="uid://daj6wa4ohsta8" path="res://Core/Logic/MainController.cs" id="1_c4hbw"]
-
-[node name="MainController" type="Node3D" unique_id=842980265]
-script = ExtResource("1_c4hbw")

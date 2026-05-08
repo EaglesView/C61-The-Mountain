@@ -1,4 +1,4 @@
-namespace Core.Share.StateMachine;
+namespace Core.Shared.StateMachine;
 /// <summary>
 /// Phase d'exécution attachée à un état d'une FSM parente. La FSM parente appelle
 /// <see cref="Enter"/> à l'entrée de l'état, <see cref="Tick"/> à chaque frame, et
@@ -6,7 +6,7 @@ namespace Core.Share.StateMachine;
 /// </summary>
 public interface IPhase
 {
-    bool isDone { get; }
+    bool IsDone { get; }
     void Enter();
     void Tick(float InDelta);
     void Exit();
