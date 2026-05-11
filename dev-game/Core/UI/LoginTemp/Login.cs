@@ -6,6 +6,12 @@ using Core.Network;
 
 public partial class Login : Control
 {
+	[Export] public LineEdit EmailField;
+	[Export] public LineEdit UsernameField;
+	[Export] public LineEdit PasswordField;
+	[Export] public Button LoginButton;
+	[Export] public Button SignUpButton;
+	[Export] public Label ErrorLabel;
 	private AuthUseCase _auth = null!;
 	private LineEdit _emailField = null!;
 	private LineEdit _usernameField = null!;
@@ -24,12 +30,12 @@ public partial class Login : Control
 
 		_auth = AuthServiceProvider.Instance;
 
-		_emailField = GetNode<LineEdit>("VBoxContainer/EmailField");
-		_usernameField = GetNode<LineEdit>("VBoxContainer/UsernameField");
-		_passwordField = GetNode<LineEdit>("VBoxContainer/PasswordField");
-		_loginButton = GetNode<Button>("VBoxContainer/LoginButton");
-		_signUpButton = GetNode<Button>("VBoxContainer/SignUpButton");
-		_errorLabel = GetNodeOrNull<Label>("VBoxContainer/ErrorLabel");
+		_emailField = EmailField;
+		_usernameField = UsernameField;
+		_passwordField = PasswordField;
+		_loginButton = LoginButton;
+		_signUpButton = SignUpButton;
+		_errorLabel = ErrorLabel;
 
 		_loginButton.Pressed += OnLoginPressed;
 		_signUpButton.Pressed += OnSignUpPressed;
