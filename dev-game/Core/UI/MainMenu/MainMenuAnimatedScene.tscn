@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://jkkf34tk07o"]
 
-[ext_resource type="PackedScene" uid="uid://cxvenxb1m26wm" path="res://Core/Dev/dev_map.tscn" id="1_awgob"]
+[ext_resource type="PackedScene" uid="uid://but3467304q27" path="res://Core/World/Maps/menu_decor_map.tscn" id="1_awgob"]
 
 [node name="SubViewportContainer" type="SubViewportContainer" unique_id=1476608370]
 offset_right = 1920.0
@@ -12,7 +12,4 @@ handle_input_locally = false
 size = Vector2i(1920, 1080)
 render_target_update_mode = 4
 
-[node name="DevMap" parent="SubViewport" unique_id=110067603 instance=ExtResource("1_awgob")]
-
-[node name="Camera3D" type="Camera3D" parent="SubViewport/DevMap" unique_id=1592822393]
-transform = Transform3D(0.1664177, 0.53348863, 0.8292738, -0.0032242627, 0.8412912, -0.54057264, -0.98605007, 0.08728706, 0.14172585, -123.18913, 0.55150414, 9.641663)
+[node name="MenuDecorMap" parent="SubViewport" unique_id=1870671043 instance=ExtResource("1_awgob")]
