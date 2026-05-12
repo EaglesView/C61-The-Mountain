@@ -32,6 +32,14 @@ public sealed partial class LobbyController : Node3D, IPhase
 		_connectionSucceeded = false;
 		_connectionFailed = false;
 
+		// Serveur dédié : pas d'UI ni de polling Firestore. La state StateMachine attends
+		// a Game les peers
+		if (NetworkManager.Instance is not null && NetworkManager.Instance.IsServer)
+		{
+			_done = true;
+			return;
+		}
+
 		// Cas re-entrée Winning -> Lobby : le statut Firestore peut être encore
 		// "started" depuis la partie précédente. Si on est l'hôte, on le remet
 		// à "waiting" — sinon le polling de LobbyScene déclencherait un nouveau

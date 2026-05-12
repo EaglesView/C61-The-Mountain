@@ -1,3 +1,20 @@
+/// +=============================================================+
+/// |    _____ _          __  __              _        _          |
+/// |   |_   _| |_  ___  |  \/  |___ _  _ _ _| |_ __ _(_)_ _      |
+/// |     | | | ' \/ -_) | |\/| / _ | || | ' |  _/ _` | | ' \     |
+/// |     |_| |_||_\___| |_|  |_\___/\_,_|_||_\__\__,_|_|_||_|    |
+/// |                                                             |
+/// |  ---------------------------------------------------------  |
+/// |  Fichier:         WinningController.cs                      |
+/// |  Auteur:           Jean-Marc Bouchard                       |
+/// |  Fonction: Contrôleur de la Machine d'états de l'état       |
+/// |  Winning.                                                   |
+/// |  ---------------------------------------------------------  |
+/// |                                                             |
+/// |                                                             |
+/// |                                                             |
+/// |                                                             |
+/// +==============================================================+
 using Godot;
 using System;
 using Core.Shared.StateMachine;
@@ -16,24 +33,33 @@ public sealed partial class WinningController : Node3D, IPhase
 	[Export] private PackedScene _winningSceneAsset;
 
 	/// <summary>Durée de l'écran de célébration avant ouverture du vote.</summary>
-	[Export] private float _celebrationDuration = 10f;
+    [Export] private float _celebrationDuration = 10f;
 
-	/// <summary>Délai max du vote avant auto-avance vers <c>NewGame</c>.</summary>
-	[Export] private float _voteTimeout = 30f;
+    /// <summary>Délai max du vote avant auto-avance vers <c>NewGame</c>.</summary>
+    [Export] private float _voteTimeout = 30f;
 
-	public enum State { Init, Failure, Celebration, Vote, NewGame }
+    public enum State { Init, Failure, Celebration, Vote, NewGame }
 
-	private StateMachine<State> _fsm;
-	private WinningScene _winningInstance;
-	private bool _voteComplete;
-	private bool _done;
+    private StateMachine<State> _fsm;
+    private WinningScene _winningInstance;
+    private bool _voteComplete;
+    private bool _done;
 
-	public bool IsDone => _done;
+    public bool IsDone => _done;
 
-	public void Enter()
-	{
-		_done = false;
-		_voteComplete = false;
+    public void Enter()
+    {
+        _done = false;
+        _voteComplete = false;
+
+		// Serveur dédié : pas d'UI de célébration ni de vote. On laisse la FSM
+		// parente boucler immédiatement Winning -> Lobby -> Game pour redevenir
+		// disponible au prochain HostMapPick.
+		if (Core.Network.NetworkManager.Instance is not null && Core.Network.NetworkManager.Instance.IsServer)
+		{
+			_done = true;
+			return;
+		}
 
 		if (_winningSceneAsset is null)
 		{
@@ -56,54 +82,54 @@ public sealed partial class WinningController : Node3D, IPhase
 		);
 
 		// Celebration -> Vote après le délai d'affichage des stats.
-		_fsm.When(State.Celebration,
-			new TimeElapsedCondition<State>(_celebrationDuration),
-			State.Vote
-		);
+        _fsm.When(State.Celebration,
+            new TimeElapsedCondition<State>(_celebrationDuration),
+            State.Vote
+        );
 
-		// Vote -> NewGame quand le signal LaunchNewLobby est reçu.
-		_fsm.When(State.Vote,
-			new PredicateCondition<State>(() => _voteComplete),
-			State.NewGame
-		);
+        // Vote -> NewGame quand le signal LaunchNewLobby est reçu.
+        _fsm.When(State.Vote,
+            new PredicateCondition<State>(() => _voteComplete),
+            State.NewGame
+        );
 
-		// Vote -> NewGame en fallback si le timeout du vote expire (évite le
-		// blocage si personne ne clique).
-		_fsm.When(State.Vote,
-			new TimeElapsedCondition<State>(_voteTimeout),
-			State.NewGame
-		);
+        // Vote -> NewGame en fallback si le timeout du vote expire (évite le
+        // blocage si personne ne clique).
+        _fsm.When(State.Vote,
+            new TimeElapsedCondition<State>(_voteTimeout),
+            State.NewGame
+        );
 
-		OnSubEnter(State.Init);
-	}
+        OnSubEnter(State.Init);
+    }
 
-	public void Tick(float InDelta) => _fsm?.Tick(InDelta);
+    public void Tick(float InDelta) => _fsm?.Tick(InDelta);
 
-	public void Exit()
-	{
-		if (_winningInstance is not null)
-		{
-			_winningInstance.LaunchNewLobby -= OnLaunchNewLobby;
-			_winningInstance.QueueFree();
-			_winningInstance = null;
-		}
-		_fsm = null;
-	}
+    public void Exit()
+    {
+        if (_winningInstance is not null)
+        {
+            _winningInstance.LaunchNewLobby -= OnLaunchNewLobby;
+            _winningInstance.QueueFree();
+            _winningInstance = null;
+        }
+        _fsm = null;
+    }
 
-	private void OnLaunchNewLobby() => _voteComplete = true;
+    private void OnLaunchNewLobby() => _voteComplete = true;
 
-	private void OnSubEnter(State InState)
-	{
-		switch (InState)
-		{
-			case State.NewGame:
-			case State.Failure:
-				_done = true;
-				break;
-		}
-	}
+    private void OnSubEnter(State InState)
+    {
+        switch (InState)
+        {
+            case State.NewGame:
+            case State.Failure:
+                _done = true;
+                break;
+        }
+    }
 
-	private void OnSubExit(State _) { }
+    private void OnSubExit(State _) { }
 
-	public override void _Ready() { }
+    public override void _Ready() { }
 }

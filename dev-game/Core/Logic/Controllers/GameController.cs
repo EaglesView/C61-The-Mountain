@@ -7,7 +7,7 @@ namespace Core.World;
 
 /// <summary>
 /// Phase «&#160;Game&#160;» de la FSM principale. Possède le <c>MapContainer</c>
-/// (plomberie réseau partagée) et y injecte le niveau correspondant à la map
+/// (les affaires du réseau partagée) et y injecte le niveau correspondant à la map
 /// choisie par l'hôte dans le lobby. Le root du niveau implémente
 /// <see cref="IPhase"/> + <see cref="IGameMode"/> et fournit le mode de jeu —
 /// GameController consomme uniquement ce contrat.
@@ -22,9 +22,7 @@ public sealed partial class GameController : Node3D, IPhase
 
     public enum State { Init, Failure, Waiting, Playing, Resolving }
     private StateMachine<State> _fsm = null;
-    // Typé en IPhase plutôt qu'IGameMode parce que GameController n'utilise ici
-    // que le cycle de vie (Enter/Tick/Exit/IsDone). Les concrets de mode (ex.
-    // RotatingBarrelController) implémentent les deux interfaces.
+
     private IPhase _mode = null;
     private Node _mapContainerInstance = null;
     private MultiplayerSpawner _spawner = null;
@@ -35,111 +33,124 @@ public sealed partial class GameController : Node3D, IPhase
 
     public override void _Ready()
     {
-        // Fallback si les [Export] ne sont pas câblés dans main_controller.tscn —
-        // évite d'imposer un drag&drop pour ce premier câblage.
-        _mapContainerSceneAsset ??= ResourceLoader.Load<PackedScene>("res://Core/World/Maps/map_container.tscn");
-        _playerScene ??= ResourceLoader.Load<PackedScene>("res://Core/World/CharacterModel/Player/Player.tscn");
-    }
+        //Fallback d'export scene
+		_mapContainerSceneAsset ??= ResourceLoader.Load<PackedScene>("res://Core/World/Maps/map_container.tscn");
+		_playerScene ??= ResourceLoader.Load<PackedScene>("res://Core/World/CharacterModel/Player/Player.tscn");
+	}
 
-    public void Enter()
-    {
-        _done = false;
+	public void Enter()
+	{
+		_done = false;
 
-        // La map (et donc le mode) est choisie par l'hôte dans le lobby et
-        // propagée via LobbyState.SelectedMapId.
-        var mapDef = MapRegistry.Get(LobbyState.SelectedMapId) ?? MapRegistry.All[0];
+		// la scene de map container est loaded
+		if (_mapContainerSceneAsset is null)
+		{
+			GD.PrintErr("[GameController] _mapContainerSceneAsset non assigné.");
+			_done = true;
+			return;
+		}
+		_mapContainerInstance = _mapContainerSceneAsset.Instantiate();
+		AddChild(_mapContainerInstance);
+		// prendre le spawner
+		_spawner = _mapContainerInstance.GetNodeOrNull<MultiplayerSpawner>("GameLogicAssets/MultiplayerSpawner");
+		if (_spawner is null)
+		{
+			GD.PrintErr("[GameController] MultiplayerSpawner introuvable dans map_container.");
+			_done = true;
+			return;
+		}
+		_spawner.SpawnFunction = Callable.From<Variant, GodotObject>(SpawnPlayerNode);
 
-        // 1) Instancie le MapContainer (plomberie réseau partagée + slot Map).
-        if (_mapContainerSceneAsset is null)
-        {
-            GD.PrintErr("[GameController] _mapContainerSceneAsset non assigné.");
-            _done = true;
-            return;
-        }
-        _mapContainerInstance = _mapContainerSceneAsset.Instantiate();
-        AddChild(_mapContainerInstance);
+		var net = NetworkManager.Instance;
+		if (net is not null) net.StateReceived += OnStateReceived;
 
-        // 2) Charge le niveau et l'injecte dans le slot Map du container.
-        var levelScene = ResourceLoader.Load<PackedScene>(mapDef.ScenePath);
-        if (levelScene is null)
-        {
-            GD.PrintErr($"[GameController] Niveau introuvable&#160;: {mapDef.ScenePath}");
-            _done = true;
-            return;
-        }
-        var levelInstance = levelScene.Instantiate();
-        var mapSlot = _mapContainerInstance.GetNodeOrNull("Map");
-        if (mapSlot is null)
-        {
-            GD.PrintErr("[GameController] Slot 'Map' introuvable dans map_container.tscn.");
-            _done = true;
-            return;
-        }
-        mapSlot.AddChild(levelInstance);
+		// Vérifier le role (client vs server)
+		if (net is not null && net.IsServer)
+		{
+			GD.Print("[GameController] Dedicated server — waiting for HostMapPick.");
+			_onPeerDisconnectedHandler = OnPeerDisconnected;
+			Multiplayer.PeerDisconnected += _onPeerDisconnectedHandler;
+			// Le niveau est loadé a la réception du HostMapPick
+		}
+		else if (net is not null && net.IsClient)
+		{
+			if (!LoadLevel(LobbyState.SelectedMapId)) return;
+			GD.Print($"[GameController] Online client — sending HostMapPick('{LobbyState.SelectedMapId}') + ClientReady.");
+			RpcId(1, MethodName.HostMapPick, LobbyState.SelectedMapId);
+			Rpc(MethodName.ClientReady);
+		}
+		else
+		{
+			if (!LoadLevel(LobbyState.SelectedMapId)) return;
+			GD.Print("[GameController] Offline — spawning local player directly.");
+			SpawnOffline();
+		}
+	}
 
-        // 3) Le root du niveau doit implémenter IPhase (et idéalement IGameMode).
-        if (levelInstance is not IPhase mode)
-        {
-            GD.PrintErr($"[GameController] Le root du niveau '{mapDef.ScenePath}' n'implémente pas IPhase.");
-            _done = true;
-            return;
-        }
-        _mode = mode;
+	/// <summary>
+	/// Charge le niveau correspondant à <paramref name="InMapId"/> dans le slot
+	/// <c>Map</c> du container, branche <see cref="_mode"/>/<see cref="_playerSpawner"/>
+	/// et démarre la State machine interne. Idempotent : retourne <c>true</c> sans rien
+	/// refaire si un niveau est déjà chargé.
+	/// </summary>
+	private bool LoadLevel(string InMapId)
+	{
+		if (_mapContainerInstance is null) return false;
+		if (_mode is not null) return true;
 
-        // 4) Plomberie réseau — câblée à partir des nodes connus de map_container.
-        _spawner = _mapContainerInstance.GetNodeOrNull<MultiplayerSpawner>("GameLogicAssets/MultiplayerSpawner");
-        if (_spawner is null)
-        {
-            GD.PrintErr("[GameController] MultiplayerSpawner introuvable dans map_container.");
-            _done = true;
-            return;
-        }
-        _spawner.SpawnFunction = Callable.From<Variant, GodotObject>(SpawnPlayerNode);
+		var mapDef = MapRegistry.Get(InMapId) ?? MapRegistry.All[0];
 
-        _playerSpawner = levelInstance.GetNodeOrNull<PlayerSpawner>("PlayerSpawner");
-        if (_playerSpawner is null)
-            GD.PrintErr($"[GameController] PlayerSpawner introuvable dans le niveau '{mapDef.ScenePath}'.");
+		var levelScene = ResourceLoader.Load<PackedScene>(mapDef.ScenePath);
+		if (levelScene is null)
+		{
+			GD.PrintErr($"[GameController] Niveau introuvable&#160;: {mapDef.ScenePath}");
+			_done = true;
+			return false;
+		}
+		var levelInstance = levelScene.Instantiate();
+		var mapSlot = _mapContainerInstance.GetNodeOrNull("Map");
+		if (mapSlot is null)
+		{
+			GD.PrintErr("[GameController] Slot 'Map' introuvable dans map_container.tscn.");
+			_done = true;
+			return false;
+		}
+		mapSlot.AddChild(levelInstance);
 
-        var net = NetworkManager.Instance;
-        if (net is not null) net.StateReceived += OnStateReceived;
+		if (levelInstance is not IPhase mode)
+		{
+			GD.PrintErr($"[GameController] Le root du niveau '{mapDef.ScenePath}' n'implémente pas IPhase.");
+			_done = true;
+			return false;
+		}
+		_mode = mode;
 
-        if (net is not null && net.IsServer)
-        {
-            GD.Print("[GameController] Dedicated server — waiting for peers.");
-            _onPeerDisconnectedHandler = OnPeerDisconnected;
-            Multiplayer.PeerDisconnected += _onPeerDisconnectedHandler;
-        }
-        else if (net is not null && net.IsClient)
-        {
-            GD.Print("[GameController] Online client — requesting spawn from server.");
-            Rpc(MethodName.ClientReady);
-        }
-        else
-        {
-            GD.Print("[GameController] Offline — spawning local player directly.");
-            SpawnOffline();
-        }
+		_playerSpawner = levelInstance.GetNodeOrNull<PlayerSpawner>("PlayerSpawner");
+		if (_playerSpawner is null)
+			GD.PrintErr($"[GameController] PlayerSpawner introuvable dans le niveau '{mapDef.ScenePath}'.");
 
-        // 5) FSM interne (Init → Waiting → Playing → Resolving).
-        _fsm = new StateMachine<State>(State.Init, OnSubEnter, OnSubExit);
-        _fsm.When(State.Init,
-            new PredicateCondition<State>(() =>/* TODO: Inclure level loaded */ true),
-            State.Waiting
-        );
-        _fsm.When(State.Init,
-            new PredicateCondition<State>(() => /* TODO: flag d'erreur de chargement */ false),
-            State.Failure
-        );
-        _fsm.When(State.Waiting,
-            new TimeElapsedCondition<State>(10f),
-            State.Playing
-        );
-        _fsm.When(State.Playing,
-            new PredicateCondition<State>(() => _mode.IsDone),
-            State.Resolving
-        );
-        OnSubEnter(State.Init);
-    }
+		// FSM interne (Init → Waiting → Playing → Resolving). Démarrée ici parce
+		// que le prédicat Playing→Resolving dépend de _mode.IsDone.
+		_fsm = new StateMachine<State>(State.Init, OnSubEnter, OnSubExit);
+		_fsm.When(State.Init,
+			new PredicateCondition<State>(() =>/* TODO: Inclure level loaded */ true),
+			State.Waiting
+		);
+		_fsm.When(State.Init,
+			new PredicateCondition<State>(() => /* TODO: flag d'erreur de chargement */ false),
+			State.Failure
+		);
+		_fsm.When(State.Waiting,
+			new TimeElapsedCondition<State>(10f),
+			State.Playing
+		);
+		_fsm.When(State.Playing,
+			new PredicateCondition<State>(() => _mode.IsDone),
+			State.Resolving
+		);
+		OnSubEnter(State.Init);
+		return true;
+	}
 
     public void Tick(float InDelta)
     {
@@ -197,59 +208,86 @@ public sealed partial class GameController : Node3D, IPhase
         ServerSpawnPeer(peerId);
     }
 
-    private void ServerSpawnPeer(int peerId)
-    {
-        if (_spawner is null || _playerSpawner is null) return;
-        Vector3 spawnPos = _playerSpawner.GetNextSpawnPoint();
-        var data = new Godot.Collections.Dictionary { ["id"] = peerId, ["pos"] = spawnPos };
-        _spawner.Spawn(data);
-        GD.Print($"[GameController] Server spawned peer {peerId} at {spawnPos}");
-    }
+    /// <summary>
+	/// Envoyé par chaque client à l'entrée en phase Game pour annoncer au
+	/// serveur quelle map a été choisie dans le lobby. Le serveur charge le
+	/// niveau au premier appel (le RPC est réémis par chaque peer, mais
+	/// <see cref="LoadLevel"/> est idempotent).
+	/// </summary>
+	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void HostMapPick(string InMapId)
+	{
+		if (!Multiplayer.IsServer()) return;
+		if (_mode is not null) return;
+		int senderId = Multiplayer.GetRemoteSenderId();
+		GD.Print($"[GameController] HostMapPick from peer {senderId}: mapId='{InMapId}'");
+		LoadLevel(InMapId);
+	}
 
-    private void OnPeerDisconnected(long peerId)
-    {
-        var players = _mapContainerInstance?.GetNodeOrNull("Players");
-        var player = players?.GetNodeOrNull(((int)peerId).ToString());
-        if (player is not null)
-        {
-            ((Node)player).QueueFree();
-            GD.Print($"[GameController] Server despawned peer {(int)peerId}");
-        }
-    }
+	private void ServerSpawnPeer(int peerId)
+	{
+		if (_spawner is null || _playerSpawner is null) return;
+		Vector3 spawnPos = _playerSpawner.GetNextSpawnPoint();
+		var data = new Godot.Collections.Dictionary { ["id"] = peerId, ["pos"] = spawnPos };
+		_spawner.Spawn(data);
+		// Donne au NetworkManager le spawn par peer pour son respawn autoritaire
+		// (chute sous FallThreshold dans OnPacketReceived).
+		NetworkManager.Instance?.RegisterPeerSpawn(peerId, spawnPos);
+		GD.Print($"[GameController] Server spawned peer {peerId} at {spawnPos}");
+	}
 
-    private void SpawnOffline()
-    {
-        if (_playerScene is null || _mapContainerInstance is null) return;
-        var player = _playerScene.Instantiate<Player>();
-        player.Name = "1";
-        player.PeerId = 1;
-        player.SpawnPosition = _playerSpawner?.GetNextSpawnPoint() ?? Vector3.Zero;
-        var players = _mapContainerInstance.GetNodeOrNull("Players");
-        if (players is null)
-        {
-            GD.PrintErr("[GameController] Container 'Players' introuvable dans map_container.");
-            return;
-        }
-        players.AddChild(player);
-    }
+	private void OnPeerDisconnected(long peerId)
+	{
+		var players = _mapContainerInstance?.GetNodeOrNull("Players");
+		var player = players?.GetNodeOrNull(((int)peerId).ToString());
+		if (player is not null)
+		{
+			((Node)player).QueueFree();
+			GD.Print($"[GameController] Server despawned peer {(int)peerId}");
+		}
 
-    private void OnStateReceived(PlayerNetState state)
-    {
-        var players = _mapContainerInstance?.GetNodeOrNull("Players");
-        var player = players?.GetNodeOrNull<Player>(state.PeerId.ToString());
-        if (player is null || player.IsMultiplayerAuthority()) return;
-        player.PushSnapshot(state, Time.GetTicksMsec());
-    }
+		// Quand tout les clients se déconnectent, automatiquement finir la game nul et
+		// attendre un autre lobby.
+		if (Multiplayer.GetPeers().Length == 0)
+		{
+			GD.Print("[GameController] Last peer left — resetting server to waiting.");
+			_done = true;
+		}
+	}
 
-    // ── FSM interne ───────────────────────────────────────────────────────────
+	private void SpawnOffline()
+	{
+		if (_playerScene is null || _mapContainerInstance is null) return;
+		var player = _playerScene.Instantiate<Player>();
+		player.Name = "1";
+		player.PeerId = 1;
+		player.SpawnPosition = _playerSpawner?.GetNextSpawnPoint() ?? Vector3.Zero;
+		var players = _mapContainerInstance.GetNodeOrNull("Players");
+		if (players is null)
+		{
+			GD.PrintErr("[GameController] Container 'Players' introuvable dans map_container.");
+			return;
+		}
+		players.AddChild(player);
+	}
 
-    private void OnSubEnter(State s)
-    {
-        switch (s)
-        {
-            case State.Playing: _mode?.Enter(); break;
-            case State.Resolving: _done = true; break;
-        }
-    }
-    private void OnSubExit(State _) { }
+	private void OnStateReceived(PlayerNetState state)
+	{
+		var players = _mapContainerInstance?.GetNodeOrNull("Players");
+		var player = players?.GetNodeOrNull<Player>(state.PeerId.ToString());
+		if (player is null || player.IsMultiplayerAuthority()) return;
+		player.PushSnapshot(state, Time.GetTicksMsec());
+	}
+
+	// ── FSM interne ───────────────────────────────────────────────────────────
+
+	private void OnSubEnter(State s)
+	{
+		switch (s)
+		{
+			case State.Playing: _mode?.Enter(); break;
+			case State.Resolving: _done = true; break;
+		}
+	}
+	private void OnSubExit(State _) { }
 }

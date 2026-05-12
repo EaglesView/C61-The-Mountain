@@ -24,7 +24,7 @@ public partial class Login : Control
 	{
 		if (OS.HasFeature("dedicated_server") || DisplayServer.GetName() == "headless")
 		{
-			GetTree().ChangeSceneToFile("res://Core/World/world.tscn");
+			GetTree().ChangeSceneToFile("res://Core/Logic/main_controller.tscn");
 			return;
 		}
 

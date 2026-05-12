@@ -97,6 +97,7 @@ debug_color = Color(0.8392157, 0, 0.3764706, 0.8235294)
 mesh = SubResource("PlaneMesh_xhr76")
 
 [node name="RotatingThing" parent="Map" unique_id=903562714 instance=ExtResource("2_xhr76")]
+RotationSpeed = 0.01
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1586363923]
 environment = SubResource("Environment_6680f")
@@ -111,6 +112,7 @@ shape = SubResource("CylinderShape3D_xhr76")
 debug_color = Color(0.64738125, 0.517329, 0.16687164, 0.8039216)
 
 [node name="PlayerSpawner" parent="." unique_id=1973612002 node_paths=PackedStringArray("_spawnPoints") instance=ExtResource("4_6680f")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6246085, 0)
 _spawnPoints = [NodePath("Spawn_Point_1"), NodePath("Spawn_Point_2"), NodePath("Spawn_Point_3"), NodePath("Spawn_Point_4"), NodePath("Spawn_Point_5"), NodePath("Spawn_Point_6"), NodePath("Spawn_Point_7"), NodePath("Spawn_Point_8")]
 
 [node name="Spawn_Point_1" type="Marker3D" parent="PlayerSpawner" unique_id=132326541]
