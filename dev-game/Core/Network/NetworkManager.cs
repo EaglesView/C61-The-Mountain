@@ -24,8 +24,28 @@ public partial class NetworkManager : Node
     private float       _tickAccum  = 0f;
     private const float TickInterval = 1f / 20f;
 
+    /// <summary>
+    /// Seuil de Y sous lequel le serveur considère qu'un joueur est tombé hors map
+    /// et déclenche un respawn autoritaire vers la position enregistrée via
+    /// <see cref="RegisterPeerSpawn"/>. Doit rester inférieur au plus bas point
+    /// jouable de toutes les maps actives.
+    /// </summary>
+    private const float FallThreshold = -5f;
+
+    /// <summary>
+    /// Cooldown minimum (ms) entre deux corrections envoyées au même peer.
+    /// Évite la rafale de corrections pendant qu'une correction en vol n'est pas
+    /// encore appliquée côté client (un round-trip).
+    /// </summary>
+    private const ulong CorrectionCooldownMsec = 250;
+
     // Per-peer last known full state for server sanity check and newcomer catch-up
     private readonly Dictionary<int, PlayerNetState> _lastKnownState = new();
+    // Per-peer spawn position registered by GameController — utilisé pour le
+    // respawn autoritaire serveur quand le joueur tombe sous FallThreshold.
+    private readonly Dictionary<int, Vector3> _peerSpawn = new();
+    // Per-peer timestamp (ticks ms) de la dernière correction envoyée — gate du cooldown.
+    private readonly Dictionary<int, ulong> _lastCorrectionMsec = new();
 
     /// <summary><c>true</c> si ce pair est le serveur de la session.</summary>
     public bool IsServer        => _provider?.Role == NetworkRole.Server;
@@ -56,6 +76,14 @@ public partial class NetworkManager : Node
     /// </summary>
     public void SetLocalPlayer(Character player) => _localPlayer = player;
 
+    /// <summary>
+    /// Côté serveur uniquement : enregistre la position de spawn d'un peer pour
+    /// que le respawn autoritaire (chute sous <see cref="FallThreshold"/>) sache
+    /// où renvoyer le joueur. Appelé par le <c>GameController</c> juste après
+    /// <c>MultiplayerSpawner.Spawn</c>.
+    /// </summary>
+    public void RegisterPeerSpawn(int peerId, Vector3 spawnPos) => _peerSpawn[peerId] = spawnPos;
+
     /// <summary>Démarre manuellement un serveur.</summary>
     public void StartServer(int port = 7777, int maxPeers = 16)
         => _provider?.StartServer(port, maxPeers);
@@ -77,6 +105,8 @@ public partial class NetworkManager : Node
         {
             GD.Print($"[NetworkManager] Peer {id} disconnected (localPeerId={LocalPeerId}).");
             _lastKnownState.Remove(id);
+            _peerSpawn.Remove(id);
+            _lastCorrectionMsec.Remove(id);
         };
         _provider.PacketReceived   += OnPacketReceived;
         _provider.ServerStarted    += ()  => GD.Print("[NetworkManager] Server started on port 7777.");
@@ -168,14 +198,49 @@ public partial class NetworkManager : Node
 
         if (_provider?.Role == NetworkRole.Server)
         {
-            if (_lastKnownState.TryGetValue(fromPeerId, out var lastState))
+            bool hasLast = _lastKnownState.TryGetValue(fromPeerId, out var lastState);
+
+            // 1) Respawn autoritaire : si le joueur signale (ou a signalé) une
+            //    position sous le seuil de chute, on le téléporte au spawn
+            //    enregistré, on broadcast la nouvelle position aux autres peers
+            //    et on aligne _lastKnownState sur le spawn. Couvre les deux
+            //    cas possibles : packet courant sous le seuil, ou
+            //    téléport-respawn client appliqué entre deux packets serveur.
+            bool incomingFell = state.Position.Y < FallThreshold;
+            bool lastFell = hasLast && lastState.Position.Y < FallThreshold;
+            if ((incomingFell || lastFell) && _peerSpawn.TryGetValue(fromPeerId, out var spawn))
+            {
+                GD.Print($"[NetworkManager] Peer {fromPeerId} fell (state.Y={state.Position.Y:F1}, last.Y={(hasLast ? lastState.Position.Y : float.NaN):F1}) — respawning at {spawn}");
+                if (incomingFell)
+                    _provider.SendReliable(fromPeerId, PlayerNetState.SerializeCorrection(fromPeerId, spawn));
+                var respawned = new PlayerNetState(
+                    state.PeerId, spawn, Vector3.Zero,
+                    state.BodyYaw, state.HeadPitch, state.ArmPointDir,
+                    (byte)state.MoveState, (byte)state.EmoteState, state.Flags);
+                _lastKnownState[fromPeerId] = respawned;
+                _provider.BroadcastUnreliable(
+                    PlayerNetState.Serialize(PacketType.StateUpdate, respawned),
+                    excludePeerId: fromPeerId);
+                StateReceived?.Invoke(respawned);
+                return;
+            }
+
+            // 2) Anti-teleport classique. Sur rejet, on rate-limite l'envoi de
+            //    correction (la correction en vol n'est pas instantanée — pas
+            //    besoin d'en spammer une par packet pendant le round-trip).
+            if (hasLast)
             {
                 float dist = lastState.Position.DistanceTo(state.Position);
                 if (dist > 20f)
                 {
-                    GD.Print($"[NetworkManager] Dropped packet from {fromPeerId}: delta {dist:F1} > 20 — sending correction");
-                    var correction = PlayerNetState.SerializeCorrection(fromPeerId, lastState.Position);
-                    _provider.SendReliable(fromPeerId, correction);
+                    ulong now = Time.GetTicksMsec();
+                    _lastCorrectionMsec.TryGetValue(fromPeerId, out ulong lastMsec);
+                    if (now - lastMsec >= CorrectionCooldownMsec)
+                    {
+                        GD.Print($"[NetworkManager] Dropped packet from {fromPeerId}: delta {dist:F1} > 20 — sending correction");
+                        _provider.SendReliable(fromPeerId, PlayerNetState.SerializeCorrection(fromPeerId, lastState.Position));
+                        _lastCorrectionMsec[fromPeerId] = now;
+                    }
                     return;
                 }
             }

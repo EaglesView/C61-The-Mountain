@@ -72,8 +72,10 @@ public partial class SnowballSpawner : Node3D
 		}
 		ball.AddChild(meshInst);
 
-		ball.GlobalPosition = GlobalPosition;
+		// GlobalPosition n'est valide qu'une fois la balle dans l'arbre — sinon
+		// get_global_transform échoue (assert !is_inside_tree()).
 		GetParent().AddChild(ball);
+		ball.GlobalPosition = GlobalPosition;
 
 		Vector3 dir = (GlobalBasis * ThrowDirection.Normalized()).Normalized();
 		if (Spread > 0f)

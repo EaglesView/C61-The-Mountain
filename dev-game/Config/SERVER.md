@@ -99,6 +99,44 @@ Levé pendant `CharacterState.Recovering` (après ragdoll, avant que le joueur r
 
 ---
 
+## Format des paquets serveur → client
+
+Le serveur émet trois flux distincts. Deux réutilisent le format `StateUpdate` (52 octets, identique au client), un seul a une mise en page propre (`PositionCorrect`).
+
+### 1. Rebroadcast d'état — `0x01 StateUpdate`, 52 octets, **UnreliableOrdered**
+
+À chaque snapshot reçu d'un client (et validé), le serveur appelle `BroadcastUnreliable(data, excludePeerId = émetteur)`. **Le paquet est retransmis tel quel** — mêmes 52 octets, même mode ragdoll, même réutilisation des champs `Position`/`Velocity`/`BodyYaw`/`HeadPitch` que côté client. Voir [Format des paquets (`PlayerNetState`)](#format-des-paquets-playernetstate).
+
+C'est le flux dominant : 20 Hz × (N − 1) destinataires par joueur actif.
+
+### 2. Rattrapage à la connexion — `0x01 StateUpdate`, 52 octets, **Reliable**
+
+Sur `peer_connected`, le serveur parcourt `_lastKnownState` et envoie au nouveau pair l'état le plus récent de chaque autre joueur via `SendReliable`. Même format que le rebroadcast, mais transport fiable pour garantir que le ring buffer du nouveau client n'initialise pas à `(0,0,0)`. Pas de paquet inverse — le nouveau pair commencera à émettre ses propres snapshots dès que son `Player` local sera prêt.
+
+### 3. Correction anti-téléportation — `0x04 PositionCorrect`, **17 octets**, **Reliable**
+
+Émis uniquement vers le pair fautif quand son delta de position dépasse 20 u/tick. Mise en page propre, distincte de `StateUpdate` :
+
+| Offset | Champ | Type | Octets | Notes |
+|---|---|---|---|---|
+| 0 | `PacketType` | `byte` | 1 | `0x04` = PositionCorrect |
+| 1 | `PeerId` | `int32` | 4 | Pair ciblé (le client vérifie qu'il s'agit bien de lui) |
+| 5 | `Position.X` | `float32` | 4 | Position autoritaire à restaurer |
+| 9 | `Position.Y` | `float32` | 4 | |
+| 13 | `Position.Z` | `float32` | 4 | |
+
+Le client compare `PeerId` à son `LocalPeerId`, puis écrase `GlobalPosition` et remet `Velocity = Vector3.Zero`. Aucun ack n'est attendu — la fiabilité ENet suffit.
+
+### Récapitulatif
+
+| Flux | PacketType | Taille | Transport | Destinataires |
+|---|---|---|---|---|
+| Rebroadcast d'état | `0x01` | 52 o | UnreliableOrdered | Tous les pairs sauf l'émetteur |
+| Rattrapage connexion | `0x01` | 52 o | Reliable | Nouveau pair uniquement |
+| Correction position | `0x04` | 17 o | Reliable | Pair fautif uniquement |
+
+---
+
 ## Architecture — couche réseau
 
 ```

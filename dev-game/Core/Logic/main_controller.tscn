@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://ernhw31a2vqx"]
+
+[ext_resource type="Script" uid="uid://daj6wa4ohsta8" path="res://Core/Logic/Controllers/MainController.cs" id="1_778ni"]
+[ext_resource type="Script" uid="uid://bmg0oet136f3v" path="res://Core/Logic/Controllers/LobbyController.cs" id="2_778ni"]
+[ext_resource type="Script" uid="uid://bnxynmiiofw36" path="res://Core/Logic/Controllers/GameController.cs" id="3_c70xw"]
+[ext_resource type="PackedScene" uid="uid://c8r3bf2r451s" path="res://Core/UI/Room/lobby.tscn" id="3_fa3qi"]
+[ext_resource type="Script" uid="uid://b7rpl0oyj2xic" path="res://Core/Logic/Controllers/WinningController.cs" id="4_c70xw"]
+[ext_resource type="PackedScene" uid="uid://c1531obdi2t5v" path="res://Core/UI/Winning/winning.tscn" id="6_vmgfg"]
+
+[node name="MainController" type="Node3D" unique_id=842980265 node_paths=PackedStringArray("_lobbyController", "_gameController", "_winningController")]
+script = ExtResource("1_778ni")
+_lobbyController = NodePath("LobbyController")
+_gameController = NodePath("GameController")
+_winningController = NodePath("WinningController")
+
+[node name="LobbyController" type="Node3D" parent="." unique_id=1557174751]
+script = ExtResource("2_778ni")
+_lobbySceneAsset = ExtResource("3_fa3qi")
+
+[node name="GameController" type="Node3D" parent="." unique_id=1407688606]
+script = ExtResource("3_c70xw")
+
+[node name="WinningController" type="Node3D" parent="." unique_id=1803285030]
+script = ExtResource("4_c70xw")
+_winningSceneAsset = ExtResource("6_vmgfg")
