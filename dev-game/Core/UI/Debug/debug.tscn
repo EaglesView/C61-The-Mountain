@@ -1,15 +1,17 @@
 [gd_scene format=3 uid="uid://bqm28efgwql4h"]
 
+[ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="1_8k21o"]
 [ext_resource type="Theme" uid="uid://barb3fnyyh5h7" path="res://Config/themes/debug_theme.tres" id="1_d6iev"]
 [ext_resource type="Script" uid="uid://vun14e1nnrxy" path="res://Core/UI/Debug/Debug.cs" id="1_u2dwp"]
 
-[node name="Debug" type="Control" unique_id=752801447 node_paths=PackedStringArray("_fpsValue", "_serverValue", "_responseTimeValue", "_playerAmtValue", "_pingValue", "_positionXLabel", "_positionYLabel", "_positionZLabel", "_headAngleRadLabel", "_headAngleDegLabel", "_velocityLabel", "_speedLabel", "_characterStateLabel", "_isOnFloorLabel", "_isRagdollLabel")]
+[node name="Debug" type="Control" unique_id=752801447 node_paths=PackedStringArray("_fpsValue", "_serverValue", "_responseTimeValue", "_playerAmtValue", "_pingValue", "_positionXLabel", "_positionYLabel", "_positionZLabel", "_headAngleRadLabel", "_headAngleDegLabel", "_velocityLabel", "_speedLabel", "_characterStateLabel", "_isOnFloorLabel", "_isRagdollLabel", "_remoteTrackedPeerLabel", "_remotePosXLabel", "_remotePosYLabel", "_remotePosZLabel", "_replicationDeltaLabel")]
 layout_mode = 3
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
+theme = ExtResource("1_8k21o")
 script = ExtResource("1_u2dwp")
 _fpsValue = NodePath("PanelContainer/MarginContainer/VBoxContainer/FPS/ValueLabel")
 _serverValue = NodePath("PanelContainer/MarginContainer/VBoxContainer/CurrentServer/ValueLabel")
@@ -26,6 +28,11 @@ _speedLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/Speed/Value
 _characterStateLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/CharacterState/ValueLabel")
 _isOnFloorLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/IsOnFloor/ValueLabel")
 _isRagdollLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/IsRagdoll/ValueLabel")
+_remoteTrackedPeerLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/RemotePeerId/ValueLabel")
+_remotePosXLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/RemotePosX/ValueLabel")
+_remotePosYLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/RemotePosY/ValueLabel")
+_remotePosZLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/RemotePosZ/ValueLabel")
+_replicationDeltaLabel = NodePath("PanelContainer/MarginContainer/VBoxContainer/ReplicationDelta/ValueLabel")
 
 [node name="PanelContainer" type="PanelContainer" parent="." unique_id=370331976]
 layout_mode = 0
@@ -250,6 +257,98 @@ layout_mode = 2
 theme = ExtResource("1_d6iev")
 theme_override_font_sizes/font_size = 8
 text = "False"
+
+[node name="NetReplicationTitle" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=411111120]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_type_variation = &"HeaderLarge"
+theme_override_font_sizes/font_size = 10
+text = "-~-NET REPLICATION-~-"
+
+[node name="RemotePeerId" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=411111121]
+layout_mode = 2
+alignment = 1
+
+[node name="RemotePeerIdLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/RemotePeerId" unique_id=411111122]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "Tracked Peer:"
+
+[node name="ValueLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/RemotePeerId" unique_id=411111123]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "--"
+
+[node name="RemotePosX" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=411111124]
+layout_mode = 2
+alignment = 1
+
+[node name="RemotePosXLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/RemotePosX" unique_id=411111125]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "Remote X:"
+
+[node name="ValueLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/RemotePosX" unique_id=411111126]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "--"
+
+[node name="RemotePosY" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=411111127]
+layout_mode = 2
+alignment = 1
+
+[node name="RemotePosYLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/RemotePosY" unique_id=411111128]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "Remote Y:"
+
+[node name="ValueLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/RemotePosY" unique_id=411111129]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "--"
+
+[node name="RemotePosZ" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=411111130]
+layout_mode = 2
+alignment = 1
+
+[node name="RemotePosZLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/RemotePosZ" unique_id=411111131]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "Remote Z:"
+
+[node name="ValueLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/RemotePosZ" unique_id=411111132]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "--"
+
+[node name="ReplicationDelta" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=411111133]
+layout_mode = 2
+alignment = 1
+
+[node name="ReplicationDeltaLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/ReplicationDelta" unique_id=411111134]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "Delta (gap):"
+
+[node name="ValueLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/ReplicationDelta" unique_id=411111135]
+layout_mode = 2
+theme = ExtResource("1_d6iev")
+theme_override_font_sizes/font_size = 8
+text = "--"
 
 [node name="ServerPerformanceLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=1207138300]
 layout_mode = 2

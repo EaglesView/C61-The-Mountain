@@ -1,0 +1,126 @@
+@startuml ClassesCharacter
+!include ../style.iuml
+title The Mountain - Classes - Personnage (Character, Player, Physique)
+
+' Noeuds Godot de reference
+class Node3D <<Godot>>
+class CharacterBody3D <<Godot>> {
+    + _Ready()
+    + _PhysicsProcess(delta)
+}
+class Skeleton3D <<Godot>>
+class Camera3D <<Godot>>
+
+package "Core.World.CharacterModel" {
+
+    package "Character" {
+        abstract class Character <<Godot>> {
+            # AnimPlayer : AnimationPlayer
+            + PhysicsSkelton : PhysicsSkeleton
+            # _capsule : CollisionShape3D?
+            # speed, jumpVelocity : Vector3
+            # velocity, moveVec, aimVec, pointVec : Vector3
+            # currentMovementState : MovementState
+            # currentEmoteState : EmoteState
+            # _characterState : CharacterState
+            # _stateBeforePause : CharacterState
+            # prevHeadAngle, headAngle : float
+            # _graceTime : float
+            + FallLimit : float
+            + SpawnPosition : Vector3
+            + PeerId : int
+            --
+            + RotateHead(dy) : void
+            + PointAt(dir) : void
+            + GetHeadBonePosition() : Vector3
+            + GetPhysicsHeadBonePosition() : Vector3
+            + GetHeadAngle() : float
+            + GetCurrentState() : CharacterState
+            + TransitionTo(next) : void
+            # EnterState(s) : void
+            # ExitState(s) : void
+            + SnapshotState() : PlayerNetState
+            + ApplyNetworkState(s) : void
+            + ComputeEmotePhysics() : void
+        }
+    }
+
+    package "Player" {
+        class Player <<Godot>> {
+            ' exports + etat input/camera
+            - _camera : CameraMan
+            - _snapshots : PlayerNetState[4]
+            - _timestamps : ulong[4]
+            - _head, _count : int
+            --
+            + PushSnapshot(state, tsMs) : void
+            # EnterState(s) : void
+            # ExitState(s) : void
+            + _Input(event) : void
+            + _PhysicsProcess(delta) : void
+            + _Process(delta) : void
+            - RemotePhysicsProcess() : void
+        }
+    }
+
+    package "Physics" {
+        class PhysicsSkeleton <<Godot>> {
+            - _boneSim : PhysicalBoneSimulator3D?
+            - _physicsBones : List<PhysicalBone3D>
+            - _spinePhysBone : PhysicalBone3D?
+            - _headPhysBone : PhysicalBone3D?
+            + HeadAngle : float
+            + ArmPointDir : Vector3
+            + ArmUpDir : float
+            --
+            + ApplyRagdollKick(force) : void
+            + GetSpinePhysicsWorldPosition() : Vector3
+            + GetSpinePhysicsLinearVelocity() : Vector3
+            + GetHeadPhysicsWorldAngles() : (float, float)
+            + GetPoseTargetSkel(useSpine) : Transform3D
+            - _SetHeadPose() : void
+            - _SetSpinePoseFromHead() : void
+            - _ArmPoint() : void
+            - _ArmsRaise() : void
+        }
+    }
+
+    package "Camera" {
+        class CameraMan <<Godot>> {
+            + CamType : CameraType
+            - _yaw, _pitch, _lerpT : float
+            --
+            + SetCameraType(t) : void
+            + SetNextCamera(list, wrap) : void
+            + RotateCameraTP(x, y, dt) : void
+            + GetCameraForwardFlat() : Vector3
+            + GetCameraRightFlat() : Vector3
+            + GetRaycastPointingVector() : Vector3
+            + ComputeCameraPosition(dt) : void
+        }
+
+        class Camera <<Godot>> {
+            ' stub - enveloppe Camera3D
+        }
+    }
+}
+
+Node3D <|-- CharacterBody3D
+CharacterBody3D <|-- Character
+Character <|-- Player
+Skeleton3D <|-- PhysicsSkeleton
+Camera3D <|-- Camera
+
+Character "1" o-- "1" PhysicsSkeleton
+Player "1" o-- "1" CameraMan
+CameraMan "1" o-- "1" Camera
+
+note right of Character
+  FSM principal via
+  CharacterState + transitions
+  avec EnterState/ExitState.
+  Expose Snapshot/Apply pour
+  la replication reseau.
+end note
+
+@enduml

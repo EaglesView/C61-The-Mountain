@@ -1,0 +1,29 @@
+@startuml EtatGameMenuFSM
+!include ../style.iuml
+title The Mountain - Etats - Menu pause
+
+[*] --> Running
+
+state Running {
+    Running : Visible = false
+    Running : MouseMode = Captured
+    Running : GameMenu.IsPaused = false
+}
+
+state Paused {
+    Paused : Visible = true
+    Paused : MouseMode = Visible
+    Paused : GameMenu.IsPaused = true
+}
+
+Running --> Paused : action pause_menu\nPlayer.TransitionTo(Paused)\n=> OpenMenu()
+Paused --> Running : action pause_menu\nou bouton Resume\n=> CloseMenu()
+Paused --> [*] : bouton Quit\nChangeSceneToFile MainMenu
+
+note right of Paused
+  Etat couple avec
+  CharacterState.Paused
+  du joueur local.
+end note
+
+@enduml

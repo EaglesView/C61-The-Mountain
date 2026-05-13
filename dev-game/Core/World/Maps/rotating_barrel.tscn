@@ -1,0 +1,140 @@
+[gd_scene format=3 uid="uid://disxsg2778ts1"]
+
+[ext_resource type="Shader" uid="uid://deuye0mkqnsm4" path="res://Core/Shaders/water.gdshader" id="1_nu1m5"]
+[ext_resource type="Script" uid="uid://c145mvoa44rb1" path="res://Core/Logic/LevelControllers/RotatingBarrelController.cs" id="1_xhr76"]
+[ext_resource type="PackedScene" uid="uid://3lj7a0stmiiv" path="res://Core/World/MapAssets/MainAssets/rotating_thing_animatable.tscn" id="2_xhr76"]
+[ext_resource type="PackedScene" uid="uid://d1fshm7mq3au7" path="res://Core/World/MapAssets/MainAssets/player_spawner.tscn" id="4_6680f"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ddkwf"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_ddkwf"]
+material = SubResource("StandardMaterial3D_ddkwf")
+top_radius = 15.0
+bottom_radius = 10.0
+height = 100.0
+radial_segments = 96
+rings = 0
+cap_bottom = false
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_nu1m5"]
+height = 100.0
+radius = 15.0
+
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_rd44d"]
+plane = Plane(-8.815, 1, 0, 0)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_rd44d"]
+render_priority = 0
+shader = ExtResource("1_nu1m5")
+shader_parameter/shallow_color = Color(0.1, 0.55, 0.65, 1)
+shader_parameter/deep_color = Color(0, 0.12, 0.3, 1)
+shader_parameter/foam_color = Color(1, 1, 1, 1)
+shader_parameter/wave_speed = 0.1
+shader_parameter/wave_height = 0.2
+shader_parameter/wave_length = 2.0
+shader_parameter/wave_dir_a = Vector2(1, 0.3)
+shader_parameter/wave_dir_b = Vector2(-0.6, 0.8)
+shader_parameter/wave_dir_c = Vector2(0.2, -1)
+shader_parameter/fresnel_power = 5.0
+shader_parameter/depth_distance = 4.0
+shader_parameter/foam_thickness = 0.35
+shader_parameter/roughness_value = 0.08
+shader_parameter/min_alpha = 0.55
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_xhr76"]
+material = SubResource("ShaderMaterial_rd44d")
+size = Vector2(1000, 1000)
+subdivide_width = 2000
+subdivide_depth = 2000
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_rd44d"]
+
+[sub_resource type="Sky" id="Sky_xhr76"]
+sky_material = SubResource("ProceduralSkyMaterial_rd44d")
+
+[sub_resource type="Environment" id="Environment_6680f"]
+background_mode = 2
+sky = SubResource("Sky_xhr76")
+ambient_light_source = 3
+ssr_enabled = true
+ssao_enabled = true
+ssil_enabled = true
+glow_enabled = true
+glow_intensity = 0.5
+
+[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_d6caa"]
+
+[sub_resource type="Compositor" id="Compositor_dkjid"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_xhr76"]
+radius = 15.0
+
+[node name="RotatingBarrel" type="Node3D" unique_id=663783760]
+script = ExtResource("1_xhr76")
+
+[node name="Map" type="Node3D" parent="." unique_id=62228479]
+
+[node name="Platform" type="MeshInstance3D" parent="Map" unique_id=1177330007]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -50, 0)
+mesh = SubResource("CylinderMesh_ddkwf")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Map/Platform" unique_id=2093007589]
+collision_layer = 2
+collision_mask = 5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Map/Platform/StaticBody3D" unique_id=113144298]
+shape = SubResource("CylinderShape3D_nu1m5")
+
+[node name="WaterArea" type="Area3D" parent="Map" unique_id=1924326728]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -10.403808, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Map/WaterArea" unique_id=2058575219]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24.330236, 0, 0)
+shape = SubResource("WorldBoundaryShape3D_rd44d")
+debug_color = Color(0.8392157, 0, 0.3764706, 0.8235294)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Map/WaterArea" unique_id=181386193]
+mesh = SubResource("PlaneMesh_xhr76")
+
+[node name="RotatingThing" parent="Map" unique_id=903562714 instance=ExtResource("2_xhr76")]
+RotationSpeed = 0.01
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1586363923]
+environment = SubResource("Environment_6680f")
+camera_attributes = SubResource("CameraAttributesPractical_d6caa")
+compositor = SubResource("Compositor_dkjid")
+
+[node name="SpawnArea" type="Area3D" parent="." unique_id=1231921456]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SpawnArea" unique_id=2135426435]
+shape = SubResource("CylinderShape3D_xhr76")
+debug_color = Color(0.64738125, 0.517329, 0.16687164, 0.8039216)
+
+[node name="PlayerSpawner" parent="." unique_id=1973612002 node_paths=PackedStringArray("_spawnPoints") instance=ExtResource("4_6680f")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6246085, 0)
+_spawnPoints = [NodePath("Spawn_Point_1"), NodePath("Spawn_Point_2"), NodePath("Spawn_Point_3"), NodePath("Spawn_Point_4"), NodePath("Spawn_Point_5"), NodePath("Spawn_Point_6"), NodePath("Spawn_Point_7"), NodePath("Spawn_Point_8")]
+
+[node name="Spawn_Point_1" type="Marker3D" parent="PlayerSpawner" unique_id=132326541]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 0)
+
+[node name="Spawn_Point_4" type="Marker3D" parent="PlayerSpawner" unique_id=1103388219]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 0)
+
+[node name="Spawn_Point_3" type="Marker3D" parent="PlayerSpawner" unique_id=765142994]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 3)
+
+[node name="Spawn_Point_2" type="Marker3D" parent="PlayerSpawner" unique_id=1742805345]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, -3)
+
+[node name="Spawn_Point_5" type="Marker3D" parent="PlayerSpawner" unique_id=498054435]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, -8, 0, 4.371139e-08)
+
+[node name="Spawn_Point_6" type="Marker3D" parent="PlayerSpawner" unique_id=1337866151]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, -10, 0, -1.3113416e-07)
+
+[node name="Spawn_Point_7" type="Marker3D" parent="PlayerSpawner" unique_id=172982254]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, -8, 0, -3)
+
+[node name="Spawn_Point_8" type="Marker3D" parent="PlayerSpawner" unique_id=2007416297]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, -8, 0, 3)

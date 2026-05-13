@@ -1,0 +1,78 @@
+@startuml ClassesUtilsConfig
+!include ../style.iuml
+title The Mountain - Classes - Utilitaires et configuration
+
+package "Config" {
+    class Env <<Static>> {
+        - {static} _values : Dictionary<string, string>?
+        --
+        + {static} Get(key) : string
+    }
+
+    class FirebaseConfig <<Static>> {
+        + {static} ApiKey : string
+        + {static} ProjectId : string
+    }
+}
+
+package "Core.Utils" {
+    enum MovementState {
+        Walking
+        Running
+        Idle
+        Sliding
+        Ragdolling
+    }
+
+    enum CharacterState {
+        Idle
+        Moving
+        Airborne
+        Ragdoll
+        Recovering
+        Paused
+    }
+
+    enum EmoteState {
+        Pointing
+        ArmsUp
+        ShowSign
+        None
+    }
+
+    enum CameraType {
+        FirstPerson
+        ThirdPerson
+        FreeMode
+        Death
+    }
+
+    class CharacterUtils <<Static>> {
+        + {static} GetMovementStateFromMovement(vel, move) : MovementState
+        + {static} PlayAnimationFromMovement(s, anim) : void
+        + {static} HookesLaw(pos, target, k, d) : Vector3
+        + {static} CalculatePointingRot(dir) : Quaternion
+        + {static} GetLocalAimDir(skel, dir, idx) : Vector3
+        + {static} ToggleCharacterFocus(on) : bool
+        + {static} GetPoseFromIdx(skel, idx) : Transform3D
+    }
+
+    class RayCastUtils <<Static>> {
+        + {static} GetObjectTypeFromRaycast(r) : GodotObject
+        + {static} GetInteractableFromRaycast(r, dist) : Interactable?
+    }
+
+    class CameraUtils <<Static>> {
+        ' contient l'enum CameraType
+    }
+}
+
+FirebaseConfig ..> Env : Env.Get("FB_API_KEY")
+CharacterUtils --> MovementState
+CharacterUtils --> CharacterState : indirect
+CameraUtils +-- CameraType
+CharacterUtils +-- MovementState
+CharacterUtils +-- CharacterState
+CharacterUtils +-- EmoteState
+
+@enduml

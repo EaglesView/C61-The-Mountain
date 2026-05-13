@@ -26,11 +26,11 @@ public partial class GameMenu : Control
 		Visible  = false;
 
 		_resumeButton.Pressed        += CloseMenu;
+		_settingsButton.Pressed      += OpenSettings;
 		_backToMenuButton.Pressed    += QuitToMenu;
 		_backToDesktopButton.Pressed += QuitToDesktop;
 		_muteButton.Pressed          += ToggleMute;
 		_killCharacterButton.Pressed += KillCharacter;
-		// _settingsButton branché quand la scène settings sera prête
 	}
 
 	/// <summary>
@@ -60,6 +60,12 @@ public partial class GameMenu : Control
 		// Le menu gère uniquement la fermeture — l'ouverture est gérée par le Player
 		if (IsPaused && @event.IsActionPressed("pause_menu"))
 			CloseMenu();
+	}
+
+	private void OpenSettings()
+	{
+		var settingsScene = GD.Load<PackedScene>("res://Core/UI/Settings/settings_menu.tscn");
+		AddChild(settingsScene.Instantiate<Control>());
 	}
 
 	private void QuitToMenu()

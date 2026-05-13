@@ -1,0 +1,92 @@
+@startuml ClassesNetworkCore
+!include ../style.iuml
+title The Mountain - Classes - Reseau (coeur + fournisseurs)
+
+package "Core.Network" {
+
+    enum NetworkRole {
+        None
+        Server
+        Client
+    }
+
+    interface INetworkProvider <<Interface>> {
+        + Role : NetworkRole
+        + LocalPeerId : int
+        + IsRunning : bool
+        --
+        + StartServer(port, max) : void
+        + ConnectToServer(ip, port) : void
+        + Disconnect() : void
+        + SendReliable(peer, data) : void
+        + SendUnreliable(peer, data) : void
+        + BroadcastReliable(data, exclude) : void
+        + BroadcastUnreliable(data, exclude) : void
+        --
+        + PeerConnected : Action<int>
+        + PeerDisconnected : Action<int>
+        + PacketReceived : Action<int, byte[]>
+        + ServerStarted : Action
+        + ConnectionFailed : Action<string>
+    }
+
+    class NetworkManager <<Godot>> {
+        + {static} Instance : NetworkManager
+        - _provider : INetworkProvider?
+        - _localPlayer : Character?
+        - _tickAccum : float
+        - {static} TickInterval = 1/20 s
+        - _lastKnownState : Dictionary<int, PlayerNetState>
+        --
+        + IsServer : bool
+        + IsClient : bool
+        + IsRunning : bool
+        + LocalPeerId : int
+        --
+        + SetLocalPlayer(c) : void
+        + StartServer(port, max) : void
+        + ConnectToServer(ip, port) : void
+        + _Ready() : void
+        + _Process(delta) : void
+        - OnProviderPeerConnected(id) : void
+        - OnPacketReceived(from, bytes) : void
+        --
+        + StateReceived : Action<PlayerNetState>
+        + LocalConnected : Action<int>
+        + ConnectionFailed : Action<string>
+    }
+
+    package "Providers" {
+        class GodotENetProvider <<Godot>> {
+            - _peer : ENetMultiplayerPeer?
+            - _sm : SceneMultiplayer?
+            - _role : NetworkRole
+            --
+            + StartServer(port, max) : void
+            + ConnectToServer(ip, port) : void
+            + Disconnect() : void
+            + SendReliable(...) : void
+            + SendUnreliable(...) : void
+            + BroadcastReliable(...) : void
+            + BroadcastUnreliable(...) : void
+        }
+
+        class GodotSteamProvider <<Godot>> {
+            .. STUB - non implemente ..
+        }
+    }
+}
+
+INetworkProvider <|.. GodotENetProvider
+INetworkProvider <|.. GodotSteamProvider
+NetworkManager o--> INetworkProvider : pilote
+NetworkManager --> NetworkRole : lit
+
+note right of NetworkManager
+  Singleton autoload Godot.
+  Capture l'etat local a 20 Hz,
+  relaie aux clients, valide
+  la position (anti-triche).
+end note
+
+@enduml

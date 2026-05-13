@@ -1,0 +1,68 @@
+@startuml EtatCharacterFSM
+!include ../style.iuml
+title The Mountain - Etats - CharacterState (FSM principal)
+
+[*] --> Idle : _Ready()\nSpawnPosition
+
+state Idle {
+    Idle : entree : reset velocite plane
+    Idle : anim = Idle
+}
+
+state Moving {
+    Moving : mise a jour moveVec
+    Moving : anim = Walking | Running
+}
+
+state Airborne {
+    Airborne : chute libre / saut
+    Airborne : applique gravite
+}
+
+state Ragdoll {
+    Ragdoll : entree : capsule off\n+ ApplyRagdollKick
+    Ragdoll : bones pilotes par physique
+    Ragdoll : sortie : capsule on
+}
+
+state Recovering {
+    Recovering : replace position\ndepuis spine phys.
+    Recovering : grace time + anim recup
+}
+
+state Paused {
+    Paused : GameMenu.OpenMenu()
+    Paused : sortie : CloseMenu()
+}
+
+Idle --> Moving : moveVec != 0
+Moving --> Idle : moveVec == 0
+Idle --> Airborne : !IsOnFloor
+Moving --> Airborne : !IsOnFloor
+Airborne --> Idle : atterri (vel plane nulle)
+Airborne --> Moving : atterri (moveVec != 0)
+
+Idle --> Ragdoll : WindArea aggressive\nVentBlower / collision
+Moving --> Ragdoll : vitesse > seuil
+Airborne --> Ragdoll : chute > FallLimit
+Ragdoll --> Recovering : auto apres kick
+Recovering --> Idle : grace ecoule + sol
+Recovering --> Moving : grace ecoule + input
+
+Idle --> Paused : action pause_menu
+Moving --> Paused : action pause_menu
+Airborne --> Paused : action pause_menu
+Recovering --> Paused : action pause_menu
+Paused --> Idle : fermer menu\n(_stateBeforePause)
+Paused --> Moving : fermer menu
+Paused --> Airborne : fermer menu
+Paused --> Recovering : fermer menu
+
+note right of Ragdoll
+  Transitions orchestrees par
+  TransitionTo(CharacterState)
+  qui appelle ExitState puis
+  EnterState.
+end note
+
+@enduml

@@ -1,0 +1,30 @@
+@startuml SequenceWindCycle
+!include ../style.iuml
+title The Mountain - Sequence - Cycle de vie d'une WindArea
+
+participant "WindZoneDcm" as Gen
+participant "WindArea" as WA
+participant "Character\n(dans la zone)" as Ch
+participant "PhysicsSkeleton" as PS
+
+Gen -> Gen : _Process : _spawnTimer -= dt
+Gen -> Gen : timer <= 0 : _SpawnWindArea()
+Gen -> WA : new WindArea\n(taille, duree, force, dir)
+
+loop chaque frame
+    WA -> WA : _timeToStop -= dt
+    WA -> Ch : Area3D body_entered / exited\n=> _bodiesInZone
+end
+
+alt _timeToStop > DurationAreaAggressive
+    WA -> Ch : AddForce(WindDirection * WindForce)
+else _timeToStop <= DurationAreaAggressive
+    WA -> WA : _currentState = Aggressive
+    WA -> Ch : TransitionTo(Ragdoll)
+    Ch -> PS : ApplyRagdollKick(dir * force)
+end
+
+WA -> WA : _timeToStop <= 0
+WA -> WA : QueueFree()
+
+@enduml

@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://bq1y3wnjqd7us"]
+
+[ext_resource type="Script" uid="uid://da72v12e5aoyk" path="res://Core/World/MapAssets/MainAssets/FallingTile.cs" id="1_ftile"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_body"]
+size = Vector3(0.66, 0.099, 0.66)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_white"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_tile"]
+material = SubResource("StandardMaterial3D_white")
+size = Vector3(0.66, 0.099, 0.66)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_area"]
+size = Vector3(0.66, 0.02574903, 0.66)
+
+[node name="FallingTile" type="AnimatableBody3D" unique_id=1309946126 node_paths=PackedStringArray("DetectionArea", "TileMesh")]
+script = ExtResource("1_ftile")
+collision_layer = 2
+collision_mask = 5
+DetectionArea = NodePath("DetectionArea")
+TileMesh = NodePath("TileMesh")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=334574980]
+transform = Transform3D(1.0000004, 0, 0, 0, 1, 0, 0, 0, 1.0000004, 0, 0, 0)
+shape = SubResource("BoxShape3D_body")
+
+[node name="TileMesh" type="MeshInstance3D" parent="." unique_id=1508164539]
+mesh = SubResource("BoxMesh_tile")
+
+[node name="DetectionArea" type="Area3D" parent="." unique_id=641227165]
+collision_layer = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DetectionArea" unique_id=2012710752]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.06237451, 0)
+shape = SubResource("BoxShape3D_area")

@@ -1,0 +1,66 @@
+@startuml ArchitectureOverview
+!include ../style.iuml
+title The Mountain - Architecture globale (paquets)
+
+package "Config" as Config
+package "Core" {
+    package "Auth" as Auth {
+        package "Domain"
+        package "Application"
+        package "Infrastructure"
+    }
+    package "Profile" as Profile
+    package "Network" as Network {
+        package "Providers"
+        package "Rooms"
+    }
+    package "Shared" as Shared
+    package "Interfaces" as Interfaces
+    package "Utils" as Utils
+    package "UI" as UI {
+        package "MainMenu"
+        package "LoginTemp"
+        package "Profile" as UIProfile
+        package "Room"
+        package "GameMenu"
+        package "Settings"
+        package "Splash"
+        package "Debug"
+    }
+    package "World" as World {
+        package "CharacterModel"
+        package "Interaction"
+        package "MapAssets"
+        package "Terrain"
+    }
+}
+
+cloud "Firebase" as Firebase {
+    [Auth API]
+    [Realtime DB]
+    [Firestore]
+}
+
+node "Godot Runtime" as Runtime {
+    [ENet Transport]
+    [MultiplayerSpawner]
+    [SceneMultiplayer]
+}
+
+Config ..> Firebase : cles
+Auth --> Config
+Auth ..> Firebase : Auth API
+Profile ..> Firebase : Firestore
+Profile --> Shared
+Network --> Interfaces
+Network ..> Runtime : ENet + SceneMultiplayer
+Network.Rooms ..> Firebase : RTDB
+UI --> Auth
+UI --> Profile
+UI --> Network
+World --> Utils
+World --> Network : NetworkManager.Instance
+World --> Interfaces
+World ..> Runtime : Node3D
+
+@enduml

@@ -10,8 +10,8 @@ namespace Core.Network;
 /// Singleton autoload qui orchestre toute la couche réseau.
 /// Possède le transport actif (<see cref="INetworkProvider"/>), envoie les snapshots
 /// client à 20 Hz, et relaie les états reçus aux autres pairs côté serveur.
-/// Le <c>World</c> s'abonne à <see cref="PeerJoined"/>, <see cref="PeerLeft"/>
-/// et <see cref="StateReceived"/> pour gérer le spawn et la mise à jour des personnages.
+/// Le <c>World</c> utilise <c>MultiplayerSpawner</c> pour le spawn et s'abonne à
+/// <see cref="StateReceived"/> pour mettre à jour les personnages distants.
 /// </summary>
 public partial class NetworkManager : Node
 {
@@ -21,16 +21,31 @@ public partial class NetworkManager : Node
     private INetworkProvider? _provider;
     private Character?        _localPlayer;
 
-    private readonly HashSet<int> _remotePeerIds = new();
-
-    /// <summary>Ensemble des peer IDs distants actuellement connus (reçus via SpawnReq ou connexion directe).</summary>
-    public IReadOnlyCollection<int> RemotePeerIds => _remotePeerIds;
-
     private float       _tickAccum  = 0f;
-    private const float TickInterval = 1f / 20f; // 50ms
+    private const float TickInterval = 1f / 20f;
 
-    // Per-peer last known position for server-side sanity check (20 units/tick max)
-    private readonly Dictionary<int, Vector3> _lastKnownPos = new();
+    /// <summary>
+    /// Seuil de Y sous lequel le serveur considère qu'un joueur est tombé hors map
+    /// et déclenche un respawn autoritaire vers la position enregistrée via
+    /// <see cref="RegisterPeerSpawn"/>. Doit rester inférieur au plus bas point
+    /// jouable de toutes les maps actives.
+    /// </summary>
+    private const float FallThreshold = -5f;
+
+    /// <summary>
+    /// Cooldown minimum (ms) entre deux corrections envoyées au même peer.
+    /// Évite la rafale de corrections pendant qu'une correction en vol n'est pas
+    /// encore appliquée côté client (un round-trip).
+    /// </summary>
+    private const ulong CorrectionCooldownMsec = 250;
+
+    // Per-peer last known full state for server sanity check and newcomer catch-up
+    private readonly Dictionary<int, PlayerNetState> _lastKnownState = new();
+    // Per-peer spawn position registered by GameController — utilisé pour le
+    // respawn autoritaire serveur quand le joueur tombe sous FallThreshold.
+    private readonly Dictionary<int, Vector3> _peerSpawn = new();
+    // Per-peer timestamp (ticks ms) de la dernière correction envoyée — gate du cooldown.
+    private readonly Dictionary<int, ulong> _lastCorrectionMsec = new();
 
     /// <summary><c>true</c> si ce pair est le serveur de la session.</summary>
     public bool IsServer        => _provider?.Role == NetworkRole.Server;
@@ -45,45 +60,35 @@ public partial class NetworkManager : Node
     public int  LocalPeerId     => _provider?.LocalPeerId ?? 1;
 
     /// <summary>
-    /// <c>true</c> si une connexion automatique via <c>--connect</c> est en cours au démarrage.
-    /// </summary>
-    public bool IsAutoConnecting { get; private set; }
-
-    /// <summary>Déclenché lorsqu'un nouveau pair rejoint la session. Paramètre : identifiant du pair.</summary>
-    public event Action<int>?            PeerJoined;
-
-    /// <summary>Déclenché lorsqu'un pair quitte la session. Paramètre : identifiant du pair.</summary>
-    public event Action<int>?            PeerLeft;
-
-    /// <summary>
     /// Déclenché à la réception d'un <see cref="PlayerNetState"/> validé.
     /// Côté serveur, ce snapshot a déjà été relayé aux autres pairs avant d'être émis ici.
     /// </summary>
     public event Action<PlayerNetState>? StateReceived;
 
     /// <summary>Déclenché une seule fois lorsque la connexion locale au serveur est confirmée (client seulement).</summary>
-    public event Action?                 LocalConnected;
+    public event Action<int>?            LocalConnected;
+
+    /// <summary>Déclenché si la connexion au serveur échoue.</summary>
+    public event Action<string>?         ConnectionFailed;
 
     /// <summary>
     /// Enregistre le personnage local pour que le tick client puisse sérialiser son état.
-    /// Doit être appelé par le <c>World</c> après avoir instancié le joueur local.
     /// </summary>
-    /// <param name="player">Le personnage contrôlé par ce client.</param>
     public void SetLocalPlayer(Character player) => _localPlayer = player;
 
     /// <summary>
-    /// Démarre manuellement un serveur sur le port et le nombre de pairs donnés.
+    /// Côté serveur uniquement : enregistre la position de spawn d'un peer pour
+    /// que le respawn autoritaire (chute sous <see cref="FallThreshold"/>) sache
+    /// où renvoyer le joueur. Appelé par le <c>GameController</c> juste après
+    /// <c>MultiplayerSpawner.Spawn</c>.
     /// </summary>
-    /// <param name="port">Le port UDP d'écoute. Par défaut <c>7777</c>.</param>
-    /// <param name="maxPeers">Le nombre maximum de clients simultanés. Par défaut <c>16</c>.</param>
+    public void RegisterPeerSpawn(int peerId, Vector3 spawnPos) => _peerSpawn[peerId] = spawnPos;
+
+    /// <summary>Démarre manuellement un serveur.</summary>
     public void StartServer(int port = 7777, int maxPeers = 16)
         => _provider?.StartServer(port, maxPeers);
 
-    /// <summary>
-    /// Connecte manuellement ce client à un serveur distant.
-    /// </summary>
-    /// <param name="address">L'adresse IP ou le nom de domaine du serveur.</param>
-    /// <param name="port">Le port UDP du serveur. Par défaut <c>7777</c>.</param>
+    /// <summary>Connecte manuellement ce client à un serveur distant.</summary>
     public void ConnectToServer(string address, int port = 7777)
         => _provider?.ConnectToServer(address, port);
 
@@ -96,24 +101,20 @@ public partial class NetworkManager : Node
         _provider = enet;
 
         _provider.PeerConnected    += OnProviderPeerConnected;
-        _provider.PeerDisconnected += id  =>
+        _provider.PeerDisconnected += id =>
         {
-            GD.Print($"[NetworkManager] Peer {id} disconnected. Active peers: {_lastKnownPos.Count - 1}");
-            _lastKnownPos.Remove(id);
-
-            // Notify all remaining clients that this peer is gone
-            if (_provider?.Role == NetworkRole.Server)
-            {
-                var notify = PlayerNetState.SerializePeerNotify(PacketType.DespawnNotify, id);
-                _provider.BroadcastReliable(notify);
-            }
-
-            _remotePeerIds.Remove(id);
-            PeerLeft?.Invoke(id);
+            GD.Print($"[NetworkManager] Peer {id} disconnected (localPeerId={LocalPeerId}).");
+            _lastKnownState.Remove(id);
+            _peerSpawn.Remove(id);
+            _lastCorrectionMsec.Remove(id);
         };
         _provider.PacketReceived   += OnPacketReceived;
         _provider.ServerStarted    += ()  => GD.Print("[NetworkManager] Server started on port 7777.");
-        _provider.ConnectionFailed += msg => GD.PrintErr($"[NetworkManager] {msg}");
+        _provider.ConnectionFailed += msg =>
+        {
+            GD.PrintErr($"[NetworkManager] {msg}");
+            ConnectionFailed?.Invoke(msg);
+        };
 
         string[] args = OS.GetCmdlineArgs();
 
@@ -125,17 +126,6 @@ public partial class NetworkManager : Node
         {
             GD.Print("[NetworkManager] Headless mode — starting dedicated server.");
             _provider.StartServer(7777, 16);
-            return;
-        }
-
-        // --connect or --connect=<address>
-        string? connectArg = System.Array.Find(args, a => a == "--connect" || a.StartsWith("--connect="));
-        if (connectArg != null)
-        {
-            IsAutoConnecting = true;
-            string address = connectArg.Contains('=') ? connectArg.Split('=')[1] : "127.0.0.1";
-            GD.Print($"[NetworkManager] Auto-connecting to {address}:7777");
-            _provider.ConnectToServer(address, 7777);
         }
     }
 
@@ -143,18 +133,14 @@ public partial class NetworkManager : Node
     {
         if (_provider?.Role == NetworkRole.Server)
         {
-            GD.Print($"[NetworkManager] Player {id} connected. Active peers: {Multiplayer.GetPeers().Length}");
-
-            // Tell all already-connected clients about the newcomer
-            var newNotify = PlayerNetState.SerializePeerNotify(PacketType.SpawnReq, id);
-            _provider.BroadcastReliable(newNotify, excludePeerId: id);
-
-            // Tell the newcomer about every peer already in the session
+            GD.Print($"[NetworkManager] Player {id} connected.");
+            // Send each existing peer's last known state to the newcomer so their
+            // ring buffer starts at the correct position (not 0,0,0)
             foreach (int existingId in Multiplayer.GetPeers())
             {
                 if (existingId == id) continue;
-                var existingNotify = PlayerNetState.SerializePeerNotify(PacketType.SpawnReq, existingId);
-                _provider.SendReliable(id, existingNotify);
+                if (_lastKnownState.TryGetValue(existingId, out var existingState))
+                    _provider.SendReliable(id, PlayerNetState.Serialize(PacketType.StateUpdate, existingState));
             }
         }
         else
@@ -162,24 +148,24 @@ public partial class NetworkManager : Node
             GD.Print($"[NetworkManager] Connected to server. Local peer ID: {id}");
         }
 
-        PeerJoined?.Invoke(id);
-        _remotePeerIds.Add(id);
-        // Fire LocalConnected when our own client connection is confirmed
         if (_provider?.Role == NetworkRole.Client && id == _provider.LocalPeerId)
-            LocalConnected?.Invoke();
+            LocalConnected?.Invoke(id);
     }
 
     public override void _Process(double delta)
     {
         if (_provider?.Role != NetworkRole.Client || _localPlayer == null) return;
+        if (!GodotObject.IsInstanceValid(_localPlayer)) { _localPlayer = null; return; }
+        if (Multiplayer.MultiplayerPeer?.GetConnectionStatus() != MultiplayerPeer.ConnectionStatus.Connected) return;
 
         _tickAccum += (float)delta;
         if (_tickAccum < TickInterval) return;
         _tickAccum -= TickInterval;
 
+        if (!_localPlayer.IsInsideTree()) { GD.Print("[NetworkManager] ERROR: _localPlayer not in tree!"); return; }
         var state  = _localPlayer.SnapshotState();
         var packet = PlayerNetState.Serialize(PacketType.StateUpdate, state);
-        _provider.SendUnreliable(1, packet); // peer 1 = server in ENet
+        _provider.SendUnreliable(1, packet);
     }
 
     private void OnPacketReceived(int fromPeerId, byte[] data)
@@ -188,22 +174,21 @@ public partial class NetworkManager : Node
 
         var type = (PacketType)data[0];
 
-        // Lightweight peer-notify packets (5 bytes): relay PeerJoined/PeerLeft on clients
-        if (type == PacketType.SpawnReq || type == PacketType.DespawnNotify)
+        if (type == PacketType.PositionCorrect)
         {
-            if (_provider?.Role == NetworkRole.Client && data.Length >= 5)
+            if (_provider?.Role == NetworkRole.Client && data.Length >= 17 && _localPlayer != null)
             {
-                int peerId = System.BitConverter.ToInt32(data, 1);
-                GD.Print($"[NetworkManager] Got {type} for peer {peerId}");
-                if (type == PacketType.SpawnReq)
+                int corrPeerId = System.BitConverter.ToInt32(data, 1);
+                if (corrPeerId == _provider.LocalPeerId)
                 {
-                    _remotePeerIds.Add(peerId);
-                    PeerJoined?.Invoke(peerId);
-                }
-                else
-                {
-                    _remotePeerIds.Remove(peerId);
-                    PeerLeft?.Invoke(peerId);
+                    var correctedPos = new Vector3(
+                        System.BitConverter.ToSingle(data, 5),
+                        System.BitConverter.ToSingle(data, 9),
+                        System.BitConverter.ToSingle(data, 13)
+                    );
+                    GD.Print($"[NetworkManager] Server correction applied: {correctedPos}");
+                    _localPlayer.GlobalPosition = correctedPos;
+                    _localPlayer.Velocity = Vector3.Zero;
                 }
             }
             return;
@@ -213,19 +198,53 @@ public partial class NetworkManager : Node
 
         if (_provider?.Role == NetworkRole.Server)
         {
-            // Sanity check: reject teleports > 20 units per tick
-            if (_lastKnownPos.TryGetValue(fromPeerId, out var lastPos))
+            bool hasLast = _lastKnownState.TryGetValue(fromPeerId, out var lastState);
+
+            // 1) Respawn autoritaire : si le joueur signale (ou a signalé) une
+            //    position sous le seuil de chute, on le téléporte au spawn
+            //    enregistré, on broadcast la nouvelle position aux autres peers
+            //    et on aligne _lastKnownState sur le spawn. Couvre les deux
+            //    cas possibles : packet courant sous le seuil, ou
+            //    téléport-respawn client appliqué entre deux packets serveur.
+            bool incomingFell = state.Position.Y < FallThreshold;
+            bool lastFell = hasLast && lastState.Position.Y < FallThreshold;
+            if ((incomingFell || lastFell) && _peerSpawn.TryGetValue(fromPeerId, out var spawn))
             {
-                float dist = lastPos.DistanceTo(state.Position);
+                GD.Print($"[NetworkManager] Peer {fromPeerId} fell (state.Y={state.Position.Y:F1}, last.Y={(hasLast ? lastState.Position.Y : float.NaN):F1}) — respawning at {spawn}");
+                if (incomingFell)
+                    _provider.SendReliable(fromPeerId, PlayerNetState.SerializeCorrection(fromPeerId, spawn));
+                var respawned = new PlayerNetState(
+                    state.PeerId, spawn, Vector3.Zero,
+                    state.BodyYaw, state.HeadPitch, state.ArmPointDir,
+                    (byte)state.MoveState, (byte)state.EmoteState, state.Flags);
+                _lastKnownState[fromPeerId] = respawned;
+                _provider.BroadcastUnreliable(
+                    PlayerNetState.Serialize(PacketType.StateUpdate, respawned),
+                    excludePeerId: fromPeerId);
+                StateReceived?.Invoke(respawned);
+                return;
+            }
+
+            // 2) Anti-teleport classique. Sur rejet, on rate-limite l'envoi de
+            //    correction (la correction en vol n'est pas instantanée — pas
+            //    besoin d'en spammer une par packet pendant le round-trip).
+            if (hasLast)
+            {
+                float dist = lastState.Position.DistanceTo(state.Position);
                 if (dist > 20f)
                 {
-                    GD.Print($"[NetworkManager] Dropped packet from {fromPeerId}: delta {dist:F1} > 20");
+                    ulong now = Time.GetTicksMsec();
+                    _lastCorrectionMsec.TryGetValue(fromPeerId, out ulong lastMsec);
+                    if (now - lastMsec >= CorrectionCooldownMsec)
+                    {
+                        GD.Print($"[NetworkManager] Dropped packet from {fromPeerId}: delta {dist:F1} > 20 — sending correction");
+                        _provider.SendReliable(fromPeerId, PlayerNetState.SerializeCorrection(fromPeerId, lastState.Position));
+                        _lastCorrectionMsec[fromPeerId] = now;
+                    }
                     return;
                 }
             }
-            _lastKnownPos[fromPeerId] = state.Position;
-
-            // Relay to all other peers
+            _lastKnownState[fromPeerId] = state;
             _provider.BroadcastUnreliable(data, excludePeerId: fromPeerId);
             StateReceived?.Invoke(state);
         }

@@ -1,26 +1,20 @@
-[gd_scene format=3 uid="uid://c_lobby_scene"]
+[gd_scene format=3 uid="uid://c8r3bf2r451s"]
 
-[ext_resource type="Script" path="res://Core/UI/Room/LobbyScene.cs" id="1_lobby"]
+[ext_resource type="Script" uid="uid://dtrvrjidafpd5" path="res://Core/UI/Room/LobbyScene.cs" id="1_lobby"]
+[ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="1_mg0n1"]
+[ext_resource type="FontFile" uid="uid://d3iekdubpmgvd" path="res://Assets/fonts/Gorditas/Gorditas-Bold.ttf" id="3_bold"]
 
-[node name="LobbyScene" type="Control"]
+[node name="LobbyScene" type="Control" unique_id=405631335]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("1_mg0n1")
 script = ExtResource("1_lobby")
 
-[node name="Background" type="ColorRect" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.08, 0.08, 0.1, 1)
-
-[node name="PanelContainer" type="PanelContainer" parent="."]
+[node name="PanelContainer" type="PanelContainer" parent="." unique_id=1073503119]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -34,101 +28,124 @@ offset_bottom = 300.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="PanelContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer" unique_id=545038190]
 layout_mode = 2
 theme_override_constants/margin_left = 24
 theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 24
 
-[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer" unique_id=277518372]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Title" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="Title" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=123563456]
 layout_mode = 2
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 32
 text = "LOBBY"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 32
 
-[node name="HSep1" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="HSep1" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=1572486002]
 layout_mode = 2
 
-[node name="CodeBox" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="CodeBox" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=898909438]
 layout_mode = 2
+theme_override_constants/separation = 8
 
-[node name="CodeLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/CodeBox"]
+[node name="CodeLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/CodeBox" unique_id=1587543319]
 layout_mode = 2
-text = "Room Code:   "
-theme_override_colors/font_color = Color(0.65, 0.65, 0.65, 1)
+text = "Room Code:"
 
-[node name="CodeValue" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/CodeBox"]
+[node name="CodeValue" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/CodeBox" unique_id=1068706535]
 layout_mode = 2
-text = "------"
-theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.2, 0.85, 0.45, 1)
+theme_override_font_sizes/font_size = 20
+text = "------"
 
-[node name="ServerBox" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="ServerBox" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=1054317882]
 layout_mode = 2
+theme_override_constants/separation = 8
 
-[node name="ServerLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/ServerBox"]
+[node name="ServerLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/ServerBox" unique_id=1088127642]
 layout_mode = 2
-text = "Server:          "
-theme_override_colors/font_color = Color(0.65, 0.65, 0.65, 1)
+text = "Serveur:"
 
-[node name="ServerValue" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/ServerBox"]
+[node name="ServerValue" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/ServerBox" unique_id=611699638]
 layout_mode = 2
 text = "-"
 
-[node name="StatusBox" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="StatusBox" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=372674371]
 layout_mode = 2
+theme_override_constants/separation = 8
 
-[node name="StatusLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/StatusBox"]
+[node name="StatusLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/StatusBox" unique_id=1095845908]
 layout_mode = 2
-text = "Status:           "
-theme_override_colors/font_color = Color(0.65, 0.65, 0.65, 1)
+text = "Statut:"
 
-[node name="StatusValue" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/StatusBox"]
+[node name="StatusValue" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/StatusBox" unique_id=2025818006]
 layout_mode = 2
-text = "waiting"
-theme_override_colors/font_color = Color(1.0, 0.85, 0.2, 1)
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+text = "en attente"
 
-[node name="HSep2" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="MapBox" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=881234567]
 layout_mode = 2
+theme_override_constants/separation = 8
 
-[node name="PlayersTitle" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="MapLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/MapBox" unique_id=881234568]
 layout_mode = 2
-text = "Players (1 / 8)"
-theme_override_font_sizes/font_size = 14
-theme_override_colors/font_color = Color(0.65, 0.65, 0.65, 1)
+text = "Carte :"
 
-[node name="PlayersPanel" type="PanelContainer" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="MapPrev" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/MapBox" unique_id=881234569]
+custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
-custom_minimum_size = Vector2(0, 140)
+text = "<"
 
-[node name="ScrollContainer" type="ScrollContainer" parent="PanelContainer/MarginContainer/VBoxContainer/PlayersPanel"]
-layout_mode = 2
-
-[node name="PlayersList" type="VBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer/PlayersPanel/ScrollContainer"]
+[node name="MapValue" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/MapBox" unique_id=881234570]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 4
+theme_override_colors/font_color = Color(0.6, 0.85, 1, 1)
+text = "La Montagne (Dev)"
 
-[node name="HSep3" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="MapNext" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/MapBox" unique_id=881234571]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+text = ">"
+
+[node name="HSep2" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=708562224]
 layout_mode = 2
 
-[node name="ButtonsBox" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="PlayersTitle" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=2143665043]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Joueurs (1 / 8)"
+
+[node name="PlayersPanel" type="PanelContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=1949623064]
+custom_minimum_size = Vector2(0, 140)
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="PanelContainer/MarginContainer/VBoxContainer/PlayersPanel" unique_id=761611123]
+layout_mode = 2
+
+[node name="PlayersList" type="VBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer/PlayersPanel/ScrollContainer" unique_id=1193662845]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="HSep3" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=1201273756]
+layout_mode = 2
+
+[node name="ButtonsBox" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=1154260432]
 layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 2
 
-[node name="LeaveButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/ButtonsBox"]
-layout_mode = 2
+[node name="LeaveButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/ButtonsBox" unique_id=400248755]
 custom_minimum_size = Vector2(100, 0)
-text = "Leave"
-
-[node name="StartButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/ButtonsBox"]
 layout_mode = 2
+text = "Quitter"
+
+[node name="StartButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/ButtonsBox" unique_id=2076665759]
 custom_minimum_size = Vector2(120, 0)
-text = "Start Game"
-disabled = true
+layout_mode = 2
+text = "Démarrer"

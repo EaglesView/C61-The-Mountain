@@ -1,0 +1,94 @@
+@startuml ClassesAuth
+!include ../style.iuml
+title The Mountain - Classes - Authentification
+
+package "Core.Auth" {
+
+    package "Domain" {
+        class User <<Domain>> {
+            + Id : string
+            + Email : string
+            + Username : string
+            --
+            + User(id, email, username)
+        }
+
+        class AuthResult <<Domain>> {
+            + Success : bool
+            + UserId : string?
+            + Email : string?
+            + Username : string?
+            + Token : string?
+            + ErrorMessage : string?
+            --
+            + {static} Ok(id, email, user, token) : AuthResult
+            + {static} Fail(msg) : AuthResult
+        }
+
+        interface IAuthService <<Interface>> {
+            + CurrentUser : User?
+            + IsAuthenticated : bool
+            + IdToken : string?
+            --
+            + SignInAsync(email, pwd) : Task<AuthResult>
+            + SignUpAsync(email, pwd, user) : Task<AuthResult>
+            + SignOutAsync() : Task
+        }
+    }
+
+    package "Application" {
+        class AuthUseCase {
+            - _authService : IAuthService
+            --
+            + CurrentUser : User?
+            + IsAuthenticated : bool
+            + IdToken : string?
+            --
+            + SignInAsync(email, pwd) : Task<AuthResult>
+            + SignUpAsync(email, pwd, user) : Task<AuthResult>
+            + SignOutAsync() : Task
+        }
+    }
+
+    package "Infrastructure" {
+        class FirebaseAuthService <<Infra>> {
+            - _apiKey : string
+            - _currentUser : User?
+            - _idToken : string?
+            --
+            + SignInAsync(...) : Task<AuthResult>
+            + SignUpAsync(...) : Task<AuthResult>
+            + SignOutAsync() : Task
+            - RequestAsync(...) : Task<AuthResult>
+            - UpdateDisplayNameAsync(...) : Task<bool>
+            - {static} MapFirebaseError(code) : string
+        }
+
+        class "FirebaseAuthRequest\n/Response/ErrorWrapper" as FirebaseDtos <<DTO>>
+    }
+
+    class AuthServiceProvider <<Static>> {
+        - {static} _instance : AuthUseCase?
+        --
+        + {static} Instance : AuthUseCase
+        + {static} GetCurrentToken() : string
+        + {static} SignOutAsync() : Task
+        + {static} Reset() : void
+    }
+}
+
+IAuthService <|.. FirebaseAuthService
+AuthUseCase o--> IAuthService : delegue
+AuthServiceProvider ..> AuthUseCase : cree
+AuthServiceProvider ..> FirebaseAuthService : cree
+FirebaseAuthService ..> AuthResult : retourne
+FirebaseAuthService ..> User : produit
+FirebaseAuthService ..> FirebaseDtos : (de)serialise
+
+note right of AuthServiceProvider
+  Singleton applicatif:
+  point d'entree global
+  pour l'authentification
+end note
+
+@enduml

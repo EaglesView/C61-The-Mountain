@@ -10,6 +10,7 @@ public sealed class RoomSnapshot
     public int    ServerPort  { get; init; }
     public string Status     { get; init; } = "";
     public int    MaxPlayers  { get; init; }
+    public string MapId     { get; init; } = MapRegistry.DefaultMapId;
     public Dictionary<string, PlayerEntry> Players { get; init; } = new();
 
     public sealed class PlayerEntry

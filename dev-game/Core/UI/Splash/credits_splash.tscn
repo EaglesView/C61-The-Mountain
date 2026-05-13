@@ -1,9 +1,167 @@
 [gd_scene format=3 uid="uid://ceww01ump2xy5"]
 
-[node name="CreditsSplash" type="Control" unique_id=1724206084]
+[ext_resource type="Script" uid="uid://bgmhjedbw1sde" path="res://Core/UI/Splash/CreditsScene.cs" id="1_credits"]
+[ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="2_theme"]
+[ext_resource type="FontFile" uid="uid://d3iekdubpmgvd" path="res://Assets/fonts/Gorditas/Gorditas-Bold.ttf" id="3_bold"]
+[ext_resource type="FontFile" uid="uid://1ub3n8rl4quv" path="res://Assets/fonts/Gorditas/Gorditas-Regular.ttf" id="4_regular"]
+
+[node name="CreditsScene" type="Control" unique_id=1115306295 node_paths=PackedStringArray("_creditsContent", "_backButton")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_credits")
+_creditsContent = NodePath("ClipContainer/CreditsContent")
+_backButton = NodePath("BackButton")
+
+[node name="Background" type="ColorRect" parent="." unique_id=773488481]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.04, 0.08, 1)
+
+[node name="ClipContainer" type="Control" parent="." unique_id=701252797]
+clip_contents = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -60.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CreditsContent" type="VBoxContainer" parent="ClipContainer" unique_id=2121846099]
+layout_mode = 0
+offset_right = 1152.0
+offset_bottom = 600.0
+grow_horizontal = 2
+size_flags_horizontal = 3
+
+[node name="Spacer" type="Control" parent="ClipContainer/CreditsContent" unique_id=1670425654]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="ClipContainer/CreditsContent" unique_id=4730229]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 52
+text = "THE MOUNTAIN"
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="ClipContainer/CreditsContent" unique_id=834191703]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("4_regular")
+theme_override_font_sizes/font_size = 20
+text = "C61 — HIV2026"
+horizontal_alignment = 1
+
+[node name="Sep1" type="Control" parent="ClipContainer/CreditsContent" unique_id=328654430]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+
+[node name="TeamTitle" type="Label" parent="ClipContainer/CreditsContent" unique_id=2033721487]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 28
+text = "— Équipe —"
+horizontal_alignment = 1
+
+[node name="Sep2" type="Control" parent="ClipContainer/CreditsContent" unique_id=339087516]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="TeamMembers" type="Label" parent="ClipContainer/CreditsContent" unique_id=1515138304]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("4_regular")
+theme_override_font_sizes/font_size = 22
+text = "jim"
+horizontal_alignment = 1
+
+[node name="Sep3" type="Control" parent="ClipContainer/CreditsContent" unique_id=125441480]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+
+[node name="TechTitle" type="Label" parent="ClipContainer/CreditsContent" unique_id=1011154459]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 28
+text = "— Technologies —"
+horizontal_alignment = 1
+
+[node name="Sep4" type="Control" parent="ClipContainer/CreditsContent" unique_id=1608740599]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="TechList" type="Label" parent="ClipContainer/CreditsContent" unique_id=1416336298]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("4_regular")
+theme_override_font_sizes/font_size = 20
+text = "Godot 4  •  C#  •  Firebase  •  ENet"
+horizontal_alignment = 1
+
+[node name="Sep5" type="Control" parent="ClipContainer/CreditsContent" unique_id=1998646754]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+
+[node name="AssetsTitle" type="Label" parent="ClipContainer/CreditsContent" unique_id=112397216]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 28
+text = "— Ressources —"
+horizontal_alignment = 1
+
+[node name="Sep6" type="Control" parent="ClipContainer/CreditsContent" unique_id=592577860]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="AssetsList" type="Label" parent="ClipContainer/CreditsContent" unique_id=850501317]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("4_regular")
+theme_override_font_sizes/font_size = 20
+text = "Kenney UI Pack  •  Gorditas Font  •  Doto Font"
+horizontal_alignment = 1
+
+[node name="Sep7" type="Control" parent="ClipContainer/CreditsContent" unique_id=1289993811]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+
+[node name="EndLabel" type="Label" parent="ClipContainer/CreditsContent" unique_id=938207334]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 26
+text = "Merci d'avoir joué."
+horizontal_alignment = 1
+
+[node name="SpacerEnd" type="Control" parent="ClipContainer/CreditsContent" unique_id=8441974]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="." unique_id=2134791918]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -75.0
+offset_top = -52.0
+offset_right = 75.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Retour"

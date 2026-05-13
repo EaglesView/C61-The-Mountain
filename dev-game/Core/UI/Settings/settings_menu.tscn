@@ -1,0 +1,85 @@
+[gd_scene format=3 uid="uid://b44xqwe5unhdg"]
+
+[ext_resource type="Script" uid="uid://baupysfr1bxv8" path="res://Core/UI/Settings/SettingsMenu.cs" id="1_script"]
+[ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="2_theme"]
+[ext_resource type="FontFile" uid="uid://d3iekdubpmgvd" path="res://Assets/fonts/Gorditas/Gorditas-Bold.ttf" id="3_bold"]
+
+[node name="SettingsMenu" type="Control" unique_id=1934289598 node_paths=PackedStringArray("_tabs", "_audioContainer", "_controlsContainer", "_backButton")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+_tabs = NodePath("PanelContainer/MarginContainer/VBoxContainer/TabContainer")
+_audioContainer = NodePath("PanelContainer/MarginContainer/VBoxContainer/TabContainer/Audio")
+_controlsContainer = NodePath("PanelContainer/MarginContainer/VBoxContainer/TabContainer/Controles/ControlsList")
+_backButton = NodePath("PanelContainer/MarginContainer/VBoxContainer/BackButton")
+
+[node name="Overlay" type="ColorRect" parent="." unique_id=19587114]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.65)
+
+[node name="PanelContainer" type="PanelContainer" parent="." unique_id=66563317]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -310.0
+offset_top = -270.0
+offset_right = 310.0
+offset_bottom = 270.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer" unique_id=437922026]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer" unique_id=482154824]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=518376897]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 28
+text = "Paramètres"
+horizontal_alignment = 1
+
+[node name="TabContainer" type="TabContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=948130700]
+custom_minimum_size = Vector2(0, 360)
+layout_mode = 2
+size_flags_vertical = 3
+current_tab = 0
+
+[node name="Audio" type="VBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer/TabContainer" unique_id=1989263959]
+layout_mode = 2
+theme_override_constants/separation = 14
+metadata/_tab_index = 0
+
+[node name="Controles" type="ScrollContainer" parent="PanelContainer/MarginContainer/VBoxContainer/TabContainer" unique_id=1686277626]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="ControlsList" type="VBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer/TabContainer/Controles" unique_id=146689416]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="BackButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=649905797]
+layout_mode = 2
+text = "Retour"

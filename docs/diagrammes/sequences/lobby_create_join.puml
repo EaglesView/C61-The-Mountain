@@ -1,0 +1,36 @@
+@startuml SequenceLobbyCreateJoin
+!include ../style.iuml
+title The Mountain - Sequence - Creation / rejoindre le salon partage "MAIN"
+
+actor Joueur
+participant MainMenu as MM
+participant "RoomServiceProvider" as RSP
+participant "RoomRepository" as Repo
+database "Firebase RTDB\n/rooms" as DB
+participant "LobbyState" as LS
+
+Joueur -> MM : clic Play
+MM -> RSP : Repository
+RSP --> MM : RoomRepository
+MM -> Repo : GetAsync("MAIN")
+Repo -> DB : GET /rooms/MAIN.json?auth=token
+DB --> Repo : RoomSnapshot | null
+Repo --> MM : snapshot?
+
+alt snapshot null OR started OR plein
+    MM -> Repo : CreateAsync(new Room("MAIN", uid, username), ip)
+    Repo -> DB : PUT /rooms/MAIN.json
+    DB --> Repo : 200 OK
+    Repo --> MM : ok
+    MM -> LS : Set(snapshot, isHost = true)
+else slot disponible
+    MM -> Repo : AddPlayerAsync("MAIN", uid, username)
+    Repo -> DB : PUT /rooms/MAIN/players/<uid>.json
+    DB --> Repo : 200 OK
+    Repo --> MM : ok
+    MM -> LS : Set(snapshot, isHost = false)
+end
+
+MM -> MM : ChangeSceneToFile lobby.tscn
+
+@enduml

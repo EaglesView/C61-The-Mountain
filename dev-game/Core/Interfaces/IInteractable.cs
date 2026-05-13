@@ -1,5 +1,5 @@
 interface IInteractable
 {
-    void Interact();
-    void Highlight(bool InEnabled);
+	void Interact();
+	void Highlight(bool InEnabled);
 }

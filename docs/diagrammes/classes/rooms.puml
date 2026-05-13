@@ -1,0 +1,80 @@
+@startuml ClassesRooms
+!include ../style.iuml
+title The Mountain - Classes - Salons multijoueur (Lobby)
+
+package "Core.Network.Rooms" {
+
+    class Room <<Domain>> {
+        + {static} HardcodedServerIp : string
+        + {static} HardcodedServerPort : int
+        + {static} SharedLobbyCode = "MAIN"
+        + {static} DefaultStatus = "waiting"
+        + {static} DefaultMaxPlayers : int
+        --
+        + Code : string
+        + HostUserId : string
+        + HostUsername : string
+        --
+        + Room(code, hostId, hostUser)
+        + {static} GenerateCode() : string
+    }
+
+    class RoomSnapshot <<Domain>> {
+        + Code : string
+        + HostUserId : string
+        + ServerIp : string
+        + ServerPort : int
+        + Status : string
+        + MaxPlayers : int
+        + Players : Dictionary<string, PlayerEntry>
+    }
+
+    class PlayerEntry <<DTO>> {
+        + Username : string
+        + IsHost : bool
+    }
+
+    class LobbyState <<Static>> {
+        + {static} Current : RoomSnapshot?
+        + {static} IsHost : bool
+        --
+        + {static} Set(snapshot, isHost) : void
+        + {static} SetDirect(ip, port) : void
+        + {static} Clear() : void
+    }
+
+    class RoomRepository <<Infra>> {
+        - _getToken : Func<string>
+        - {static} BaseUrl : string
+        --
+        + CreateAsync(room, ip?) : Task
+        + GetAsync(code) : Task<RoomSnapshot?>
+        + AddPlayerAsync(code, uid, user) : Task
+        + RemovePlayerAsync(code, uid) : Task
+        + UpdateStatusAsync(code, status) : Task
+    }
+
+    class "RoomDto\nPlayerEntryDto" as RoomDtos <<DTO>>
+
+    class RoomServiceProvider <<Static>> {
+        - {static} _repo : RoomRepository?
+        --
+        + {static} Repository : RoomRepository
+        + {static} Reset() : void
+    }
+}
+
+RoomSnapshot "1" *-- "*" PlayerEntry
+RoomRepository ..> Room : persiste
+RoomRepository ..> RoomSnapshot : reconstruit
+RoomRepository ..> RoomDtos : (de)serialise
+LobbyState --> RoomSnapshot : memorise
+RoomServiceProvider ..> RoomRepository : cree
+
+note right of LobbyState
+  Cache en memoire du
+  salon courant. Remis
+  a zero au deconnecte.
+end note
+
+@enduml

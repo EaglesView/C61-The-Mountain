@@ -1,0 +1,88 @@
+[gd_scene format=3 uid="uid://but3467304q27"]
+
+[ext_resource type="PackedScene" uid="uid://dhqocpk2vnmod" path="res://Core/World/MapAssets/map.tscn" id="1_x71oi"]
+[ext_resource type="Texture2D" uid="uid://bu7fsw23jtsu3" path="res://Assets/Textures/Particles/dingbats-518.png" id="2_8wbjl"]
+[ext_resource type="Script" uid="uid://bt2ha3jskupir" path="res://Core/World/MapAssets/DecorAssets/RagdollSpawner.cs" id="3_iew4k"]
+[ext_resource type="PackedScene" uid="uid://cue46vlh7h8q8" path="res://Core/World/CharacterModel/Character/Character.tscn" id="4_7t6q3"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_iew4k"]
+lifetime_randomness = 0.1
+emission_shape = 3
+emission_box_extents = Vector3(2.17, 1.015, 2.275)
+initial_velocity_max = 0.099999994
+gravity = Vector3(0, -0.2, 0)
+linear_accel_min = -2.2351742e-06
+linear_accel_max = 0.49999776
+radial_accel_min = -1.0800022
+radial_accel_max = 1.0799978
+tangential_accel_min = -4.300002
+tangential_accel_max = 4.3099976
+damping_max = 2.6880002
+turbulence_enabled = true
+turbulence_noise_strength = 4.74
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s4n5g"]
+transparency = 1
+shading_mode = 0
+albedo_texture = ExtResource("2_8wbjl")
+
+[sub_resource type="QuadMesh" id="QuadMesh_7t6q3"]
+material = SubResource("StandardMaterial3D_s4n5g")
+size = Vector2(0.1, 0.1)
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_7t6q3"]
+sky_top_color = Color(0.71095455, 0.7643686, 0.83363813, 1)
+sky_horizon_color = Color(1, 1, 1, 1)
+ground_bottom_color = Color(1, 1, 1, 1)
+
+[sub_resource type="Sky" id="Sky_bk26c"]
+sky_material = SubResource("ProceduralSkyMaterial_7t6q3")
+
+[sub_resource type="Environment" id="Environment_l1hwa"]
+background_mode = 2
+sky = SubResource("Sky_bk26c")
+glow_enabled = true
+glow_normalized = true
+glow_intensity = 1.57
+glow_bloom = 0.19
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.01
+volumetric_fog_emission = Color(1, 1, 1, 1)
+volumetric_fog_emission_energy = 0.5
+
+[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_i43sa"]
+
+[sub_resource type="Compositor" id="Compositor_svcmn"]
+
+[node name="MenuDecorMap" type="Node3D" unique_id=1870671043]
+
+[node name="map" parent="." unique_id=532924581 instance=ExtResource("1_x71oi")]
+transform = Transform3D(-2.4372608e-07, 0, -5.575803, 0, 5.575803, 0, 5.575803, 0, -2.4372608e-07, 0, 0, 0)
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=745082803]
+transform = Transform3D(1, 0, 0, 0, 0.8660254, -0.5, 0, 0.5, 0.8660254, -7.6293945e-06, 3.571489, 33.678616)
+
+[node name="GPUParticles3D2" type="GPUParticles3D" parent="." unique_id=1337821342]
+transform = Transform3D(16.185404, 0, 0, 0, 9.420224, -7.8788238, 0, 10.403281, 7.1343145, -0.17871761, 15.57415, 29.070778)
+cast_shadow = 0
+ignore_occlusion_culling = true
+amount = 20000
+lifetime = 5.0
+transform_align = 1
+process_material = SubResource("ParticleProcessMaterial_iew4k")
+draw_pass_1 = SubResource("QuadMesh_7t6q3")
+
+[node name="RagdollSpawner" type="Node3D" parent="." unique_id=1708059752 node_paths=PackedStringArray("ThrowDirection")]
+transform = Transform3D(5.575803, 0, 0, 0, 5.575803, 0, 0, 0, 5.575803, 0, 26.533985, -16.482725)
+script = ExtResource("3_iew4k")
+RagdollScene = ExtResource("4_7t6q3")
+ThrowDirection = NodePath("ThrowDirection")
+SpawnInterval = 0.2
+
+[node name="ThrowDirection" type="Marker3D" parent="RagdollSpawner" unique_id=565009531]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22587049, 0.5453758, 2.7076545)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=8446906]
+environment = SubResource("Environment_l1hwa")
+camera_attributes = SubResource("CameraAttributesPractical_i43sa")
+compositor = SubResource("Compositor_svcmn")

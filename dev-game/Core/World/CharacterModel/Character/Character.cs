@@ -21,66 +21,85 @@ using static Utils.CharacterUtils;
 public partial class Character : CharacterBody3D
 {
 
-	/// ····································
-	/// : _____  _____  ___  ___ _____ ___ :
-	/// :| __\ \/ | _ \/ _ \| _ |_   _/ __|:
-	/// :| _| >  <|  _| (_) |   / | | \__ \:
-	/// :|___/_/\_|_|  \___/|_|_\ |_| |___/:
-	/// ····································
-	[ExportGroup("Character Nodes")]
-	[Export] protected AnimationPlayer AnimPlayer;
-	[Export] public PhysicsSkeleton PhysicsSkelton;
-	[Export] protected CollisionShape3D? _capsule;
+    /// ····································
+    /// : _____  _____  ___  ___ _____ ___ :
+    /// :| __\ \/ | _ \/ _ \| _ |_   _/ __|:
+    /// :| _| >  <|  _| (_) |   / | | \__ \:
+    /// :|___/_/\_|_|  \___/|_|_\ |_| |___/:
+    /// ····································
+    [ExportGroup("Character Nodes")]
+    [Export] protected AnimationPlayer AnimPlayer;
+    [Export] public PhysicsSkeleton PhysicsSkelton;
+    [Export] protected CollisionShape3D? _capsule;
 
-	[ExportGroup("Fall Recovery")]
-	[Export] public float FallLimit = -50.0f;
+    [ExportGroup("Fall Recovery")]
+    [Export] public float FallLimit = -50.0f;
 
-	protected float speed;
-	protected float jumpVelocity = 5.0f;
-	protected Vector3 velocity = Vector3.Zero;
-	protected Vector3 moveVec = Vector3.Zero;
-	protected Vector3 aimVec = Vector3.Zero;
-	protected Vector3 pointVec = Vector3.Forward;
-	protected MovementState currentMovementState = MovementState.Idle;
-	protected EmoteState currentEmoteState = EmoteState.None;
-	protected float prevHeadAngle, headAngle = 0.0f;
-	protected CharacterState _characterState = CharacterState.Idle;
-	protected CharacterState _stateBeforePause = CharacterState.Idle;
-	protected float _graceTime = 0f;
-	private CollisionShape3D? _spineCollBox;
-	public Vector3 SpawnPosition { get; set; } = Vector3.Zero;
+    protected float speed;
+    protected float jumpVelocity = 5.0f;
+    protected Vector3 velocity = Vector3.Zero;
+    protected Vector3 moveVec = Vector3.Zero;
+    protected Vector3 aimVec = Vector3.Zero;
+    protected Vector3 pointVec = Vector3.Forward;
+    protected MovementState currentMovementState = MovementState.Idle;
+    protected EmoteState currentEmoteState = EmoteState.None;
+    protected float prevHeadAngle, headAngle = 0.0f;
+    protected CharacterState _characterState = CharacterState.Idle;
+    protected CharacterState _stateBeforePause = CharacterState.Idle;
+    protected float _graceTime = 0f;
+    private CollisionShape3D? _spineCollBox;
+    public Vector3 SpawnPosition { get; set; } = Vector3.Zero;
 
 
-	public void RotateHead(float InXAngle)
-	{
-		prevHeadAngle = headAngle;
-		headAngle = InXAngle;
-	}
-	public void PointAt(Vector3 InDirection)
-	{
-		PhysicsSkelton.ArmPointDir = InDirection;
-	}
-	public Vector3 GetHeadBonePosition()
-	{
-		return PhysicsSkelton.GetPoseTargetSkel().Origin;
-	}
-	public Vector3 GetPhysicsHeadBonePosition()
-	{
-		return PhysicsSkelton.GetPoseTargetSkel(true).Origin;
-	}
-	public float GetHeadAngle() => headAngle;
-	public CharacterState GetCurrentState() => _characterState;
+    public void RotateHead(float InXAngle)
+    {
+        prevHeadAngle = headAngle;
+        headAngle = InXAngle;
+    }
+    public void PointAt(Vector3 InDirection)
+    {
+        PhysicsSkelton.ArmPointDir = InDirection;
+    }
+    public Vector3 GetHeadBonePosition()
+    {
+        return PhysicsSkelton.GetPoseTargetSkel().Origin;
+    }
+    public Vector3 GetPhysicsHeadBonePosition()
+    {
+        return PhysicsSkelton.GetPoseTargetSkel(true).Origin;
+    }
+    public float GetHeadAngle() => headAngle;
+    public CharacterState GetCurrentState() => _characterState;
 
-	// ── Network ──────────────────────────────────────────────────────────────
+    // ── Network ──────────────────────────────────────────────────────────────
 
-	public int PeerId { get; set; } = 0;
+    public int PeerId { get; set; } = 0;
 
-	public virtual PlayerNetState SnapshotState()
-	{
-		byte flags = 0;
-		if (PhysicsSkelton.Aiming) flags |= 0x01;
-		if (PhysicsSkelton.ArmsUp) flags |= 0x02;
-		return new PlayerNetState(PeerId, GlobalPosition, velocity,
+    public virtual PlayerNetState SnapshotState()
+    {
+        byte flags = 0;
+        if (PhysicsSkelton.Aiming) flags |= 0x01;
+        if (PhysicsSkelton.ArmsUp) flags |= 0x02;
+
+        if (_characterState == CharacterState.Ragdoll)
+        {
+            // Position and Velocity are repurposed: spine physics world position
+            // and velocity so remote players can anchor their local simulation.
+			// BodyYaw and HeadPitch carry the head physical bone's world rotation
+			// so the remote correction steers head orientation correctly.
+			var (headPitch, headYaw) = PhysicsSkelton.GetHeadPhysicsWorldAngles();
+			return new PlayerNetState(PeerId,
+				PhysicsSkelton.GetSpinePhysicsWorldPosition(),
+				PhysicsSkelton.GetSpinePhysicsLinearVelocity(),
+				headYaw, headPitch,
+				PhysicsSkelton.ArmPointDir,
+				(byte)currentMovementState, (byte)currentEmoteState, flags);
+		}
+
+		if (_characterState == CharacterState.Recovering)
+			flags |= 0x04;
+
+		return new PlayerNetState(PeerId, GlobalPosition, Velocity,
 			Rotation.Y, headAngle, PhysicsSkelton.ArmPointDir,
 			(byte)currentMovementState, (byte)currentEmoteState, flags);
 	}
@@ -91,6 +110,7 @@ public partial class Character : CharacterBody3D
 		velocity = state.Velocity;
 		Rotation = new Vector3(Rotation.X, state.BodyYaw, Rotation.Z);
 		RotateHead(state.HeadPitch);
+		PhysicsSkelton.HeadAngle = -headAngle;
 		PhysicsSkelton.ArmPointDir = state.ArmPointDir;
 		PhysicsSkelton.Aiming = state.Aiming;
 		PhysicsSkelton.ArmsUp = state.ArmsUp;
@@ -171,7 +191,11 @@ public partial class Character : CharacterBody3D
 
 	public override void _PhysicsProcess(double delta)
 	{
-		if (GlobalPosition.Y < FallLimit)
+		// Respawn local — uniquement quand on n'est pas en réseau. En multi le
+		// serveur fait autorité (cf. NetworkManager.OnPacketReceived /
+		// FallThreshold) et envoie la correction de position ; téléporter ici
+		// en plus produirait un fight client/serveur sur la position.
+		if (GlobalPosition.Y < FallLimit && (NetworkManager.Instance is null || !NetworkManager.Instance.IsRunning))
 		{
 			GlobalPosition = SpawnPosition;
 			velocity = Vector3.Zero;
@@ -281,5 +305,12 @@ public partial class Character : CharacterBody3D
 		if (currentMovementState == newMovementState) return;
 		currentMovementState = newMovementState;
 		PlayAnimationFromMovement(newMovementState, AnimPlayer);
+	}
+
+	public override void _Notification(int what) { if (what == Node.NotificationExitTree) { GD.Print($"[Character] EXIT TREE: {Name}"); } else if (what == Node.NotificationEnterTree) { GD.Print($"[Character] ENTER TREE: {Name}"); } base._Notification(what); }
+	public override void _ExitTree()
+	{
+		base._ExitTree();
+		GD.Print($"[Character] _ExitTree called on {Name} (PeerId={PeerId})");
 	}
 }

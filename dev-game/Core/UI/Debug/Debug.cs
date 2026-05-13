@@ -25,6 +25,7 @@ public partial class Debug : Control
 	/// :|___/_/\_|_|  \___/|_|_\ |_| |___/:
 	/// ····································
 	private Player? _player;
+
 	[ExportCategory("Internal")]
 	[Export] private Label _fpsValue;
 
@@ -43,6 +44,13 @@ public partial class Debug : Control
 	[Export] private Label _characterStateLabel;
 	[Export] private Label _isOnFloorLabel;
 	[Export] private Label _isRagdollLabel;
+
+	// Replication section
+	[Export] private Label _remoteTrackedPeerLabel;
+	[Export] private Label _remotePosXLabel;
+	[Export] private Label _remotePosYLabel;
+	[Export] private Label _remotePosZLabel;
+	[Export] private Label _replicationDeltaLabel;
 
 	/// ···········································
 	/// : _    ___ ___ ___ _____   _____ _    ___ :
@@ -79,6 +87,33 @@ public partial class Debug : Control
 		_characterStateLabel.Text = _player.GetCurrentState().ToString();
 		_isOnFloorLabel.Text = _player.IsOnFloor().ToString();
 		_isRagdollLabel.Text = _player.PhysicsSkelton.IsRagdoll.ToString();
+
+		Player? remote = null;
+		var players = GetTree().Root.FindChild("Players", true, false);
+		if (players != null)
+		{
+			foreach (var child in players.GetChildren())
+			{
+				if (child is Player p && !p.IsMultiplayerAuthority()) { remote = p; break; }
+			}
+		}
+
+		if (remote != null)
+		{
+			_remoteTrackedPeerLabel.Text = remote.PeerId.ToString();
+			_remotePosXLabel.Text = remote.GlobalPosition.X.ToString("F3");
+			_remotePosYLabel.Text = remote.GlobalPosition.Y.ToString("F3");
+			_remotePosZLabel.Text = remote.GlobalPosition.Z.ToString("F3");
+			_replicationDeltaLabel.Text = _player!.GlobalPosition.DistanceTo(remote.GlobalPosition).ToString("F3");
+		}
+		else
+		{
+			_remoteTrackedPeerLabel.Text = "--";
+			_remotePosXLabel.Text = "--";
+			_remotePosYLabel.Text = "--";
+			_remotePosZLabel.Text = "--";
+			_replicationDeltaLabel.Text = "--";
+		}
 
 		var peer = Multiplayer.MultiplayerPeer;
 		bool connected = peer != null && peer.GetConnectionStatus() == MultiplayerPeer.ConnectionStatus.Connected;

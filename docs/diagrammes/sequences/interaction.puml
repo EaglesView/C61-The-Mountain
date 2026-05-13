@@ -1,0 +1,28 @@
+@startuml SequenceInteraction
+!include ../style.iuml
+title The Mountain - Sequence - Interaction avec un objet (ex: bouton -> porte)
+
+actor Joueur
+participant "Player" as P
+participant "RayCast3D" as RC
+participant "RayCastUtils" as RU
+participant "BasicButtonInteractable" as Btn
+participant "Door (IActivatable)" as Door
+
+Joueur -> P : action interact
+P -> RC : ForceRaycastUpdate()
+P -> RU : GetInteractableFromRaycast(rc, dist)
+RU -> RC : GetCollider()
+RC --> RU : Node3D collider
+RU --> P : Interactable? (Btn)
+
+alt collider interactable
+    P -> Btn : Interact()
+    Btn -> Door : Activate()
+    Door -> Door : _isOpen = true\nTween height
+    Btn -> Btn : OnHighlight()
+else rien a faire
+    P -> P : aucune action
+end
+
+@enduml

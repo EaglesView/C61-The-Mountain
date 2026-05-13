@@ -3,9 +3,7 @@
 [ext_resource type="Script" uid="uid://bivbri8k5yp3h" path="res://Core/World/World.cs" id="1_xujvb"]
 [ext_resource type="PackedScene" uid="uid://bqm28efgwql4h" path="res://Core/UI/Debug/debug.tscn" id="2_lwm54"]
 [ext_resource type="PackedScene" uid="uid://c6b388a8o2od" path="res://Core/UI/GameMenu/game_menu.tscn" id="3_1dyim"]
-[ext_resource type="PackedScene" uid="uid://d1fshm7mq3au7" path="res://Core/World/MapAssets/MainAssets/player_spawner.tscn" id="4_5l2lx"]
-[ext_resource type="PackedScene" uid="uid://pyyf2q46j574" path="res://Core/World/CharacterModel/Player/Player.tscn" id="5_bm08a"]
-[ext_resource type="PackedScene" uid="uid://bp0rj5s7re13t" path="res://Core/World/CharacterModel/Character/RemoteCharacter.tscn" id="6_3g1lu"]
+[ext_resource type="PackedScene" uid="uid://bq1y3wnjqd7us" path="res://Core/World/MapAssets/MainAssets/falling_tile.tscn" id="4_lwm54"]
 [ext_resource type="PackedScene" uid="uid://7f5ysctvudb8" path="res://Core/World/Interaction/fan/Fan.tscn" id="7_1dyim"]
 [ext_resource type="PackedScene" uid="uid://w0vh0lann51y" path="res://Core/World/Interaction/convoyer/ConveyorBelt.tscn" id="8_5l2lx"]
 
@@ -54,20 +52,21 @@ script = ExtResource("1_xujvb")
 
 [node name="GameMenu" parent="." unique_id=1229459489 instance=ExtResource("3_1dyim")]
 
-[node name="PlayerSpawner" parent="." unique_id=1973612002 node_paths=PackedStringArray("_spawnPoints") instance=ExtResource("4_5l2lx")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.7944541, 2.6187654, 0)
-_playerScene = ExtResource("5_bm08a")
-_remoteCharacterScene = ExtResource("6_3g1lu")
-_spawnPoints = [NodePath("Marker3D")]
-
-[node name="Marker3D" type="Marker3D" parent="PlayerSpawner" unique_id=189181669]
-
 [node name="Environment" type="Node3D" parent="." unique_id=395441633]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="Environment" unique_id=1571055516]
 environment = SubResource("Environment_qaqi3")
 camera_attributes = SubResource("CameraAttributesPractical_xfmh7")
 compositor = SubResource("Compositor_8nmog")
+
+[node name="FallingTile" parent="Environment/WorldEnvironment" unique_id=1309946126 instance=ExtResource("4_lwm54")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 7.483172)
+
+[node name="FallingTile2" parent="Environment/WorldEnvironment" unique_id=1907792518 instance=ExtResource("4_lwm54")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 10.297791)
+
+[node name="FallingTile3" parent="Environment/WorldEnvironment" unique_id=930649797 instance=ExtResource("4_lwm54")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 10.297791)
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="Environment" unique_id=953799062]
 transform = Transform3D(0.9659258, 0.1830127, 0.1830127, -0.25881907, 0.6830128, 0.6830128, 0, -0.7071068, 0.7071068, 0, 8.155859, 0)

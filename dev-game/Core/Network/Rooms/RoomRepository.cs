@@ -20,7 +20,7 @@ public sealed class RoomRepository
         _getToken = getToken ?? throw new ArgumentNullException(nameof(getToken));
     }
 
-    public async Task CreateAsync(Room room)
+    public async Task CreateAsync(Room room, string? serverIpOverride = null)
     {
         var token = _getToken();
 
@@ -28,10 +28,11 @@ public sealed class RoomRepository
         {
             code       = room.Code,
             hostUserId = room.HostUserId,
-            serverIp   = Room.HardcodedServerIp,
+            serverIp   = serverIpOverride ?? Room.HardcodedServerIp,
             serverPort = Room.HardcodedServerPort,
             status     = Room.DefaultStatus,
             maxPlayers = Room.DefaultMaxPlayers,
+            mapId      = Room.DefaultMapId,
             players    = new Dictionary<string, PlayerEntryDto>
             {
                 [room.HostUserId] = new PlayerEntryDto(room.HostUsername, true)
@@ -75,6 +76,7 @@ public sealed class RoomRepository
             ServerPort = dto.ServerPort > 0 ? dto.ServerPort : Room.HardcodedServerPort,
             Status     = dto.Status     ?? Room.DefaultStatus,
             MaxPlayers = dto.MaxPlayers > 0 ? dto.MaxPlayers : Room.DefaultMaxPlayers,
+            MapId      = dto.MapId      ?? Room.DefaultMapId,
             Players    = players
         };
     }
@@ -95,6 +97,17 @@ public sealed class RoomRepository
         var token = _getToken();
         var request = new HttpRequestMessage(HttpMethod.Delete,
             $"{BaseUrl}/{Uri.EscapeDataString(code)}/players/{Uri.EscapeDataString(userId)}.json?auth={token}");
+        var response = await Http.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task UpdateMapAsync(string code, string mapId)
+    {
+        var token = _getToken();
+        var body  = JsonSerializer.Serialize(mapId);
+        var request = new HttpRequestMessage(HttpMethod.Put,
+            $"{BaseUrl}/{Uri.EscapeDataString(code)}/mapId.json?auth={token}");
+        request.Content = new StringContent(body, Encoding.UTF8, "application/json");
         var response = await Http.SendAsync(request);
         response.EnsureSuccessStatusCode();
     }
@@ -120,6 +133,7 @@ public sealed class RoomRepository
         [JsonPropertyName("serverPort")] public int     ServerPort  { get; set; }
         [JsonPropertyName("status")]     public string? Status      { get; set; }
         [JsonPropertyName("maxPlayers")] public int     MaxPlayers  { get; set; }
+        [JsonPropertyName("mapId")]      public string? MapId       { get; set; }
         [JsonPropertyName("players")]    public Dictionary<string, PlayerEntryDto>? Players { get; set; }
     }
 

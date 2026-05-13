@@ -1,14 +1,69 @@
 [gd_scene format=3 uid="uid://cxvenxb1m26wm"]
 
-[ext_resource type="Material" uid="uid://bx6qeabdhq2s" path="res://addons/kenney_prototype_tools/materials/dark/material_01.tres" id="1_8xl54"]
+[ext_resource type="Texture2D" uid="uid://c68nes7tsf7dj" path="res://textures/snow-2/textures/snow_02_diff_1k.jpg" id="1_0jqa6"]
 [ext_resource type="PackedScene" uid="uid://w2vuvhf2iyy6" path="res://Core/World/MapAssets/MainAssets/vent_blower.tscn" id="2_ccc14"]
+[ext_resource type="Texture2D" uid="uid://bp3vrhs63nyr2" path="res://textures/snow-2/textures/snow_02_nor_gl_1k.jpg" id="2_u8qu8"]
+[ext_resource type="PackedScene" uid="uid://dhqocpk2vnmod" path="res://Core/World/MapAssets/map.tscn" id="3_8ugvu"]
+[ext_resource type="Texture2D" uid="uid://cekqp5iysbyxp" path="res://textures/snow-2/textures/snow_02_rough_1k.jpg" id="3_d0yof"]
 [ext_resource type="PackedScene" uid="uid://3lj7a0stmiiv" path="res://Core/World/MapAssets/MainAssets/rotating_thing_animatable.tscn" id="3_ibgka"]
+[ext_resource type="PackedScene" uid="uid://7f5ysctvudb8" path="res://Core/World/Interaction/fan/Fan.tscn" id="5_dqtda"]
+[ext_resource type="Texture2D" uid="uid://bu7fsw23jtsu3" path="res://Assets/Textures/Particles/dingbats-518.png" id="8_u8qu8"]
+[ext_resource type="PackedScene" uid="uid://blchon3025mrj" path="res://Core/World/Terrain/WindArea/wind_zone_dcm.tscn" id="9_pien6"]
+[ext_resource type="PackedScene" uid="uid://cihs25qij1jtb" path="res://Core/World/Terrain/WindArea/wind_area.tscn" id="10_u8372"]
+[ext_resource type="Script" uid="uid://dds81g3nsewph" path="res://Core/World/MapAssets/MainAssets/SnowballSpawner.cs" id="11_u8372"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_u8372"]
+albedo_texture = ExtResource("1_0jqa6")
+roughness_texture = ExtResource("3_d0yof")
+normal_enabled = true
+normal_texture = ExtResource("2_u8qu8")
+uv1_scale = Vector3(0.125, 0.125, 0.125)
+uv1_triplanar = true
+uv1_world_triplanar = true
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_dguye"]
-material = ExtResource("1_8xl54")
+material = SubResource("StandardMaterial3D_u8372")
 size = Vector2(500, 500)
 
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_pien6"]
+friction = 0.75
+rough = true
+bounce = 0.1
+
 [sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_ccc14"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_d0yof"]
+lifetime_randomness = 0.1
+emission_shape = 3
+emission_box_extents = Vector3(2.17, 1.015, 2.275)
+initial_velocity_max = 0.099999994
+gravity = Vector3(0, -0.2, 0)
+linear_accel_min = -2.2351742e-06
+linear_accel_max = 0.49999776
+radial_accel_min = -1.0800022
+radial_accel_max = 1.0799978
+tangential_accel_min = -4.300002
+tangential_accel_max = 4.3099976
+damping_max = 2.6880002
+turbulence_noise_strength = 4.74
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s4n5g"]
+transparency = 1
+shading_mode = 0
+albedo_texture = ExtResource("8_u8qu8")
+
+[sub_resource type="QuadMesh" id="QuadMesh_pien6"]
+material = SubResource("StandardMaterial3D_s4n5g")
+size = Vector2(0.1, 0.1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_u8372"]
+radius = 1.0
+height = 2.0
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_s4n5g"]
+radius = 1.0
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_d6ibe"]
 
 [node name="DevMap" type="Node3D" unique_id=110067603]
 
@@ -18,16 +73,90 @@ mesh = SubResource("PlaneMesh_dguye")
 [node name="StaticBody3D" type="StaticBody3D" parent="MainFloor" unique_id=81730352]
 collision_layer = 2
 collision_mask = 5
+physics_material_override = SubResource("PhysicsMaterial_pien6")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="MainFloor/StaticBody3D" unique_id=669121185]
 shape = SubResource("WorldBoundaryShape3D_ccc14")
 
+[node name="map" parent="MainFloor" unique_id=532924581 instance=ExtResource("3_8ugvu")]
+transform = Transform3D(5.575803, 0, 0, 0, 5.575803, 0, 0, 0, 5.575803, -100.33055, 0, 0)
+
 [node name="VentBlower" parent="." unique_id=1091358536 instance=ExtResource("2_ccc14")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, 0)
+transform = Transform3D(-4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0, 1, -27.463543, 7.656494, -0.5700114)
+
+[node name="VentBlower3" parent="." unique_id=309924367 instance=ExtResource("2_ccc14")]
+transform = Transform3D(-4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0, 1, -27.015968, 9.281019, 3.581654)
+
+[node name="VentBlower2" parent="." unique_id=411510862 instance=ExtResource("2_ccc14")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.7465515, -0.46965218, -6.4781704)
 
 [node name="RotatingThing" parent="." unique_id=903562714 instance=ExtResource("3_ibgka")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, -8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.4, 5, -2.8)
 
 [node name="RotatingThing2" parent="." unique_id=1454467726 instance=ExtResource("3_ibgka")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, 8)
 RotationSpeed = 2.0
+
+[node name="fan" parent="." unique_id=1376072467 instance=ExtResource("5_dqtda")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.458977, 2.467836, 0)
+
+[node name="fan2" parent="." unique_id=1297668517 instance=ExtResource("5_dqtda")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.862747, 1.0509062, -6.1139793)
+
+[node name="fan3" parent="." unique_id=1781634452 instance=ExtResource("5_dqtda")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22.154556, 3.9829674, -5.8417773)
+
+[node name="fan4" parent="." unique_id=398542167 instance=ExtResource("5_dqtda")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24.37994, 5.2693157, -3.3407307)
+
+[node name="fan5" parent="." unique_id=1325839467 instance=ExtResource("5_dqtda")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25.182034, 6.933303, 0.95368075)
+WindForce = 25.0
+
+[node name="fan6" parent="." unique_id=1510186786 instance=ExtResource("5_dqtda")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24.635193, 8.562162, 4.899999)
+WindForce = 25.0
+
+[node name="fan7" parent="." unique_id=81183830 instance=ExtResource("5_dqtda")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -27.739788, 12.707022, 4.8999987)
+WindForce = 25.0
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="." unique_id=1644409714]
+transform = Transform3D(135.09245, 0, 0, 0, 8.994269, 0, 0, 0, 20.621077, 0, 9.79924, 0)
+amount = 100000
+lifetime = 5.0
+transform_align = 1
+process_material = SubResource("ParticleProcessMaterial_d0yof")
+draw_pass_1 = SubResource("QuadMesh_pien6")
+
+[node name="GPUParticles3D2" type="GPUParticles3D" parent="." unique_id=1241658518]
+transform = Transform3D(135.09245, 0, 0, 0, 8.994269, 0, 0, 0, 20.621077, 0, 22.61409, 0)
+amount = 100000
+lifetime = 5.0
+transform_align = 1
+process_material = SubResource("ParticleProcessMaterial_d0yof")
+draw_pass_1 = SubResource("QuadMesh_pien6")
+
+[node name="WindZoneDCM" parent="." unique_id=1288385587 instance=ExtResource("9_pien6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -54.736214, 0.387982, 0)
+WindAreaScene = ExtResource("10_u8372")
+SpawnInterval = 5.0
+WindForce = 1.0
+WindDirection = Vector3(1, 0, 0)
+DurationAreaTotal = 1.0
+SpawnCount = 10
+
+[node name="Node3D" type="Node3D" parent="." unique_id=1694646218]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -61.87784, 16.918518, 0)
+script = ExtResource("11_u8372")
+SpawnInterval = 0.1
+MaxBalls = 94
+BallMass = 199.97
+ThrowForce = 35.0
+ThrowDirection = Vector3(1, 0, 0.1)
+Spread = 0.329
+BallMesh = SubResource("SphereMesh_u8372")
+CollisionShape = SubResource("SphereShape3D_s4n5g")
+PhysicsMaterial = SubResource("PhysicsMaterial_d6ibe")
+CollisionLayer = 2
+CollisionMask = 7

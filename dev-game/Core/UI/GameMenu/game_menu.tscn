@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://c6b388a8o2od"]
 
 [ext_resource type="Script" uid="uid://bhm8pivlb7t7l" path="res://Core/UI/GameMenu/GameMenu.cs" id="1_ijhm3"]
+[ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="1_o1xuj"]
 
 [node name="GameMenu" type="Control" unique_id=1229459489 node_paths=PackedStringArray("_resumeButton", "_settingsButton", "_backToMenuButton", "_backToDesktopButton", "_muteButton", "_killCharacterButton")]
 layout_mode = 3
@@ -9,6 +10,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("1_o1xuj")
 script = ExtResource("1_ijhm3")
 _resumeButton = NodePath("PanelContainer/PanelContainer/MarginContainer/VBoxContainer/ResumeGameButton")
 _settingsButton = NodePath("PanelContainer/PanelContainer/MarginContainer/VBoxContainer/SettingsButton")
@@ -18,6 +20,7 @@ _muteButton = NodePath("PanelContainer/PanelContainer/MarginContainer/VBoxContai
 _killCharacterButton = NodePath("PanelContainer/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/KillCharacterButton")
 
 [node name="PanelContainer" type="PanelContainer" parent="." unique_id=1061809706]
+z_index = -1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -26,6 +29,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="PanelContainer" type="PanelContainer" parent="PanelContainer" unique_id=1069168032]
+z_index = 1
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4

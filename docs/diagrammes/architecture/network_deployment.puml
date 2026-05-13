@@ -1,0 +1,55 @@
+@startuml ArchitectureNetworkDeployment
+!include ../style.iuml
+title The Mountain - Deploiement reseau
+
+node "Poste client" as ClientNode {
+    artifact "Jeu Godot" as ClientGame
+    component "NetworkManager" as NMC
+    component "GodotENetProvider" as ENC
+    component "Player (authority)" as PLC
+    component "Player (remote proxy)" as PLR
+
+    ClientGame --> NMC
+    NMC --> ENC
+    ClientGame --> PLC
+    ClientGame --> PLR
+}
+
+node "Serveur dedie (headless)" as ServerNode {
+    artifact "Godot --server" as ServerGame
+    component "NetworkManager" as NMS
+    component "GodotENetProvider" as ENS
+    component "World (spawner)" as WS
+
+    ServerGame --> NMS
+    NMS --> ENS
+    ServerGame --> WS
+}
+
+cloud "Firebase" as FB {
+    [Auth API] as FAuth
+    [Realtime DB /rooms] as FRTDB
+    [Firestore /profiles] as FFS
+}
+
+ClientGame --> FAuth : HTTPS\nSignInWithPassword
+ClientGame --> FRTDB : HTTPS\nlobby CRUD + polling
+ClientGame --> FFS : HTTPS\nprofil (lecture/ecriture)
+
+ENC <--> ENS : UDP ENet\n(port 7777)\nsnapshots 20 Hz
+
+note right of ServerGame
+  Detecte par:
+  - DisplayServer == "headless"
+  - OS.HasFeature("dedicated_server")
+  - argument --server
+end note
+
+note left of ClientGame
+  Le client authority envoie
+  des StateUpdate en non-fiable,
+  recoit des PositionCorrect
+  en fiable (anti triche).
+end note
+
+@enduml

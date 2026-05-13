@@ -1,0 +1,46 @@
+@startuml SequenceNetworkTick
+!include ../style.iuml
+title The Mountain - Sequence - Tick reseau (replication du joueur a 20 Hz)
+
+participant "Client Player\n(authority)" as PL
+participant "Client NetworkManager" as NMC
+participant "GodotENetProvider\n(client)" as ENC
+participant "GodotENetProvider\n(serveur)" as ENS
+participant "Server NetworkManager" as NMS
+participant "Client Player\n(remote proxy)" as PR
+
+loop chaque _Process
+    NMC -> NMC : _tickAccum += delta
+end
+
+== Tick ecoule (50 ms) ==
+
+NMC -> PL : SnapshotState()
+PL --> NMC : PlayerNetState (52 o)
+NMC -> NMC : Serialize(StateUpdate, state)
+NMC -> ENC : SendUnreliable(1, bytes)
+ENC -> ENS : paquet UDP
+ENS -> NMS : PacketReceived(from, bytes)
+NMS -> NMS : Deserialize
+NMS -> NMS : distance(lastPos, newPos) ?
+
+alt distance > 20 m (anti triche)
+    NMS -> ENS : SerializeCorrection(peer, lastPos)
+    ENS -> ENC : paquet Reliable
+    ENC -> NMC : PacketReceived
+    NMC -> PL : ApplyNetworkState(correction)
+else deplacement valide
+    NMS -> NMS : _lastKnownState[peer] = state
+    NMS -> ENS : BroadcastUnreliable(bytes, exclude=peer)
+    ENS -> ENC : vers les autres clients
+    NMS -> NMS : StateReceived?.Invoke(state)
+end
+
+== Cote autres clients ==
+
+ENC -> NMC : PacketReceived(from, bytes)
+NMC -> NMC : StateReceived(event)
+NMC -> PR : PushSnapshot(state, ts)
+PR -> PR : interpolation\n(RenderDelay 100 ms)
+
+@enduml

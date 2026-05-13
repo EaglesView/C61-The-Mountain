@@ -1,0 +1,57 @@
+@startuml ArchitectureNetworkComponents
+!include ../style.iuml
+title The Mountain - Composants reseau
+
+package "Core.Network" {
+    component "NetworkManager\n<<singleton>>" as NM
+    component "INetworkProvider" as IP
+    component "GodotENetProvider" as EN
+    component "GodotSteamProvider\n(stub)" as ST
+    component "PlayerNetState\n(serialisation)" as PNS
+    component "Rooms.LobbyState" as LS
+    component "Rooms.RoomRepository" as RR
+    component "Rooms.Room / RoomSnapshot" as RS
+}
+
+package "Core.Auth" {
+    component "AuthServiceProvider" as ASP
+    component "FirebaseAuthService" as FAS
+}
+
+package "Core.World" {
+    component "World\n(MultiplayerSpawner)" as W
+    component "Player\n(authority + proxy)" as PL
+    component "Character\n(Snapshot / Apply)" as CH
+}
+
+package "Core.UI" {
+    component "MainMenu" as MM
+    component "LobbyScene" as LB
+    component "Debug" as DB
+}
+
+cloud "Firebase" as FB
+
+IP <|.. EN
+IP <|.. ST
+NM --> IP : delegue transport
+NM --> PNS : serialise/deserialise
+NM --> CH : SnapshotState / ApplyNetworkState
+NM --> PL : PushSnapshot
+
+MM --> RR : CreateAsync / GetAsync
+MM --> LS : Set
+LB --> RR : polling
+LB --> NM : ConnectToServer
+LB --> LS : Current
+W --> NM : Instance
+W --> PL : spawn/despawn
+PL --> NM : SetLocalPlayer
+DB --> NM : statistiques temps reel
+
+ASP --> FAS
+RR --> FB : HTTP /rooms
+FAS --> FB : Auth API
+RR --> ASP : IdToken
+
+@enduml

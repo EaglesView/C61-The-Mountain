@@ -1,0 +1,35 @@
+@startuml SequencePlayerSpawn
+!include ../style.iuml
+title The Mountain - Sequence - Spawn d'un joueur via RPC
+
+participant "Client World" as WC
+participant "Client NetworkManager" as NMC
+participant "GodotENetProvider" as EN
+participant "Server NetworkManager" as NMS
+participant "Server World" as WS
+participant "MultiplayerSpawner" as MS
+participant "PlayerSpawner" as PS
+
+WC -> WC : _Ready()
+note right of WC
+  Detecte role client et
+  emet le RPC ClientReady
+end note
+WC -> NMC : Rpc(ClientReady)\n(AnyPeer, Reliable)
+NMC -> EN : SendReliable(1, packet)
+EN -> NMS : PacketReceived\n(Rpc Godot natif)
+NMS -> WS : ClientReady()
+WS -> WS : verif Multiplayer.IsServer()
+WS -> PS : GetNextSpawnPoint()
+PS --> WS : Vector3 spawn
+WS -> MS : Spawn({id, pos})
+MS -> WS : SpawnPlayerNode({id, pos})
+WS -> WS : instancie Player.tscn\nsetAuthority(id)\nSpawnPosition = pos
+
+note over MS : MultiplayerSpawner\ndiffuse le spawn sur\ntous les peers connectes.
+
+MS -> EN : spawn broadcast
+EN -> WC : reception
+WC -> WC : Player ajoute\nlocalement
+
+@enduml

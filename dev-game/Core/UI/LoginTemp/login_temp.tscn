@@ -1,58 +1,120 @@
 [gd_scene format=3 uid="uid://gxttws0oc2ur"]
 
+[ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="1_5w32i"]
 [ext_resource type="Script" uid="uid://b6li3g72816q6" path="res://Core/UI/LoginTemp/Login.cs" id="1_logea"]
+[ext_resource type="PackedScene" uid="uid://jkkf34tk07o" path="res://Core/UI/MainMenu/MainMenuAnimatedScene.tscn" id="3_0e8m3"]
 
-[node name="Control" type="Control" unique_id=1362554432]
+[node name="Control" type="Control" unique_id=1362554432 node_paths=PackedStringArray("EmailField", "UsernameField", "PasswordField", "LoginButton", "SignUpButton", "ErrorLabel")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("1_5w32i")
 script = ExtResource("1_logea")
+EmailField = NodePath("MarginContainer/VBoxContainer2/VBoxContainer/EmailField")
+UsernameField = NodePath("MarginContainer/VBoxContainer2/VBoxContainer/UsernameField")
+PasswordField = NodePath("MarginContainer/VBoxContainer2/VBoxContainer/PasswordField")
+LoginButton = NodePath("MarginContainer/VBoxContainer2/VBoxContainer/LoginButton")
+SignUpButton = NodePath("MarginContainer/VBoxContainer2/VBoxContainer/SignUpButton")
+ErrorLabel = NodePath("MarginContainer/VBoxContainer2/VBoxContainer/ErrorLabel")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=101640224]
+[node name="SubViewportContainer" parent="." unique_id=1476608370 instance=ExtResource("3_0e8m3")]
+custom_minimum_size = Vector2(27.465, 0)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 0.0
+offset_bottom = 0.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=166680820]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 250.0
+grow_vertical = 2
+
+[node name="ColorRect" type="Panel" parent="MarginContainer" unique_id=1716656068]
+layout_mode = 2
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="MarginContainer" unique_id=1738221681]
+layout_mode = 2
+alignment = 1
+
+[node name="Spacer2" type="Control" parent="MarginContainer/VBoxContainer2" unique_id=74989138]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer2" unique_id=101640224]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+alignment = 1
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer2/VBoxContainer" unique_id=760004715]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "The Mountain"
+horizontal_alignment = 1
+
+[node name="EmailField" type="LineEdit" parent="MarginContainer/VBoxContainer2/VBoxContainer" unique_id=1521309159]
+layout_mode = 2
+placeholder_text = "Email"
+
+[node name="UsernameField" type="LineEdit" parent="MarginContainer/VBoxContainer2/VBoxContainer" unique_id=119918398]
+layout_mode = 2
+placeholder_text = "Username"
+
+[node name="PasswordField" type="LineEdit" parent="MarginContainer/VBoxContainer2/VBoxContainer" unique_id=245912937]
+layout_mode = 2
+placeholder_text = "Password"
+secret = true
+
+[node name="LoginButton" type="Button" parent="MarginContainer/VBoxContainer2/VBoxContainer" unique_id=1109665968]
+layout_mode = 2
+text = "Login"
+
+[node name="SignUpButton" type="Button" parent="MarginContainer/VBoxContainer2/VBoxContainer" unique_id=1806046937]
+layout_mode = 2
+text = "Sign Up"
+
+[node name="ErrorLabel" type="Label" parent="MarginContainer/VBoxContainer2/VBoxContainer" unique_id=1574762756]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Spacer" type="Control" parent="MarginContainer/VBoxContainer2" unique_id=1425600478]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer2" unique_id=312037465]
+layout_mode = 2
+text = "   ALPHA BUILD - 0.00.03"
+
+[node name="MarginContainer2" type="MarginContainer" parent="." unique_id=1105653178]
+custom_minimum_size = Vector2(800, 500)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -150.0
-offset_top = -100.0
-offset_right = 150.0
-offset_bottom = 100.0
+offset_left = -400.0
+offset_right = 400.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Title" type="Label" parent="VBoxContainer" unique_id=760004715]
+[node name="RichTextLabel" type="RichTextLabel" parent="MarginContainer2" unique_id=873521803]
 layout_mode = 2
-text = "The Mountain"
-horizontal_alignment = 1
-
-[node name="EmailField" type="LineEdit" parent="VBoxContainer" unique_id=1521309159]
-layout_mode = 2
-placeholder_text = "Email"
-
-[node name="UsernameField" type="LineEdit" parent="VBoxContainer" unique_id=119918398]
-layout_mode = 2
-placeholder_text = "Username"
-
-[node name="PasswordField" type="LineEdit" parent="VBoxContainer" unique_id=245912937]
-layout_mode = 2
-placeholder_text = "Password"
-secret = true
-
-[node name="LoginButton" type="Button" parent="VBoxContainer" unique_id=1109665968]
-layout_mode = 2
-text = "Login"
-
-[node name="SignUpButton" type="Button" parent="VBoxContainer" unique_id=1806046937]
-layout_mode = 2
-text = "Sign Up"
-
-[node name="ErrorLabel" type="Label" parent="VBoxContainer" unique_id=1574762756]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
-horizontal_alignment = 1
-autowrap_mode = 2
+theme_override_colors/default_color = Color(0.11764706, 0.654902, 0.88235295, 1)
+theme_override_font_sizes/normal_font_size = 35
+bbcode_enabled = true
+text = "[center] \"I know of no better life purpose than to perish in attempting the great and the impossible\" [/center]
+- Friedrich Nietzsche"

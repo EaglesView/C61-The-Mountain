@@ -1,0 +1,72 @@
+[gd_scene format=3 uid="uid://bafy0nll0mmxc"]
+
+[ext_resource type="Script" uid="uid://do0cqr6xctpx5" path="res://Core/Logic/LevelControllers/FallingTilesController.cs" id="1_ftctrl"]
+[ext_resource type="PackedScene" uid="uid://d1fshm7mq3au7" path="res://Core/World/MapAssets/MainAssets/player_spawner.tscn" id="2_ftctrl"]
+[ext_resource type="PackedScene" uid="uid://bq1y3wnjqd7us" path="res://Core/World/MapAssets/MainAssets/falling_tile.tscn" id="2_pawgt"]
+[ext_resource type="Script" uid="uid://cx7qx3pava0qs" path="res://Core/World/Maps/TileGrid.cs" id="3_tgrid"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_ft"]
+
+[sub_resource type="Sky" id="Sky_ft"]
+sky_material = SubResource("ProceduralSkyMaterial_ft")
+
+[sub_resource type="Environment" id="Environment_ft"]
+background_mode = 2
+sky = SubResource("Sky_ft")
+ambient_light_source = 3
+glow_enabled = true
+glow_intensity = 0.5
+
+[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_ft"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_death"]
+size = Vector3(500, 1, 500)
+
+[node name="FallingTiles" type="Node3D" unique_id=199755767]
+script = ExtResource("1_ftctrl")
+
+[node name="TileGrid" type="Node3D" parent="." unique_id=1680967745]
+script = ExtResource("3_tgrid")
+TileScene = ExtResource("2_pawgt")
+
+[node name="PlayerSpawner" parent="." unique_id=1202673603 instance=ExtResource("2_ftctrl")]
+
+[node name="Spawn_Point_1" type="Marker3D" parent="PlayerSpawner" unique_id=209656844]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.60921514, 0.67041385, -0.61991477)
+
+[node name="Spawn_Point_2" type="Marker3D" parent="PlayerSpawner" unique_id=1911031123]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.60921514, 0.67041385, -0.056613743)
+
+[node name="Spawn_Point_3" type="Marker3D" parent="PlayerSpawner" unique_id=227489814]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.60921514, 0.67041385, 0.3823951)
+
+[node name="Spawn_Point_4" type="Marker3D" parent="PlayerSpawner" unique_id=363778970]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.60921514, 0.67041385, 0.8648078)
+
+[node name="Spawn_Point_5" type="Marker3D" parent="PlayerSpawner" unique_id=229704660]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4387076, 0.67041385, 0.8648078)
+
+[node name="Spawn_Point_6" type="Marker3D" parent="PlayerSpawner" unique_id=1105552956]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4387076, 0.67041385, 0.4352165)
+
+[node name="Spawn_Point_7" type="Marker3D" parent="PlayerSpawner" unique_id=1979567804]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4387076, 0.67041385, -0.026737005)
+
+[node name="Spawn_Point_8" type="Marker3D" parent="PlayerSpawner" unique_id=434330064]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4387076, 0.67041385, -0.5277747)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=99067908]
+environment = SubResource("Environment_ft")
+camera_attributes = SubResource("CameraAttributesPractical_ft")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=812146522]
+transform = Transform3D(0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, -0.75, 0.433013, 0, 10, 0)
+light_energy = 1.5
+shadow_enabled = true
+
+[node name="DeathZone" type="Area3D" parent="." unique_id=610493788]
+collision_layer = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DeathZone" unique_id=1973481661]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -74.13428, 0)
+shape = SubResource("BoxShape3D_death")

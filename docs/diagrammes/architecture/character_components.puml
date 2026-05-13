@@ -1,0 +1,57 @@
+@startuml ArchitectureCharacterComponents
+!include ../style.iuml
+title The Mountain - Composants du personnage
+
+package "Personnage (scene Player)" {
+    component "Player\n(CharacterBody3D)" as PL
+    component "CameraMan" as CM
+    component "Camera3D" as CAM
+    component "PhysicsSkeleton\n(Skeleton3D)" as PS
+    component "AnimationPlayer" as AP
+    component "CollisionShape3D\n(capsule)" as CS
+    component "RayCast3D\n(interaction)" as RC
+    component "PhysicalBoneSimulator3D" as PBS
+
+    PL *-- CM
+    PL *-- PS
+    PL *-- AP
+    PL *-- CS
+    PL *-- RC
+    CM o-- CAM
+    PS *-- PBS
+}
+
+package "Utilitaires" {
+    component "CharacterUtils" as CU
+    component "RayCastUtils" as RU
+    component "CameraUtils" as CAMU
+}
+
+package "Reseau" {
+    component "NetworkManager" as NM
+    component "PlayerNetState" as PNS
+}
+
+package "Interactions / Monde" {
+    component "Interactable (abstract)" as I
+    component "BasicButtonInteractable" as BI
+    component "Door (IActivatable)" as D
+    component "WindArea" as WA
+    component "VentBlower" as VB
+    component "GameMenu" as GM
+}
+
+PL --> CU : etats + anims
+PL --> RU : raycast
+PL --> CAMU : type camera
+PL --> NM : SetLocalPlayer\nSnapshotState / ApplyNetworkState
+NM --> PNS
+RC --> I : collision
+I <|-- BI
+BI --> D : Activate
+WA --> PL : force + ragdoll
+VB --> PL : BlowForce
+PL --> GM : Paused -> OpenMenu
+GM --> PL : CloseMenu -> Unpause
+
+@enduml

@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://cq81x3rovcrir"]
+
+[ext_resource type="PackedScene" uid="uid://bafy0nll0mmxc" path="res://Core/World/Maps/falling_tiles.tscn" id="1_ftdev"]
+[ext_resource type="PackedScene" uid="uid://pyyf2q46j574" path="res://Core/World/CharacterModel/Player/Player.tscn" id="2_ftdev"]
+
+[node name="FallingTilesDev" type="Node3D" unique_id=1335237420]
+
+[node name="FallingTiles" parent="." unique_id=804859667 instance=ExtResource("1_ftdev")]
+
+[node name="Player" parent="." unique_id=980392315 instance=ExtResource("2_ftdev")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.21420142, 0)
