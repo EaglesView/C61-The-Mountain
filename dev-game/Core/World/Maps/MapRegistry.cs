@@ -28,6 +28,12 @@ public static class MapRegistry
 				Id = "Jump The Barrel",
 				DisplayName = "Rotating Thing Contest",
 				ScenePath = "res://Core/World/Maps/rotating_barrel.tscn"
+			},
+			new MapDefinition
+			{
+				Id = "Falling Tiles",
+				DisplayName = "Falling Tiles",
+				ScenePath = "res://Core/World/Maps/falling_tiles.tscn"
 			}
 	];
 
