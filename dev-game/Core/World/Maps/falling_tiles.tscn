@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://bafy0nll0mmxc"]
 
 [ext_resource type="Script" uid="uid://do0cqr6xctpx5" path="res://Core/Logic/LevelControllers/FallingTilesController.cs" id="1_ftctrl"]
-[ext_resource type="PackedScene" uid="uid://d1fshm7mq3au7" path="res://Core/World/MapAssets/MainAssets/player_spawner.tscn" id="2_ftctrl"]
-[ext_resource type="PackedScene" uid="uid://bq1y3wnjqd7us" path="res://Core/World/MapAssets/MainAssets/falling_tile.tscn" id="2_pawgt"]
+[ext_resource type="PackedScene" uid="uid://d1fshm7mq3au7" path="res://Core/World/MapAssets/MainAssets/PlayerSpawner/player_spawner.tscn" id="2_ftctrl"]
+[ext_resource type="PackedScene" uid="uid://bq1y3wnjqd7us" path="res://Core/World/MapAssets/MainAssets/FallingTile/falling_tile.tscn" id="2_pawgt"]
 [ext_resource type="Script" uid="uid://cx7qx3pava0qs" path="res://Core/World/Maps/TileGrid.cs" id="3_tgrid"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_ft"]
