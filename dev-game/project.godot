@@ -13,7 +13,6 @@ config_version=5
 config/name="dev-game"
 run/main_scene="uid://y8cajmk108h3"
 config/features=PackedStringArray("4.6", "C#", "Forward Plus")
-config/icon="uid://c1tq6by6dul6r"
 
 [autoload]
 
@@ -117,6 +116,7 @@ change_view={
 3d_physics/layer_1="Capsules"
 3d_physics/layer_2="Boundaries"
 3d_physics/layer_3="Bones"
+3d_physics/layer_6="Water"
 
 [physics]
 
