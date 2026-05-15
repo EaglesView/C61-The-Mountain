@@ -56,7 +56,33 @@ public static class CharacterUtils
         ///<summary>Récupération post-ragdoll (grâce active)</summary>
         Recovering,
         ///<summary>Menu de pause ouvert</summary>
-        Paused
+        Paused,
+        ///<summary>Joueur mort pour la durée du round. Le corps ragdoll, les inputs et la locomotion sont coupés, le HUD est remplacé par l'overlay Wasted.</summary>
+        Dead
+    }
+
+    ///<summary>
+    /// Raison de la mort d'un joueur. Sérialisée sur un octet et propagée via RPC
+    /// pour que le système de stats puisse l'enregistrer côté serveur.
+    ///</summary>
+    public enum DeathReason : byte
+    {
+        ///<summary>Raison par défaut/inconnue. Évite les surprises côté stats si on oublie d'en passer une.</summary>
+        Unknown = 0,
+        ///<summary>Noyé (chute dans l'eau ou hors map sous le seuil de noyade).</summary>
+        Drowned = 1,
+        ///<summary>Tué par une explosion (TNT, baril, etc.).</summary>
+        Exploded = 2,
+        ///<summary>Écrasé (tile qui tombe, plateforme, etc.).</summary>
+        Crushed = 3,
+        ///<summary>Gelé (zone froide prolongée).</summary>
+        Frozen = 4,
+        ///<summary>Chute mortelle (hors map ou hauteur excessive).</summary>
+        Fell = 5,
+        ///<summary>Le joueur s'est rendu volontairement.</summary>
+        Surrender = 6,
+        ///<summary>Éliminé par un autre joueur ou par le mode de jeu.</summary>
+        Eliminated = 7
     }
 
     ///<summary>
