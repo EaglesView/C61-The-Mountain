@@ -3,6 +3,8 @@ using System;
 using Core.Network;
 using Core.Network.Rooms;
 using Core.Shared.StateMachine;
+using Core.UI.Loading;
+using static Utils.CharacterUtils;
 namespace Core.World;
 
 /// <summary>
@@ -20,27 +22,76 @@ public sealed partial class GameController : Node3D, IPhase
     /// <summary>Scène <c>Player.tscn</c> utilisée par le <c>MultiplayerSpawner</c>.</summary>
     [Export] private PackedScene _playerScene;
 
-    public enum State { Init, Failure, Waiting, Playing, Resolving }
-    private StateMachine<State> _fsm = null;
+    /// <summary>HUD in-game (<c>ui_ingame.tscn</c>) instancié pour la durée de la phase.</summary>
+    [Export] private PackedScene _uiIngameScene;
 
-    private IPhase _mode = null;
-    private Node _mapContainerInstance = null;
-    private MultiplayerSpawner _spawner = null;
-    private PlayerSpawner _playerSpawner = null;
-    private MultiplayerApi.PeerDisconnectedEventHandler _onPeerDisconnectedHandler = null;
-    private bool _done;
-    public bool IsDone => _done;
+    /// <summary>Overlay de mort (<c>wasted.tscn</c>) affiché par-dessus le HUD quand le joueur local meurt.</summary>
+    [Export] private PackedScene _wastedScene;
 
-    public override void _Ready()
-    {
-        //Fallback d'export scene
+	/// <summary>Durée de l'écran d'attente (countdown) avant de démarrer le mode.</summary>
+    [Export] private float _waitingDuration = 10f;
+
+	/// <summary>
+	/// Durée du palier «&#160;GAME OVER&#160;» en phase <c>Resolving</c>&#160;: le monde
+	/// reste visible derrière l'overlay <c>wasted.tscn</c> dont le label est
+	/// réécrit avec «&#160;GAME OVER&#160;», pour laisser le temps de sons/animations
+	/// avant le passage à la phase Winning. Secondes.
+	/// </summary>
+	[Export] private float _gameOverDuration = 3f;
+
+	public enum State { Init, Failure, Waiting, Playing, Resolving, Finalize }
+	private StateMachine<State> _fsm = null;
+
+	private IPhase _mode = null;
+	private Node _mapContainerInstance = null;
+	private MultiplayerSpawner _spawner = null;
+	private PlayerSpawner _playerSpawner = null;
+	private MultiplayerApi.PeerDisconnectedEventHandler _onPeerDisconnectedHandler = null;
+	private bool _done;
+	public bool IsDone => _done;
+
+	// ── HUD in-game ──────────────────────────────────────────────────────────
+	/// <summary>Durée du fondu d'apparition/disparition des panneaux du HUD (secondes).</summary>
+	[Export] private float _hudFadeDuration = 0.3f;
+
+	private Control _uiInstance = null;
+	private Control _countdownPanel = null;
+	private Control _timerPanel = null;
+	private Label _countdownLabel = null;
+	private Label _timerLabel = null;
+	private TimeElapsedCondition<State> _waitingCondition = null;
+	private Tween _countdownTween = null;
+	private Tween _timerTween = null;
+	private bool _countdownShown;
+	private bool _timerShown;
+
+	// ── Overlay wasted + lien joueur local ────────────────────────────────────
+	private Control _wastedInstance = null;
+	private Player _localPlayer = null;
+	private bool _localPlayerDead;
+
+	public override void _Ready()
+	{
+		//Fallback d'export scene
 		_mapContainerSceneAsset ??= ResourceLoader.Load<PackedScene>("res://Core/World/Maps/map_container.tscn");
 		_playerScene ??= ResourceLoader.Load<PackedScene>("res://Core/World/CharacterModel/Player/Player.tscn");
+		_uiIngameScene ??= ResourceLoader.Load<PackedScene>("res://Core/UI/InGame/ui_ingame.tscn");
+		_wastedScene ??= ResourceLoader.Load<PackedScene>("res://Core/UI/InGame/wasted.tscn");
 	}
 
 	public void Enter()
 	{
 		_done = false;
+		_localPlayerDead = false;
+
+		// Filet de sécurité : si on entre dans Game sans être passé par OnGameStartRequested
+		// (ex. cycle Winning → Game ou retry), on s'assure que l'overlay est visible
+		// jusqu'à ce que UpdateLoadingOverlay détecte le niveau et le joueur prêts.
+		if (!IsDedicatedServer())
+		{
+			LoadingScreen.Show(GetTree());
+			LoadingScreen.SetStatus("Chargement de la carte", 0.55f);
+		}
 
 		// la scene de map container est loaded
 		if (_mapContainerSceneAsset is null)
@@ -51,6 +102,9 @@ public sealed partial class GameController : Node3D, IPhase
 		}
 		_mapContainerInstance = _mapContainerSceneAsset.Instantiate();
 		AddChild(_mapContainerInstance);
+		// Instancie le HUD in-game. Le Control reste caché tant qu'aucun mode
+		// n'est chargé&#160;: l'affichage est piloté depuis Tick() selon l'état FSM.
+		SpawnIngameUi();
 		// prendre le spawner
 		_spawner = _mapContainerInstance.GetNodeOrNull<MultiplayerSpawner>("GameLogicAssets/MultiplayerSpawner");
 		if (_spawner is null)
@@ -99,6 +153,7 @@ public sealed partial class GameController : Node3D, IPhase
 		if (_mode is not null) return true;
 
 		var mapDef = MapRegistry.Get(InMapId) ?? MapRegistry.All[0];
+		LoadingScreen.SetStatus($"Chargement de la carte&#160;: {mapDef.DisplayName}", 0.65f);
 
 		var levelScene = ResourceLoader.Load<PackedScene>(mapDef.ScenePath);
 		if (levelScene is null)
@@ -116,6 +171,7 @@ public sealed partial class GameController : Node3D, IPhase
 			return false;
 		}
 		mapSlot.AddChild(levelInstance);
+		LoadingScreen.SetStatus("En attente du joueur", 0.85f);
 
 		if (levelInstance is not IPhase mode)
 		{
@@ -131,6 +187,7 @@ public sealed partial class GameController : Node3D, IPhase
 
 		// FSM interne (Init → Waiting → Playing → Resolving). Démarrée ici parce
 		// que le prédicat Playing→Resolving dépend de _mode.IsDone.
+		_waitingCondition = new TimeElapsedCondition<State>(_waitingDuration);
 		_fsm = new StateMachine<State>(State.Init, OnSubEnter, OnSubExit);
 		_fsm.When(State.Init,
 			new PredicateCondition<State>(() =>/* TODO: Inclure level loaded */ true),
@@ -141,12 +198,16 @@ public sealed partial class GameController : Node3D, IPhase
 			State.Failure
 		);
 		_fsm.When(State.Waiting,
-			new TimeElapsedCondition<State>(10f),
+			_waitingCondition,
 			State.Playing
 		);
 		_fsm.When(State.Playing,
 			new PredicateCondition<State>(() => _mode.IsDone),
 			State.Resolving
+		);
+		_fsm.When(State.Resolving,
+			new TimeElapsedCondition<State>(_gameOverDuration),
+			State.Finalize
 		);
 		OnSubEnter(State.Init);
 		return true;
@@ -154,9 +215,14 @@ public sealed partial class GameController : Node3D, IPhase
 
     public void Tick(float InDelta)
     {
+		// Le link au joueur local et la mise à jour de l'overlay loading doivent
+		// tourner même si la FSM n'est pas encore créée (LoadLevel pas terminé).
+        UpdateLocalPlayerLink();
+        UpdateLoadingOverlay();
         if (_fsm is null) return;
         if (_fsm.Is(State.Playing)) _mode?.Tick(InDelta);
         _fsm.Tick(InDelta);
+        UpdateIngameUi();
     }
 
     public void Exit()
@@ -169,7 +235,43 @@ public sealed partial class GameController : Node3D, IPhase
             _onPeerDisconnectedHandler = null;
         }
 
+		// Le Player local capture la souris au _Ready (FPS) et personne ne la
+		// libère à la destruction du joueur. Sans ce reset, l'écran Winning
+		// hérite d'un curseur masqué/capturé et devient incliquable.
+		if (!IsDedicatedServer()) Input.MouseMode = Input.MouseModeEnum.Visible;
+
         if (_fsm is not null && _fsm.Is(State.Playing)) _mode?.Exit();
+        _countdownTween?.Kill();
+        _timerTween?.Kill();
+        _countdownTween = null;
+        _timerTween = null;
+        if (_uiInstance is not null)
+        {
+            _uiInstance.QueueFree();
+            _uiInstance = null;
+        }
+		// Sécurité&#160;: si l'overlay est encore visible au moment où on quitte la phase
+		// (ex. échec de chargement avant que UpdateLoadingOverlay puisse Hide()),
+		// on le cache ici pour ne pas le traîner jusqu'au Winning.
+        LoadingScreen.Hide();
+        if (_wastedInstance is not null)
+        {
+            _wastedInstance.QueueFree();
+            _wastedInstance = null;
+        }
+        if (_localPlayer is not null)
+        {
+            _localPlayer.Died -= OnLocalPlayerDied;
+            _localPlayer = null;
+        }
+        _localPlayerDead = false;
+        _countdownPanel = null;
+        _timerPanel = null;
+        _countdownLabel = null;
+        _timerLabel = null;
+        _countdownShown = false;
+        _timerShown = false;
+        _waitingCondition = null;
         if (_mapContainerInstance is not null)
         {
             _mapContainerInstance.QueueFree();
@@ -186,8 +288,8 @@ public sealed partial class GameController : Node3D, IPhase
     private GodotObject SpawnPlayerNode(Variant data)
     {
         var dict = data.As<Godot.Collections.Dictionary>();
-        int peerId = dict["id"].As<int>();
-        Vector3 pos = dict["pos"].As<Vector3>();
+		int peerId = dict["id"].As<int>();
+		Vector3 pos = dict["pos"].As<Vector3>();
 
         var player = _playerScene.Instantiate<Player>();
         player.Name = peerId.ToString();
@@ -195,7 +297,7 @@ public sealed partial class GameController : Node3D, IPhase
         player.SetMultiplayerAuthority(peerId);
         player.SpawnPosition = pos;
 
-        GD.Print($"[GameController] SpawnPlayerNode&#160;: peerId={peerId}, pos={pos}, isLocal={player.IsMultiplayerAuthority()}");
+		GD.Print($"[GameController] SpawnPlayerNode&#160;: peerId={peerId}, pos={pos}, isLocal={player.IsMultiplayerAuthority()}");
         return player;
     }
 
@@ -204,7 +306,7 @@ public sealed partial class GameController : Node3D, IPhase
     {
         if (!Multiplayer.IsServer()) return;
         int peerId = Multiplayer.GetRemoteSenderId();
-        GD.Print($"[GameController] ClientReady from peer {peerId}");
+		GD.Print($"[GameController] ClientReady from peer {peerId}");
         ServerSpawnPeer(peerId);
     }
 
@@ -286,8 +388,209 @@ public sealed partial class GameController : Node3D, IPhase
 		switch (s)
 		{
 			case State.Playing: _mode?.Enter(); break;
-			case State.Resolving: _done = true; break;
+			case State.Resolving: ShowGameOverOverlay(); break;
+			case State.Finalize: _done = true; break;
 		}
 	}
 	private void OnSubExit(State _) { }
+
+	// ── HUD in-game ───────────────────────────────────────────────────────────
+
+	/// <summary>
+	/// Instancie <c>ui_ingame.tscn</c> sous le GameController et résout les
+	/// références vers les labels qui seront mis à jour à chaque tick. Les deux
+	/// conteneurs sont initialisés en <c>Visible=false</c> + <c>modulate.a=0</c>
+	/// pour permettre un fondu d'entrée propre au premier appel à
+	/// <see cref="FadePanel"/>.
+	/// </summary>
+	private void SpawnIngameUi()
+	{
+		if (_uiIngameScene is null) return;
+		_uiInstance = _uiIngameScene.Instantiate<Control>();
+		AddChild(_uiInstance);
+		_countdownPanel = _uiInstance.GetNodeOrNull<Control>("CountdownContainer");
+		_timerPanel = _uiInstance.GetNodeOrNull<Control>("TimerContainer");
+		_countdownLabel = _uiInstance.GetNodeOrNull<Label>("CountdownContainer/Label");
+		_timerLabel = _uiInstance.GetNodeOrNull<Label>("TimerContainer/Panel/Label");
+		InitHidden(_countdownPanel);
+		InitHidden(_timerPanel);
+		_countdownShown = false;
+		_timerShown = false;
+	}
+
+	/// <summary>État de départ d'un panneau&#160;: invisible et complètement transparent.</summary>
+	private static void InitHidden(Control InPanel)
+	{
+		if (InPanel is null) return;
+		InPanel.Visible = false;
+		var m = InPanel.Modulate;
+		m.A = 0f;
+		InPanel.Modulate = m;
+	}
+
+	/// <summary>
+	/// Met à jour le HUD selon l'état FSM&#160;: countdown pendant <c>Waiting</c>,
+	/// chrono restant pendant <c>Playing</c> (lu depuis <see cref="IGameMode.RemainingSeconds"/>),
+	/// les deux cachés sinon. La transition d'affichage est faite en fondu via
+	/// <see cref="FadePanel"/>.
+	/// </summary>
+	private void UpdateIngameUi()
+	{
+		if (_uiInstance is null || _fsm is null) return;
+
+		bool inWaiting = _fsm.Is(State.Waiting);
+		bool inPlaying = _fsm.Is(State.Playing);
+
+		FadePanel(_countdownPanel, ref _countdownTween, ref _countdownShown, inWaiting);
+		FadePanel(_timerPanel, ref _timerTween, ref _timerShown, inPlaying);
+
+		if (inWaiting && _countdownLabel is not null && _waitingCondition is not null)
+		{
+			int secs = Mathf.CeilToInt(_waitingCondition.Remaining);
+			_countdownLabel.Text = secs.ToString();
+		}
+
+		if (inPlaying && _timerLabel is not null && _mode is IGameMode mode)
+		{
+			float rem = mode.RemainingSeconds;
+			if (rem <= 0f)
+			{
+				_timerLabel.Text = "TIME LEFT : --:--";
+			}
+			else
+			{
+				int total = Mathf.CeilToInt(rem);
+				int m = total / 60;
+				int s = total % 60;
+				_timerLabel.Text = $"TIME LEFT : {m:00}:{s:00}";
+			}
+		}
+	}
+
+	// ── Overlay de chargement ─────────────────────────────────────────────────
+
+	/// <summary>
+	/// Cache l'overlay <see cref="LoadingScreen"/> (affiché depuis le lobby au clic
+	/// «&#160;Start&#160;») dès que les pré-requis sont remplis&#160;: le niveau est instancié
+	/// (<see cref="_mode"/> non null) ET le joueur local a été spawné par le
+	/// <c>MultiplayerSpawner</c>. Sur serveur dédié, le joueur local n'existe pas&#160;:
+	/// on ne se base que sur le niveau.
+	/// </summary>
+	private void UpdateLoadingOverlay()
+	{
+		if (!LoadingScreen.IsVisible) return;
+		bool levelReady = _mode is not null;
+		bool playerReady = IsDedicatedServer() || _localPlayer is not null;
+		if (!levelReady || !playerReady) return;
+
+		// Remplit la jauge à 100&#160;% avant de cacher pour que la disparition soit nette
+		// (et pour que les joueurs voient bien la barre arriver au bout).
+		LoadingScreen.SetStatus("Prêt", 1f);
+		LoadingScreen.Hide();
+	}
+
+	/// <summary>
+	/// Indique si ce process tourne en mode serveur dédié (headless ou flag <c>--server</c>).
+	/// Le joueur local n'existe pas dans ce mode&#160;: les overlays joueur (loading, wasted)
+	/// sont skippés.
+	/// </summary>
+	private static bool IsDedicatedServer()
+	{
+		var net = NetworkManager.Instance;
+		if (net is null) return false;
+		if (!net.IsServer) return false;
+		return DisplayServer.GetName() == "headless" || OS.HasFeature("dedicated_server");
+	}
+
+	// ── Lien joueur local + overlay de mort ───────────────────────────────────
+
+	/// <summary>
+	/// Cherche le joueur local dans le groupe <c>local_player</c> (ajouté par
+	/// <c>Player._Ready</c> côté authority) et s'abonne à son événement <c>Died</c>
+	/// la première fois qu'on le trouve. Idempotent une fois la liaison faite.
+	/// </summary>
+	private void UpdateLocalPlayerLink()
+	{
+		if (_localPlayer is not null) return;
+		var found = GetTree().GetFirstNodeInGroup("local_player") as Player;
+		if (found is null) return;
+		_localPlayer = found;
+		_localPlayer.Died += OnLocalPlayerDied;
+	}
+
+	/// <summary>
+	/// Handler du <see cref="Character.Died"/> du joueur local. Bascule l'UI en mode
+	/// «&#160;Wasted&#160;»&#160;: HUD caché, overlay de mort affiché par-dessus.
+	/// </summary>
+	private void OnLocalPlayerDied(int InPeerId, DeathReason InReason)
+	{
+		GD.Print($"[GameController] Local player {InPeerId} died ({InReason}).");
+		_localPlayerDead = true;
+		ShowWastedOverlay();
+	}
+
+	/// <summary>
+	/// Affiche l'overlay <c>wasted.tscn</c> et cache complètement le HUD in-game.
+	/// Si <paramref name="InTextOverride"/> est fourni, le label central est
+	/// réécrit (sinon le texte par défaut «&#160;WASTED&#160;» de la scène est
+	/// conservé). Si l'overlay est déjà actif et qu'un nouveau texte est passé,
+	/// le label est simplement mis à jour&#160;: utile pour passer de «&#160;WASTED&#160;»
+	/// à «&#160;GAME OVER&#160;» quand le mode se termine alors que le joueur local
+	/// était déjà mort.
+	/// </summary>
+	private void ShowWastedOverlay(string InTextOverride = null)
+	{
+		if (_wastedInstance is null)
+		{
+			if (_wastedScene is null) return;
+			_wastedInstance = _wastedScene.Instantiate<Control>();
+			AddChild(_wastedInstance);
+			if (_uiInstance is not null) _uiInstance.Visible = false;
+		}
+		if (InTextOverride is not null)
+		{
+			var label = _wastedInstance.GetNodeOrNull<Label>("MarginContainer/Label");
+			if (label is not null) label.Text = InTextOverride;
+		}
+	}
+
+	/// <summary>
+	/// Affiche l'overlay <c>wasted.tscn</c> avec le texte «&#160;GAME OVER&#160;».
+	/// Appelé à l'entrée en phase <c>Resolving</c> pour marquer la fin de la
+	/// partie pendant que le monde reste visible en arrière-plan.
+	/// </summary>
+	private void ShowGameOverOverlay() => ShowWastedOverlay("GAME OVER");
+
+	/// <summary>
+	/// Fait apparaître ou disparaître un panneau du HUD en fondu sur
+	/// <see cref="_hudFadeDuration"/> secondes. Idempotent&#160;: ne fait rien si
+	/// l'état demandé est déjà l'état courant. <c>Visible</c> est forcé à
+	/// <c>true</c> avant un fade-in pour que la transparence soit visible, et
+	/// rebasculé à <c>false</c> en fin de fade-out pour ne pas intercepter
+	/// les inputs.
+	/// </summary>
+	private void FadePanel(Control InPanel, ref Tween InOutTween, ref bool InOutShown, bool InTarget)
+	{
+		if (InPanel is null) return;
+		if (InOutShown == InTarget) return;
+		InOutShown = InTarget;
+
+		InOutTween?.Kill();
+		InOutTween = CreateTween();
+
+		if (InTarget)
+		{
+			InPanel.Visible = true;
+			InOutTween.TweenProperty(InPanel, "modulate:a", 1f, _hudFadeDuration);
+		}
+		else
+		{
+			Control captured = InPanel;
+			InOutTween.TweenProperty(InPanel, "modulate:a", 0f, _hudFadeDuration);
+			InOutTween.TweenCallback(Callable.From(() =>
+			{
+				if (IsInstanceValid(captured)) captured.Visible = false;
+			}));
+		}
+	}
 }
