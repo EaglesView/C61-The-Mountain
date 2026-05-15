@@ -39,7 +39,7 @@ public partial class PhysicsSkeleton : Skeleton3D
 	[Export(PropertyHint.Range, "0.0f,10000.0f,1,0f")] public float LinearSpringStiffness = 1200.0f;
 	[Export(PropertyHint.Range, "0.0f,200.0f,1,0f")] public float LinearSpringDamping = 40.0f;
 	[Export(PropertyHint.Range, "0.0f,10000.0f,1,0f")] public float AngularSpringStiffness = 4000.0f;
-	[Export(PropertyHint.Range, "0.0f,200.0f,1,0f")] public float AngularSpringDamping = 80.0f;
+	[Export(PropertyHint.Range, "0.0f,200.0f,1.0f")] public float AngularSpringDamping = 80.0f;
 	[Export(PropertyHint.Range, "0.0f,5.0f,0,1f")] public float RagdollGraceTime = 1.0f;
 	private float _graceTime = 0.0f;
 	protected static float forceThreshold = 500.0f;
@@ -53,17 +53,17 @@ public partial class PhysicsSkeleton : Skeleton3D
 
 
 	private PhysicalBoneSimulator3D? _boneSim;
-	private List<PhysicalBone3D>?    _physicsBones;
-	private PhysicalBone3D?          _spinePhysBone;
-	private PhysicalBone3D?          _headPhysBone;
+	private List<PhysicalBone3D>? _physicsBones;
+	private PhysicalBone3D? _spinePhysBone;
+	private PhysicalBone3D? _headPhysBone;
 
 	// ── Remote ragdoll correction (set by remote Player each tick) ────────────
-	public bool    RemoteCorrection  = false;
+	public bool RemoteCorrection = false;
 	public Vector3 RemoteSpineTarget = Vector3.Zero;
-	public float   RemoteHeadPitch   = 0f;
-	public float   RemoteHeadYaw     = 0f;
+	public float RemoteHeadPitch = 0f;
+	public float RemoteHeadYaw = 0f;
 	private const float SpineCorrectK = 15f;
-	private const float HeadCorrectK  = 8f;
+	private const float HeadCorrectK = 8f;
 	public bool Aiming = false;
 	public bool ArmsUp = false;
 	// SPECIAL BONES
@@ -168,7 +168,7 @@ public partial class PhysicsSkeleton : Skeleton3D
 			string bname = GetBoneName(bone.GetBoneId());
 			bonesToSimulate.Add(new StringName(bname));
 			if (bname == "Spine.001") _spinePhysBone = bone;
-			if (bname == "Head.001")  _headPhysBone  = bone;
+			if (bname == "Head.001") _headPhysBone = bone;
 		}
 		_boneSim.PhysicalBonesStartSimulation(bonesToSimulate);
 
@@ -204,6 +204,47 @@ public partial class PhysicsSkeleton : Skeleton3D
 		if (_physicsBones == null) return;
 		foreach (var bone in _physicsBones)
 			bone.LinearVelocity = spineVelocity;
+	}
+
+	/// <summary>
+	/// Applique une force de flottaison sur chaque os physique selon sa
+	/// profondeur sous <paramref name="InWaterSurfaceY"/>. Annule la gravité
+	/// (appliquée deux fois: moteur + boucle ragdoll) en proportion de
+	/// l'immersion pour que la poussée ne soit pas masquée.
+	/// </summary>
+	public void ApplyBuoyancy(float InWaterSurfaceY, float InStrength, float InMaxDepth, float InDrag, float InDelta)
+	{
+		if (_physicsBones == null) return;
+		float invMaxDepth = InMaxDepth > 0f ? 1f / InMaxDepth : 1f;
+		float verticalDamp = Mathf.Clamp(1f - InDrag * InDelta, 0f, 1f);
+		float lateralDamp = Mathf.Clamp(1f - InDrag * 0.4f * InDelta, 0f, 1f);
+		foreach (PhysicalBone3D bone in _physicsBones)
+		{
+			// Position physique réelle du rigid body: GlobalTransform corrigé par
+			// BodyOffset (le node PhysicalBone3D et son corps sont décalés selon
+			// la pose de repos). Sans cette correction la profondeur est toujours
+			// fausse — c'est la même formule que pour les ressorts (cf. plus bas).
+			Vector3 bonePhysPos = (bone.GlobalTransform * bone.BodyOffset.AffineInverse()).Origin;
+			float depth = InWaterSurfaceY - bonePhysPos.Y;
+			if (depth <= 0f) continue;
+			float submersion = Mathf.Clamp(depth * invMaxDepth, 0f, 1f);
+			Vector3 v = bone.LinearVelocity;
+			// Annule la gravité du frame (×2: moteur + PhysicsSkeleton._PhysicsProcess)
+			// proportionnellement à la fraction immergée, sinon la poussée est noyée.
+			Vector3 g = bone.GetGravity();
+			v -= g * InDelta * 2f * submersion;
+			// Poussée d'Archimède simplifiée: proportionnelle à la profondeur.
+			v.Y += submersion * InStrength * InDelta;
+			// Amortissement: plus fort sur Y pour stopper le bobbing,
+			// plus doux sur XZ pour ne pas geler les mouvements latéraux.
+			v.Y *= verticalDamp;
+			v.X *= lateralDamp;
+			v.Z *= lateralDamp;
+			bone.LinearVelocity = v;
+			bone.AngularVelocity *= lateralDamp;
+			GD.Print($"depth={depth:F3} surfaceY={InWaterSurfaceY:F3} boneY={bonePhysPos.Y:F3} submerged={submersion:F2}");
+
+		}
 	}
 	public override void _PhysicsProcess(double delta)
 	{
@@ -285,7 +326,7 @@ public partial class PhysicsSkeleton : Skeleton3D
 			if (_headPhysBone != null)
 			{
 				Transform3D cur = _headPhysBone.GlobalTransform * _headPhysBone.BodyOffset.AffineInverse();
-				Quaternion target  = Quaternion.FromEuler(new Vector3(RemoteHeadPitch, RemoteHeadYaw, 0f));
+				Quaternion target = Quaternion.FromEuler(new Vector3(RemoteHeadPitch, RemoteHeadYaw, 0f));
 				Quaternion current = cur.Basis.GetRotationQuaternion().Normalized();
 				if (target.Dot(current) < 0f) current = -current;
 				Quaternion diff = (target * current.Inverse()).Normalized();
