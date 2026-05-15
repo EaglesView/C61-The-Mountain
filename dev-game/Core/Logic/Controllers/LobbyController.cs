@@ -14,7 +14,7 @@ namespace Core.World;
 /// </summary>
 public sealed partial class LobbyController : Node3D, IPhase
 {
-    /// <summary>Scène <c>lobby.tscn</c> à instancier à l'entrée de la phase.</summary>
+	/// <summary>Scène <c>lobby.tscn</c> à instancier à l'entrée de la phase.</summary>
     [Export] private PackedScene _lobbySceneAsset;
 
     public enum State { Init, Failure, Waiting, Ready }
@@ -33,16 +33,16 @@ public sealed partial class LobbyController : Node3D, IPhase
         _connectionSucceeded = false;
         _connectionFailed = false;
 
-        // Serveur dédié : pas d'UI ni de polling Firestore. La state StateMachine attends
-        // a Game les peers
-        if (NetworkManager.Instance is not null && NetworkManager.Instance.IsServer)
-        {
-            _done = true;
-            return;
-        }
+		// Serveur dédié : pas d'UI ni de polling Firestore. La state StateMachine attends
+		// a Game les peers
+		if (NetworkManager.Instance is not null && NetworkManager.Instance.IsServer)
+		{
+			_done = true;
+			return;
+		}
 
-        // Cas re-entrée Winning -> Lobby : le statut Firestore peut être encore
-        // "started" depuis la partie précédente. Si on est l'hôte, on le remet
+		// Cas re-entrée Winning -> Lobby : le statut Firestore peut être encore
+		// "started" depuis la partie précédente. Si on est l'hôte, on le remet
         // à "waiting" — sinon le polling de LobbyScene déclencherait un nouveau
         // GameStartRequested dès le prochain tick.
         var snapshot = LobbyState.Current;
@@ -53,7 +53,7 @@ public sealed partial class LobbyController : Node3D, IPhase
 
         if (_lobbySceneAsset is null)
         {
-            GD.PrintErr("[LobbyController] _lobbySceneAsset non assigné dans l'inspecteur.");
+			GD.PrintErr("[LobbyController] _lobbySceneAsset non assigné dans l'inspecteur.");
             _fsm = new StateMachine<State>(State.Failure, OnSubEnter, OnSubExit);
             OnSubEnter(State.Failure);
             return;
@@ -106,7 +106,7 @@ public sealed partial class LobbyController : Node3D, IPhase
         var snapshot = LobbyState.Current;
         if (snapshot is null)
         {
-            GD.PrintErr("[LobbyController] LobbyState.Current null à GameStartRequested.");
+			GD.PrintErr("[LobbyController] LobbyState.Current null à GameStartRequested.");
             _connectionFailed = true;
             return;
         }
@@ -115,7 +115,7 @@ public sealed partial class LobbyController : Node3D, IPhase
         var serverPort = snapshot.ServerPort != 0 ? snapshot.ServerPort : Room.HardcodedServerPort;
         LobbyState.SetSelectedMap(snapshot.MapId ?? MapRegistry.DefaultMapId);
         LoadingScreen.Show(GetTree());
-        LoadingScreen.SetStatus("Connexion au serveur…", 0.10f);
+		LoadingScreen.SetStatus("Connexion au serveur…", 0.10f);
 
         var net = NetworkManager.Instance;
         net.LocalConnected += OnNetConnected;
@@ -126,14 +126,14 @@ public sealed partial class LobbyController : Node3D, IPhase
     private void OnNetConnected(int _)
     {
         UnsubscribeNetwork();
-        LoadingScreen.SetStatus("Connecté — préparation de la partie", 0.35f);
+		LoadingScreen.SetStatus("Connecté — préparation de la partie", 0.35f);
         _connectionSucceeded = true;
     }
 
     private void OnNetConnectionFailed(string InMessage)
     {
         UnsubscribeNetwork();
-        GD.PrintErr($"[LobbyController] Connexion échouée&#160;: {InMessage}");
+		GD.PrintErr($"[LobbyController] Connexion échouée&#160;: {InMessage}");
         LoadingScreen.Hide();
         _connectionFailed = true;
     }
@@ -150,11 +150,11 @@ public sealed partial class LobbyController : Node3D, IPhase
     {
         try
         {
-            await RoomServiceProvider.Repository.UpdateStatusAsync(InCode, "waiting");
+			await RoomServiceProvider.Repository.UpdateStatusAsync(InCode, "waiting");
         }
         catch (Exception ex)
         {
-            GD.PrintErr($"[LobbyController] Reset statut salle échoué&#160;: {ex.Message}");
+			GD.PrintErr($"[LobbyController] Reset statut salle échoué&#160;: {ex.Message}");
         }
     }
 

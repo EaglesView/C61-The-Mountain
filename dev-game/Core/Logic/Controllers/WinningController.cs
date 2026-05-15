@@ -28,56 +28,56 @@ namespace Core.World;
 /// </summary>
 public sealed partial class WinningController : Node3D, IPhase
 {
-    /// <summary>Scène <c>winning.tscn</c> à instancier à l'entrée de la phase.</summary>
+	/// <summary>Scène <c>winning.tscn</c> à instancier à l'entrée de la phase.</summary>
     [Export] private PackedScene _winningSceneAsset;
 
-    /// <summary>Durée d'affichage de la slide 1 (gagnant principal).</summary>
-    [Export] private float _celebrationDuration = 10f;
+	/// <summary>Durée d'affichage de la slide 1 (gagnant principal).</summary>
+	[Export] private float _celebrationDuration = 10f;
 
-    /// <summary>
-    /// Délai après l'apparition de la slide 2 avant que le bouton «&#160;Continue&#160;»
+	/// <summary>
+	/// Délai après l'apparition de la slide 2 avant que le bouton «&#160;Continue&#160;»
     /// soit révélé (secondes).
     /// </summary>
     [Export] private float _slide2ButtonDelay = 4f;
 
     /// <summary>
-    /// Délai max après l'apparition du bouton «&#160;Continue&#160;» avant le passage
-    /// forcé vers la slide de vote (secondes).
-    /// </summary>
-    [Export] private float _slide2ForceAdvance = 15f;
+	/// Délai max après l'apparition du bouton «&#160;Continue&#160;» avant le passage
+	/// forcé vers la slide de vote (secondes).
+	/// </summary>
+	[Export] private float _slide2ForceAdvance = 15f;
 
-    /// <summary>Délai max du vote (slide 3) avant auto-avance vers <c>NewGame</c>.</summary>
-    [Export] private float _voteTimeout = 30f;
+	/// <summary>Délai max du vote (slide 3) avant auto-avance vers <c>NewGame</c>.</summary>
+	[Export] private float _voteTimeout = 30f;
 
-    public enum State { Init, Failure, Slide1, Slide2WaitButton, Slide2ButtonShown, Slide3, NewGame }
+	public enum State { Init, Failure, Slide1, Slide2WaitButton, Slide2ButtonShown, Slide3, NewGame }
 
-    private StateMachine<State> _fsm;
-    private WinningScene _winningInstance;
-    private bool _continuePressed;
-    private bool _voteConfirmed;
-    private bool _done;
+	private StateMachine<State> _fsm;
+	private WinningScene _winningInstance;
+	private bool _continuePressed;
+	private bool _voteConfirmed;
+	private bool _done;
 
-    // État de vote côté serveur (et miroir client après chaque broadcast).
-    // Clé&#160;: peerId. Valeur&#160;: identifiant de map sélectionné.
-    private readonly Dictionary<int, string> _votes = new();
-    private string _majorityMapId = "";
+	// État de vote côté serveur (et miroir client après chaque broadcast).
+	// Clé&#160;: peerId. Valeur&#160;: identifiant de map sélectionné.
+	private readonly Dictionary<int, string> _votes = new();
+	private string _majorityMapId = "";
 
-    // Temps cumulé côté serveur dédié (pas de FSM UI&#160;: on attend simplement
-    // la fin de la fenêtre de vote, ou un ServerConfirmVote).
-    private float _serverElapsed;
+	// Temps cumulé côté serveur dédié (pas de FSM UI&#160;: on attend simplement
+	// la fin de la fenêtre de vote, ou un ServerConfirmVote).
+	private float _serverElapsed;
 
-    public bool IsDone => _done;
+	public bool IsDone => _done;
 
-    public void Enter()
-    {
-        _done = false;
-        _continuePressed = false;
-        _voteConfirmed = false;
-        _votes.Clear();
-        _majorityMapId = "";
-        _serverElapsed = 0f;
+	public void Enter()
+	{
+		_done = false;
+		_continuePressed = false;
+		_voteConfirmed = false;
+		_votes.Clear();
+		_majorityMapId = "";
+		_serverElapsed = 0f;
 
-        // Serveur dédié&#160;: pas d'UI mais on reste en vie pour traiter les
+		// Serveur dédié&#160;: pas d'UI mais on reste en vie pour traiter les
         // RPCs de vote et broadcaster les tallies pendant la fenêtre Winning.
         if (IsNetworkedServer())
         {
@@ -87,7 +87,7 @@ public sealed partial class WinningController : Node3D, IPhase
 
         if (_winningSceneAsset is null)
         {
-            GD.PrintErr("[WinningController] _winningSceneAsset non assigné dans l'inspecteur.");
+			GD.PrintErr("[WinningController] _winningSceneAsset non assigné dans l'inspecteur.");
             _fsm = new StateMachine<State>(State.Failure, OnSubEnter, OnSubExit);
             OnSubEnter(State.Failure);
             return;
@@ -176,7 +176,7 @@ public sealed partial class WinningController : Node3D, IPhase
             _winningInstance = null;
         }
         _votes.Clear();
-        _majorityMapId = "";
+		_majorityMapId = "";
         _fsm = null;
     }
 
@@ -217,7 +217,7 @@ public sealed partial class WinningController : Node3D, IPhase
     // ── Logique de vote (serveur ou offline) ─────────────────────────────────
 
     /// <summary>
-    /// Applique un vote dans <see cref="_votes"/>, recalcule la majorité et
+	/// Applique un vote dans <see cref="_votes"/>, recalcule la majorité et
     /// pousse la mise à jour: broadcast aux peers en mode serveur, mise à
     /// jour locale de l'UI en offline. Idempotent par peer: re-voter écrase
     /// le choix précédent.
@@ -251,13 +251,13 @@ public sealed partial class WinningController : Node3D, IPhase
     }
 
     /// <summary>
-    /// Met à jour <see cref="_majorityMapId"/>&#160;: vide tant qu'aucune map n'a
+	/// Met à jour <see cref="_majorityMapId"/>&#160;: vide tant qu'aucune map n'a
     /// strictement plus de la moitié des voix exprimées. Le total utilisé est
     /// le nombre de peers connectés (ou 1 en offline).
     /// </summary>
     private void RecomputeMajority()
     {
-        _majorityMapId = "";
+		_majorityMapId = "";
         int totalVoters = Mathf.Max(1, GetTotalVoters());
         int threshold = (totalVoters / 2) + 1;
 
@@ -354,7 +354,7 @@ public sealed partial class WinningController : Node3D, IPhase
 
     /// <summary>
     /// Reçu par les clients (et appelé localement sur le serveur via
-    /// <c>CallLocal=true</c>)&#160;: reconstruit <see cref="_votes"/> et pousse
+	/// <c>CallLocal=true</c>)&#160;: reconstruit <see cref="_votes"/> et pousse
     /// les counts à l'UI.
     /// </summary>
     [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
@@ -363,13 +363,13 @@ public sealed partial class WinningController : Node3D, IPhase
         _votes.Clear();
         int n = Mathf.Min(InPeerIds?.Length ?? 0, InMapIds?.Length ?? 0);
         for (int i = 0; i < n; i++) _votes[InPeerIds[i]] = InMapIds[i];
-        _majorityMapId = InMajorityMapId ?? "";
+		_majorityMapId = InMajorityMapId ?? "";
         ApplyTallyToUi();
     }
 
     /// <summary>
     /// Reçu par le serveur quand l'hôte clique sur CONFIRM&#160;: verrouille la
-    /// map majoritaire courante et broadcast <see cref="ClientFinalizeVote"/>.
+	/// map majoritaire courante et broadcast <see cref="ClientFinalizeVote"/>.
     /// </summary>
     [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void ServerConfirmVote()
@@ -423,7 +423,7 @@ public sealed partial class WinningController : Node3D, IPhase
                 {
                     string fallback = !string.IsNullOrEmpty(_majorityMapId)
                         ? _majorityMapId
-                        : (_winningInstance?.SelectedMapId ?? "");
+						: (_winningInstance?.SelectedMapId ?? "");
                     if (!string.IsNullOrEmpty(fallback)) LobbyState.SetSelectedMap(fallback);
                 }
                 _done = true;
