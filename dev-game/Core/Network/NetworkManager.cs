@@ -19,9 +19,9 @@ public partial class NetworkManager : Node
     public static NetworkManager Instance { get; private set; } = null!;
 
     private INetworkProvider? _provider;
-    private Character?        _localPlayer;
+    private Character? _localPlayer;
 
-    private float       _tickAccum  = 0f;
+    private float _tickAccum = 0f;
     private const float TickInterval = 1f / 20f;
 
     /// <summary>
@@ -48,16 +48,16 @@ public partial class NetworkManager : Node
     private readonly Dictionary<int, ulong> _lastCorrectionMsec = new();
 
     /// <summary><c>true</c> si ce pair est le serveur de la session.</summary>
-    public bool IsServer        => _provider?.Role == NetworkRole.Server;
+    public bool IsServer => _provider?.Role == NetworkRole.Server;
 
     /// <summary><c>true</c> si ce pair est un client connecté à un serveur.</summary>
-    public bool IsClient        => _provider?.Role == NetworkRole.Client;
+    public bool IsClient => _provider?.Role == NetworkRole.Client;
 
     /// <summary><c>true</c> si le transport est actif et opérationnel.</summary>
-    public bool IsRunning       => _provider?.IsRunning ?? false;
+    public bool IsRunning => _provider?.IsRunning ?? false;
 
     /// <summary>Identifiant unique de ce pair dans la session ENet.</summary>
-    public int  LocalPeerId     => _provider?.LocalPeerId ?? 1;
+    public int LocalPeerId => _provider?.LocalPeerId ?? 1;
 
     /// <summary>
     /// Déclenché à la réception d'un <see cref="PlayerNetState"/> validé.
@@ -66,10 +66,10 @@ public partial class NetworkManager : Node
     public event Action<PlayerNetState>? StateReceived;
 
     /// <summary>Déclenché une seule fois lorsque la connexion locale au serveur est confirmée (client seulement).</summary>
-    public event Action<int>?            LocalConnected;
+    public event Action<int>? LocalConnected;
 
     /// <summary>Déclenché si la connexion au serveur échoue.</summary>
-    public event Action<string>?         ConnectionFailed;
+    public event Action<string>? ConnectionFailed;
 
     /// <summary>
     /// Enregistre le personnage local pour que le tick client puisse sérialiser son état.
@@ -92,6 +92,24 @@ public partial class NetworkManager : Node
     public void ConnectToServer(string address, int port = 7777)
         => _provider?.ConnectToServer(address, port);
 
+    /// <summary>
+    /// Coupe proprement la session ENet courante (client ou serveur). Sans effet
+    /// si aucun transport n'est actif. Utilisé par exemple par l'écran Winning
+    /// quand l'utilisateur clique sur QUIT pour rebasculer vers le main menu&#160;:
+    /// la scène est changée, mais le NetworkManager autoload persiste — il faut
+    /// donc tomber explicitement la connexion sinon la prochaine partie hérite
+    /// d'un état réseau zombie.
+    /// </summary>
+    public void Disconnect()
+    {
+        if (_provider is null || !_provider.IsRunning) return;
+        _provider.Disconnect();
+        _lastKnownState.Clear();
+        _peerSpawn.Clear();
+        _lastCorrectionMsec.Clear();
+        _localPlayer = null;
+    }
+
     public override void _Ready()
     {
         Instance = this;
@@ -100,16 +118,16 @@ public partial class NetworkManager : Node
         AddChild(enet);
         _provider = enet;
 
-        _provider.PeerConnected    += OnProviderPeerConnected;
+        _provider.PeerConnected += OnProviderPeerConnected;
         _provider.PeerDisconnected += id =>
         {
-            GD.Print($"[NetworkManager] Peer {id} disconnected (localPeerId={LocalPeerId}).");
+            //GD.Print($"[NetworkManager] Peer {id} disconnected (localPeerId={LocalPeerId}).");
             _lastKnownState.Remove(id);
             _peerSpawn.Remove(id);
             _lastCorrectionMsec.Remove(id);
         };
-        _provider.PacketReceived   += OnPacketReceived;
-        _provider.ServerStarted    += ()  => GD.Print("[NetworkManager] Server started on port 7777.");
+        _provider.PacketReceived += OnPacketReceived;
+        _provider.ServerStarted += () => GD.Print("[NetworkManager] Server started on port 7777.");
         _provider.ConnectionFailed += msg =>
         {
             GD.PrintErr($"[NetworkManager] {msg}");
@@ -124,7 +142,7 @@ public partial class NetworkManager : Node
 
         if (isHeadless)
         {
-            GD.Print("[NetworkManager] Headless mode — starting dedicated server.");
+            //GD.Print("[NetworkManager] Headless mode — starting dedicated server.");
             _provider.StartServer(7777, 16);
         }
     }
@@ -133,7 +151,7 @@ public partial class NetworkManager : Node
     {
         if (_provider?.Role == NetworkRole.Server)
         {
-            GD.Print($"[NetworkManager] Player {id} connected.");
+            //GD.Print($"[NetworkManager] Player {id} connected.");
             // Send each existing peer's last known state to the newcomer so their
             // ring buffer starts at the correct position (not 0,0,0)
             foreach (int existingId in Multiplayer.GetPeers())
@@ -145,7 +163,7 @@ public partial class NetworkManager : Node
         }
         else
         {
-            GD.Print($"[NetworkManager] Connected to server. Local peer ID: {id}");
+            //GD.Print($"[NetworkManager] Connected to server. Local peer ID: {id}");
         }
 
         if (_provider?.Role == NetworkRole.Client && id == _provider.LocalPeerId)
@@ -162,8 +180,8 @@ public partial class NetworkManager : Node
         if (_tickAccum < TickInterval) return;
         _tickAccum -= TickInterval;
 
-        if (!_localPlayer.IsInsideTree()) { GD.Print("[NetworkManager] ERROR: _localPlayer not in tree!"); return; }
-        var state  = _localPlayer.SnapshotState();
+        if (!_localPlayer.IsInsideTree()) { /*GD.Print("[NetworkManager] ERROR: _localPlayer not in tree!");*/ return; }
+        var state = _localPlayer.SnapshotState();
         var packet = PlayerNetState.Serialize(PacketType.StateUpdate, state);
         _provider.SendUnreliable(1, packet);
     }
@@ -186,7 +204,7 @@ public partial class NetworkManager : Node
                         System.BitConverter.ToSingle(data, 9),
                         System.BitConverter.ToSingle(data, 13)
                     );
-                    GD.Print($"[NetworkManager] Server correction applied: {correctedPos}");
+                    //GD.Print($"[NetworkManager] Server correction applied: {correctedPos}");
                     _localPlayer.GlobalPosition = correctedPos;
                     _localPlayer.Velocity = Vector3.Zero;
                 }
@@ -210,7 +228,7 @@ public partial class NetworkManager : Node
             bool lastFell = hasLast && lastState.Position.Y < FallThreshold;
             if ((incomingFell || lastFell) && _peerSpawn.TryGetValue(fromPeerId, out var spawn))
             {
-                GD.Print($"[NetworkManager] Peer {fromPeerId} fell (state.Y={state.Position.Y:F1}, last.Y={(hasLast ? lastState.Position.Y : float.NaN):F1}) — respawning at {spawn}");
+                //GD.Print\($"[NetworkManager] Peer {fromPeerId} fell (state.Y={state.Position.Y:F1}, last.Y={(hasLast ? lastState.Position.Y : float.NaN):F1}) — respawning at {spawn}");
                 if (incomingFell)
                     _provider.SendReliable(fromPeerId, PlayerNetState.SerializeCorrection(fromPeerId, spawn));
                 var respawned = new PlayerNetState(
@@ -237,7 +255,7 @@ public partial class NetworkManager : Node
                     _lastCorrectionMsec.TryGetValue(fromPeerId, out ulong lastMsec);
                     if (now - lastMsec >= CorrectionCooldownMsec)
                     {
-                        GD.Print($"[NetworkManager] Dropped packet from {fromPeerId}: delta {dist:F1} > 20 — sending correction");
+                        //GD.Print\($"[NetworkManager] Dropped packet from {fromPeerId}: delta {dist:F1} > 20 — sending correction");
                         _provider.SendReliable(fromPeerId, PlayerNetState.SerializeCorrection(fromPeerId, lastState.Position));
                         _lastCorrectionMsec[fromPeerId] = now;
                     }

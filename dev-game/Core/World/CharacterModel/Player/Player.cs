@@ -34,6 +34,24 @@ public partial class Player : Character
 	private CameraType _lastCamType;
 	private Label3D? _nameLabel;
 
+	/// <summary>
+	/// Verrou d'entrée pour le joueur local. Activé par le GameController quand la
+    /// partie est avortée (host parti) ou par toute autre logique qui veut figer
+	/// l'input sans ouvrir le menu pause. Quand <c>true</c>&#160;: <see cref="_Input"/>
+	/// retourne immédiatement, <see cref="_PhysicsProcess"/> ne lit plus les
+	/// commandes et la souris est rendue visible.
+	/// </summary>
+	public bool InputFrozen
+	{
+		get => _inputFrozen;
+		set
+		{
+			_inputFrozen = value;
+			if (value) Input.MouseMode = Input.MouseModeEnum.Visible;
+		}
+	}
+	private bool _inputFrozen;
+
 	// ── Remote interpolation (non-authority players) ──────────────────────────
 	private const int BufferSize = 4;
 	private const float RenderDelay = 0.1f;
@@ -173,24 +191,36 @@ public partial class Player : Character
 	/// RPC client → serveur&#160;: «&#160;je suis mort, broadcast aux autres&#160;». Le serveur vérifie
 	/// que l'émetteur possède bien ce Player (sender == <see cref="Character.PeerId"/>) pour
 	/// éviter qu'un peer ne tue le personnage d'un autre.
-	/// </summary>
-	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-	private void ServerKillMe(byte InReason)
-	{
-		if (!Multiplayer.IsServer()) return;
-		int senderId = Multiplayer.GetRemoteSenderId();
-		if (senderId != PeerId) return;
-		Die((DeathReason)InReason);
-		Rpc(MethodName.NetApplyDeath, InReason);
-	}
+    /// </summary>
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ServerKillMe(byte InReason)
+    {
+        if (!Multiplayer.IsServer()) return;
+        int senderId = Multiplayer.GetRemoteSenderId();
+        if (senderId != PeerId) return;
+        Die((DeathReason)InReason);
+		// On ré-émet aux AUTRES peers seulement&#160;: l'émetteur a déjà appliqué
+		// sa mort localement (prédiction client), et lui renvoyer la RPC pose
+		// une race lors de la transition Game→Winning&#160;: si son Player a déjà
+		// été QueueFree (mapContainer libéré), l'écho échoue à trouver le
+        // nœud cible et pollue les logs avec un «&#160;Node not found&#160;» inoffensif
+        // mais bruyant. On itère donc explicitement les peers actifs en sautant
+        // le sender.
+        foreach (int peerId in Multiplayer.GetPeers())
+        {
+            if (peerId == senderId) continue;
+            RpcId(peerId, MethodName.NetApplyDeath, InReason);
+        }
+    }
 
-	/// <summary>
-	/// RPC serveur → clients&#160;: applique la mort sur les répliques distantes. Filtre
+    /// <summary>
+    /// RPC serveur → clients&#160;: applique la mort sur les répliques distantes. Filtre
 	/// pour ne faire confiance qu'au peer ID 1 (serveur).
 	/// </summary>
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
 	private void NetApplyDeath(byte InReason)
 	{
+		GD.Print($"[Player.NetApplyDeath] peer={PeerId} fromSender={Multiplayer.GetRemoteSenderId()} reason={(DeathReason)InReason}");
 		if (Multiplayer.GetRemoteSenderId() != 1) return;
 		Die((DeathReason)InReason);
 	}
@@ -198,6 +228,7 @@ public partial class Player : Character
 	public override void _Input(InputEvent @event)
 	{
 		if (!IsMultiplayerAuthority()) return;
+		if (_inputFrozen) return;
 		if (_characterState == CharacterState.Dead) return;
 
 		if (@event is InputEventMouseMotion mouseMotion)
@@ -249,6 +280,14 @@ public partial class Player : Character
 		velocity = Velocity;
 		if (_cameraMan == null) return;
 
+		if (_inputFrozen)
+		{
+			moveVec = Vector3.Zero;
+			aimVec = Vector3.Zero;
+			base._PhysicsProcess(delta);
+			return;
+		}
+
 		if (_characterState == CharacterState.Dead)
 		{
 			// Mort permanente&#160;: le corps est livré au ragdoll, on délègue à Character
@@ -266,6 +305,7 @@ public partial class Player : Character
 			_characterState != CharacterState.Recovering &&
 			Velocity.Length() > SpeedRagdollThreshold)
 		{
+			//GD.Print($"[speed-ragdoll] V={Velocity.Length():F2}  Y={GlobalPosition.Y:F2}");
 			TransitionTo(CharacterState.Ragdoll);
 		}
 
@@ -287,6 +327,8 @@ public partial class Player : Character
 			&& (_characterState == CharacterState.Idle || _characterState == CharacterState.Moving))
 		{
 			velocity.Y = JumpVelocity;
+			_stats.PeerId = PeerId;
+			_stats.JumpCount++;
 			TransitionTo(CharacterState.Airborne);
 		}
 		if (Input.IsActionJustPressed("run"))

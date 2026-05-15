@@ -24,7 +24,10 @@ public partial class Login : Control
 	{
 		if (OS.HasFeature("dedicated_server") || DisplayServer.GetName() == "headless")
 		{
-			GetTree().ChangeSceneToFile("res://Core/Logic/main_controller.tscn");
+			// Defer&#160;: changer de scène depuis _Ready essaie un remove_child sur un
+			// parent encore en train d'ajouter ses enfants (l'erreur «&#160;Parent node
+			// is busy adding/removing children&#160;»). On laisse la frame se terminer.
+			CallDeferred(MethodName.GoToMainController);
 			return;
 		}
 
@@ -39,6 +42,11 @@ public partial class Login : Control
 
 		_loginButton.Pressed += OnLoginPressed;
 		_signUpButton.Pressed += OnSignUpPressed;
+	}
+
+	private void GoToMainController()
+	{
+		GetTree().ChangeSceneToFile("res://Core/Logic/main_controller.tscn");
 	}
 
 	private async void OnLoginPressed()

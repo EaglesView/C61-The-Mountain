@@ -4,28 +4,12 @@
 [ext_resource type="PackedScene" uid="uid://d1fshm7mq3au7" path="res://Core/World/MapAssets/MainAssets/PlayerSpawner/player_spawner.tscn" id="2_ftctrl"]
 [ext_resource type="PackedScene" uid="uid://bq1y3wnjqd7us" path="res://Core/World/MapAssets/MainAssets/FallingTile/falling_tile.tscn" id="2_pawgt"]
 [ext_resource type="Script" uid="uid://cx7qx3pava0qs" path="res://Core/World/Maps/TileGrid.cs" id="3_tgrid"]
+[ext_resource type="PackedScene" uid="uid://bvmigfks33r4g" path="res://Core/World/MapAssets/world_environment_base.tscn" id="5_jg2i4"]
 [ext_resource type="PackedScene" uid="uid://blxnhy8a0mxon" path="res://Core/World/Terrain/endless_water.tscn" id="5_nmjdn"]
 [ext_resource type="Shader" uid="uid://c3d638behmwd8" path="res://Core/Shaders/water.gdshader" id="6_jsehy"]
 [ext_resource type="Texture2D" uid="uid://cpqx5abj7gsp5" path="res://Assets/Textures/Tiles/water_normal.jpg" id="7_lfqjf"]
 [ext_resource type="PackedScene" uid="uid://i7k20gcwfda6" path="res://Core/World/MapAssets/MainAssets/WindTurbine/eolienne.tscn" id="8_lfqjf"]
-
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_ft"]
-
-[sub_resource type="Sky" id="Sky_ft"]
-sky_material = SubResource("ProceduralSkyMaterial_ft")
-
-[sub_resource type="Environment" id="Environment_ft"]
-background_mode = 2
-sky = SubResource("Sky_ft")
-ambient_light_source = 3
-glow_enabled = true
-glow_intensity = 0.5
-volumetric_fog_enabled = true
-volumetric_fog_emission = Color(0.21322975, 0.5670321, 0.7566145, 1)
-
-[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_ft"]
-
-[sub_resource type="Compositor" id="Compositor_jsehy"]
+[ext_resource type="Texture2D" uid="uid://uhabcecu8axm" path="res://Assets/Textures/Particles/snowparticle.png" id="9_1ddx8"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_d6caa"]
 render_priority = 0
@@ -72,14 +56,51 @@ size = Vector2(6000, 6000)
 subdivide_width = 500
 subdivide_depth = 500
 
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_jg2i4"]
+lifetime_randomness = 0.1
+emission_shape = 3
+emission_box_extents = Vector3(2.17, 1.015, 2.275)
+initial_velocity_max = 0.099999994
+gravity = Vector3(0, -0.2, 0)
+linear_accel_min = -2.2351742e-06
+linear_accel_max = 0.49999776
+radial_accel_min = -1.0800022
+radial_accel_max = 1.0799978
+tangential_accel_min = -4.300002
+tangential_accel_max = 4.3099976
+damping_max = 2.6880002
+turbulence_enabled = true
+turbulence_noise_strength = 4.74
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s4n5g"]
+transparency = 1
+shading_mode = 0
+diffuse_mode = 3
+disable_ambient_light = true
+disable_specular_occlusion = true
+albedo_color = Color(4.5019746, 4.5019746, 4.5019746, 0.3372549)
+albedo_texture = ExtResource("9_1ddx8")
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_lyymk"]
+material = SubResource("StandardMaterial3D_s4n5g")
+size = Vector2(0.1, 0.1)
+
 [node name="FallingTiles" type="Node3D" unique_id=199755767]
 script = ExtResource("1_ftctrl")
 
 [node name="TileGrid" type="Node3D" parent="." unique_id=1680967745]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 39.424973, 0)
 script = ExtResource("3_tgrid")
 TileScene = ExtResource("2_pawgt")
+FloorGap = 3.4
 
-[node name="PlayerSpawner" parent="." unique_id=1202673603 instance=ExtResource("2_ftctrl")]
+[node name="PlayerSpawner" parent="." unique_id=1202673603 node_paths=PackedStringArray("_spawnPoints") instance=ExtResource("2_ftctrl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 39.424973, 0)
+_spawnPoints = [NodePath("Spawn_Point_1"), NodePath("Spawn_Point_2"), NodePath("Spawn_Point_3"), NodePath("Spawn_Point_4"), NodePath("Spawn_Point_5"), NodePath("Spawn_Point_6"), NodePath("Spawn_Point_7"), NodePath("Spawn_Point_8")]
 
 [node name="Spawn_Point_1" type="Marker3D" parent="PlayerSpawner" unique_id=209656844]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.60921514, 0.67041385, -0.61991477)
@@ -105,10 +126,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4387076, 0.67041385, -0.026
 [node name="Spawn_Point_8" type="Marker3D" parent="PlayerSpawner" unique_id=434330064]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4387076, 0.67041385, -0.5277747)
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=99067908]
-environment = SubResource("Environment_ft")
-camera_attributes = SubResource("CameraAttributesPractical_ft")
-compositor = SubResource("Compositor_jsehy")
+[node name="WorldEnvironment" parent="." unique_id=1478789142 instance=ExtResource("5_jg2i4")]
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=812146522]
 transform = Transform3D(0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, -0.75, 0.433013, 0, 10, 0)
@@ -116,7 +134,7 @@ light_energy = 1.5
 shadow_enabled = true
 
 [node name="Water" parent="." unique_id=2121387950 instance=ExtResource("5_nmjdn")]
-transform = Transform3D(0.86942166, 0, 0, 0, 1, 0, 0, 0, 1, 0, -11.679247, 0)
+transform = Transform3D(0.86942166, 0, 0, 0, 1, 0, 0, 0, 1, 0, -25.628687, 0)
 mesh = SubResource("PlaneMesh_1ddx8")
 
 [node name="DecorAssets" type="Node3D" parent="." unique_id=457791370]
@@ -266,3 +284,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -777.5718, -25.839865, -605.8
 
 [node name="WindTurbine49" parent="DecorAssets/WindTurbines" unique_id=942685838 instance=ExtResource("8_lfqjf")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -777.5718, -25.839865, -522.8281)
+
+[node name="GPUParticles3D2" type="GPUParticles3D" parent="DecorAssets" unique_id=320182822]
+transform = Transform3D(11.074426, 0, 0, 0, 35.0612, 0, 0, 0, 16.910715, 0, 27.164997, 0)
+cast_shadow = 0
+ignore_occlusion_culling = true
+amount = 20000
+lifetime = 5.0
+transform_align = 1
+process_material = SubResource("ParticleProcessMaterial_jg2i4")
+draw_pass_1 = SubResource("QuadMesh_lyymk")

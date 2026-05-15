@@ -13,6 +13,7 @@
 /// +==============================================================+
 using Godot;
 using System.Collections.Generic;
+using Core.Auth;
 using Core.Network;
 using Core.Network.Rooms;
 using Core.Shared.StateMachine;
@@ -97,8 +98,15 @@ public sealed partial class WinningController : Node3D, IPhase
         _winningInstance.MapVoteCast += OnMapVoteCast;
         _winningInstance.ContinuePressed += OnContinuePressed;
         _winningInstance.VoteConfirmed += OnVoteConfirmed;
+        _winningInstance.QuitPressed += OnQuitPressed;
         _winningInstance.LaunchNewLobby += OnLaunchNewLobby;
         AddChild(_winningInstance);
+
+        // Pousse le libellé du gagnant principal à la slide 1 et remplit les
+        // panneaux de sous-gagnants de la slide 2 à partir des données stockées
+        // dans LobbyState par GameController.
+        ApplyWinnerLabel();
+        ApplySubWinners();
 
         _fsm = new StateMachine<State>(State.Init, OnSubEnter, OnSubExit);
 
@@ -171,6 +179,7 @@ public sealed partial class WinningController : Node3D, IPhase
             _winningInstance.MapVoteCast -= OnMapVoteCast;
             _winningInstance.ContinuePressed -= OnContinuePressed;
             _winningInstance.VoteConfirmed -= OnVoteConfirmed;
+            _winningInstance.QuitPressed -= OnQuitPressed;
             _winningInstance.LaunchNewLobby -= OnLaunchNewLobby;
             _winningInstance.QueueFree();
             _winningInstance = null;
@@ -213,6 +222,23 @@ public sealed partial class WinningController : Node3D, IPhase
     }
 
     private void OnLaunchNewLobby() { /* legacy, conservé pour rétro-compat */ }
+
+    /// <summary>
+    /// Bouton QUIT de la slide 3&#160;: l'utilisateur quitte volontairement le
+    /// post-game. On coupe la session réseau (si active) et on rebascule la
+    /// scène vers le main menu plutôt que de laisser la FSM principale
+	/// reboucler vers Lobby. <see cref="_done"/> est levé pour que la phase
+    /// se termine proprement côté MainController au cas où le scene change
+    /// ne se produirait pas immédiatement.
+    /// </summary>
+    private void OnQuitPressed()
+    {
+        NetworkManager.Instance?.Disconnect();
+        LobbyState.Clear();
+        Input.MouseMode = Input.MouseModeEnum.Visible;
+        _done = true;
+		GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
+    }
 
     // ── Logique de vote (serveur ou offline) ─────────────────────────────────
 
@@ -434,4 +460,74 @@ public sealed partial class WinningController : Node3D, IPhase
     private void OnSubExit(State _) { }
 
     public override void _Ready() { }
+
+    /// <summary>
+	/// Lit les données de gagnant persistées par <see cref="GameController"/> dans
+	/// <see cref="LobbyState"/> et les pousse au titre de la slide 1 via
+	/// <see cref="WinningScene"/>. Sans effet si aucun gagnant n'est enregistré (ex.&#160;:
+    /// première partie, partie avortée).
+    /// </summary>
+    private void ApplyWinnerLabel()
+    {
+        if (_winningInstance is null) return;
+        int peerId = LobbyState.LastWinnerPeerId;
+        if (peerId == 0) return;
+        string username = ResolveUsername(peerId);
+        string label = string.IsNullOrEmpty(LobbyState.LastWinnerConditionLabel)
+			? $"{username} Won"
+			: $"{username} — {LobbyState.LastWinnerConditionLabel}";
+		// Le _Ready des slides a tourné synchroniquement à l'AddChild du Winning
+		// instance, donc SetWinnerLabel peut être appelé directement.
+		var slide1 = _winningInstance.GetNodeOrNull<WinningSlide1>("Winning_UI/SCR_01_WHOWINS");
+        slide1?.SetWinnerLabel(label);
+    }
+
+    /// <summary>
+	/// Pousse les sous-gagnants persistés par <see cref="GameController"/> à la
+    /// slide 2 sous forme d'entrées (titre, username, détail). Les panneaux sans
+    /// sous-gagnant correspondant seront masqués par
+	/// <see cref="WinningSlide2.Populate"/>.
+    /// </summary>
+    private void ApplySubWinners()
+    {
+        if (_winningInstance is null) return;
+		var slide2 = _winningInstance.GetNodeOrNull<WinningSlide2>("Winning_UI/SCR_02_SUBWINNERS");
+        if (slide2 is null) return;
+        var subs = LobbyState.LastSubWinners;
+        var entries = new List<WinningSlide2.SubEntry>(subs?.Count ?? 0);
+        if (subs is not null)
+        {
+            for (int i = 0; i < subs.Count; i++)
+            {
+                var sw = subs[i];
+                entries.Add(new WinningSlide2.SubEntry
+                {
+					Title = sw.Label ?? "",
+                    Username = ResolveUsername(sw.PeerId),
+					Detail = "",
+                });
+            }
+        }
+        slide2.Populate(entries);
+    }
+
+    /// <summary>
+	/// Résout un nom d'usager affichable pour <paramref name="InPeerId"/>. Pour
+	/// le joueur local (peer == <see cref="NetworkManager.LocalPeerId"/> ou peer
+    /// == 1 en offline) on utilise le username Firebase courant. Sans mapping
+    /// peer→userId broadcasté pour les autres joueurs, on retombe sur
+    /// «&#160;Player N&#160;» jusqu'à ce que ce mapping soit ajouté au protocole.
+    /// </summary>
+    private static string ResolveUsername(int InPeerId)
+    {
+        int localPeer = NetworkManager.Instance?.LocalPeerId ?? 1;
+        bool isLocal = InPeerId == localPeer
+            || (InPeerId == 1 && (NetworkManager.Instance is null || !NetworkManager.Instance.IsRunning));
+        if (isLocal)
+        {
+            var u = AuthServiceProvider.Instance.CurrentUser?.Username;
+            if (!string.IsNullOrEmpty(u)) return u;
+        }
+		return $"Player {InPeerId}";
+    }
 }

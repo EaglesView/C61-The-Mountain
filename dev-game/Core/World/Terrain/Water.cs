@@ -24,6 +24,7 @@ public partial class Water : MeshInstance3D
 	private void _OnBodyEntered(Node InBody)
 	{
 		Character? character = _FindCharacter(InBody);
+		GD.Print($"[Water] _OnBodyEntered body={InBody?.Name} character={(character is null ? "null" : character.PeerId.ToString())} authority={(character?.IsMultiplayerAuthority() ?? false)} myPath={GetPath()}");
 		if (character is null) return;
 		// Seul l'authority déclenche la mort. Sur les autres pairs (serveur dédié
 		// inclus), la réplique est pilotée par les snapshots&#160;: c'est l'authority

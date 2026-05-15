@@ -42,6 +42,10 @@ public partial class WinningScene : Node3D
 	private const float ViewportWidth = 1920f;
 	private const float ViewportHeight = 1080f;
 
+	private static readonly Vector2 SlideIn = Vector2.Zero;
+	private static readonly Vector2 SlideOutUp = new(0f, -ViewportHeight);
+	private static readonly Vector2 SlideOutRight = new(ViewportWidth, 0f);
+
 	/// <summary>Identifiant de la map sélectionnée localement sur la slide 3.</summary>
 	public string SelectedMapId => _slide3?.SelectedMapId ?? "";
 
@@ -51,7 +55,7 @@ public partial class WinningScene : Node3D
 	/// </summary>
 	public void TweenToSlide1()
 	{
-		TweenSlideOffsets(_slide1, ref _slide1Tween, 0f, 0f, 0f, 0f);
+		TweenSlide(_slide1, ref _slide1Tween, SlideIn);
 	}
 
 	/// <summary>
@@ -61,8 +65,8 @@ public partial class WinningScene : Node3D
 	/// </summary>
 	public void TweenToSlide2()
 	{
-		TweenSlideOffsets(_slide1, ref _slide1Tween, 0f, -ViewportHeight, 0f, -ViewportHeight);
-		TweenSlideOffsets(_slide2, ref _slide2Tween, 0f, 0f, 0f, 0f);
+		TweenSlide(_slide1, ref _slide1Tween, SlideOutUp);
+		TweenSlide(_slide2, ref _slide2Tween, SlideIn);
 	}
 
 	/// <summary>
@@ -71,8 +75,8 @@ public partial class WinningScene : Node3D
 	/// </summary>
 	public void TweenToSlide3()
 	{
-		TweenSlideOffsets(_slide2, ref _slide2Tween, 0f, -ViewportHeight, 0f, -ViewportHeight);
-		TweenSlideOffsets(_slide3, ref _slide3Tween, 0f, 0f, 0f, 0f);
+		TweenSlide(_slide2, ref _slide2Tween, SlideOutUp);
+		TweenSlide(_slide3, ref _slide3Tween, SlideIn);
 		_slide3?.Populate();
 	}
 
@@ -122,14 +126,20 @@ public partial class WinningScene : Node3D
 		EmitSignal(SignalName.LaunchNewLobby);
 	}
 
-	private void TweenSlideOffsets(Control InSlide, ref Tween InOutTween, float InOffsetLeft, float InOffsetTop, float InOffsetRight, float InOffsetBottom)
+	/// <summary>
+	/// Anime le déplacement d'une slide en glissant son coin haut-gauche
+	/// (<c>position</c>) vers <paramref name="InTarget"/>. On passe par
+	/// <c>position</c> plutôt que par les 4 offsets parce que les slides sont
+	/// des MarginContainer (Container), et leur re-sort interne peut écraser
+	/// les offsets mis à jour individuellement&#160;: <c>position</c> est un point
+	/// d'entrée plus haut niveau qui met à jour offsets+size de façon
+	/// atomique pour Godot.
+	/// </summary>
+	private void TweenSlide(Control InSlide, ref Tween InOutTween, Vector2 InTarget)
 	{
 		if (InSlide is null) return;
 		InOutTween?.Kill();
-		InOutTween = CreateTween().SetParallel(true).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.InOut);
-		InOutTween.TweenProperty(InSlide, "offset_left", InOffsetLeft, _slideTweenDuration);
-		InOutTween.TweenProperty(InSlide, "offset_top", InOffsetTop, _slideTweenDuration);
-		InOutTween.TweenProperty(InSlide, "offset_right", InOffsetRight, _slideTweenDuration);
-		InOutTween.TweenProperty(InSlide, "offset_bottom", InOffsetBottom, _slideTweenDuration);
+		InOutTween = CreateTween().SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.InOut);
+		InOutTween.TweenProperty(InSlide, "position", InTarget, _slideTweenDuration);
 	}
 }

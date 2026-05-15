@@ -143,6 +143,7 @@ data = PackedVector3Array(0.9036656, 3.4044044, -13.880376, 0.76429147, 3.869754
 
 [node name="ouioui" type="Node3D" unique_id=1412030690]
 script = ExtResource("1_dgjk5")
+VariabiliteVitesse = 0.96
 
 [node name="baton" type="MeshInstance3D" parent="." unique_id=286445505]
 transform = Transform3D(3.0105593, 0, 0, 0, 0.9999712, -0.022854485, 0, 0.0075914413, 3.0104725, 0, 0.2312339, -0.28971767)
