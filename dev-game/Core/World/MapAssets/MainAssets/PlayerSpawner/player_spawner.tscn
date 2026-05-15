@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://d1fshm7mq3au7"]
+
+[ext_resource type="Script" uid="uid://c07lylcrncmf6" path="res://Core/World/MapAssets/MainAssets/PlayerSpawner/PlayerSpawner.cs" id="1_l083f"]
+
+[node name="PlayerSpawner" type="Node3D" unique_id=1973612002]
+script = ExtResource("1_l083f")

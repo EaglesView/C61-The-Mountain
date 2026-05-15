@@ -16,6 +16,8 @@ public sealed partial class FallingTilesController : Node3D, IPhase, IGameMode
     public string DisplayName => "Falling Tiles";
     public PackedScene Level => CurrentLevel!;
     public bool IsDone => _fsm is not null && _fsm.Is(Phase.Done);
+    // Mode piloté par condition de victoire&#160;: pas de chrono à afficher.
+    public float RemainingSeconds => 0f;
 
     public override void _Ready()
     {

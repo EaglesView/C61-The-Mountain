@@ -1,0 +1,26 @@
+[gd_scene format=3 uid="uid://f2ll8e8rrv5q"]
+
+[ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="1_2n3dy"]
+
+[node name="Wasted" type="Control" unique_id=1657372886]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_2n3dy")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=549450442]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="MarginContainer" unique_id=639556941]
+layout_mode = 2
+theme_override_font_sizes/font_size = 128
+text = "WASTED"
+horizontal_alignment = 1

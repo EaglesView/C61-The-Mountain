@@ -135,9 +135,70 @@ public partial class Player : Character
 		speed = WalkSpeed;
 	}
 
+	/// <summary>
+	/// Demande la mort du joueur avec routing réseau. Application&#160;:
+	/// <list type="bullet">
+	/// <item>Offline&#160;: applique <see cref="Character.Die"/> localement.</item>
+	/// <item>Client (authority de ce Player)&#160;: applique localement (prédictif) puis notifie
+	///   le serveur via <see cref="ServerKillMe"/>.</item>
+	/// <item>Serveur&#160;: applique localement puis broadcast <see cref="NetApplyDeath"/> à tous
+	///   les clients (utile pour les morts déclenchées par le mode de jeu&#160;: noyade, écrasement…).</item>
+	/// </list>
+	/// Toute autre tentative (client non-authority qui essaie de tuer un autre joueur)
+	/// est ignorée silencieusement.
+	/// </summary>
+	/// <param name="InReason">Cause de la mort, transmise au futur système de stats.</param>
+	public void RequestDeath(DeathReason InReason)
+	{
+		var net = NetworkManager.Instance;
+		if (net is null || !net.IsRunning)
+		{
+			Die(InReason);
+			return;
+		}
+		if (Multiplayer.IsServer())
+		{
+			Die(InReason);
+			Rpc(MethodName.NetApplyDeath, (byte)InReason);
+			return;
+		}
+		if (IsMultiplayerAuthority())
+		{
+			Die(InReason);
+			RpcId(1, MethodName.ServerKillMe, (byte)InReason);
+		}
+	}
+
+	/// <summary>
+	/// RPC client → serveur&#160;: «&#160;je suis mort, broadcast aux autres&#160;». Le serveur vérifie
+	/// que l'émetteur possède bien ce Player (sender == <see cref="Character.PeerId"/>) pour
+	/// éviter qu'un peer ne tue le personnage d'un autre.
+	/// </summary>
+	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void ServerKillMe(byte InReason)
+	{
+		if (!Multiplayer.IsServer()) return;
+		int senderId = Multiplayer.GetRemoteSenderId();
+		if (senderId != PeerId) return;
+		Die((DeathReason)InReason);
+		Rpc(MethodName.NetApplyDeath, InReason);
+	}
+
+	/// <summary>
+	/// RPC serveur → clients&#160;: applique la mort sur les répliques distantes. Filtre
+	/// pour ne faire confiance qu'au peer ID 1 (serveur).
+	/// </summary>
+	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void NetApplyDeath(byte InReason)
+	{
+		if (Multiplayer.GetRemoteSenderId() != 1) return;
+		Die((DeathReason)InReason);
+	}
+
 	public override void _Input(InputEvent @event)
 	{
 		if (!IsMultiplayerAuthority()) return;
+		if (_characterState == CharacterState.Dead) return;
 
 		if (@event is InputEventMouseMotion mouseMotion)
 		{
@@ -187,6 +248,14 @@ public partial class Player : Character
 
 		velocity = Velocity;
 		if (_cameraMan == null) return;
+
+		if (_characterState == CharacterState.Dead)
+		{
+			// Mort permanente&#160;: le corps est livré au ragdoll, on délègue à Character
+			// (qui short-circuit le switch et laisse PhysicsSkeleton piloter la simulation).
+			base._PhysicsProcess(delta);
+			return;
+		}
 
 		if (_characterState == CharacterState.Ragdoll)
 		{

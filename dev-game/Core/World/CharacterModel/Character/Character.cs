@@ -75,16 +75,46 @@ public partial class Character : CharacterBody3D
 
     public int PeerId { get; set; } = 0;
 
-    public virtual PlayerNetState SnapshotState()
-    {
-        byte flags = 0;
-        if (PhysicsSkelton.Aiming) flags |= 0x01;
-        if (PhysicsSkelton.ArmsUp) flags |= 0x02;
+    // ── Death ────────────────────────────────────────────────────────────────
 
-        if (_characterState == CharacterState.Ragdoll)
-        {
-            // Position and Velocity are repurposed: spine physics world position
-            // and velocity so remote players can anchor their local simulation.
+    /// <summary>
+    /// Dernière raison de mort enregistrée. Réinitialisée par <see cref="Die"/> à chaque
+    /// déclenchement. Utilisée par les consommateurs de stats pour catégoriser la mort.
+    /// </summary>
+    public DeathReason LastDeathReason { get; private set; } = DeathReason.Unknown;
+
+    /// <summary>
+    /// Émis lorsque ce personnage entre en état <see cref="CharacterState.Dead"/>.
+	/// Fire-once par mort&#160;: l'événement n'est pas réémis si <see cref="Die"/> est rappelé
+	/// alors qu'on est déjà mort (idempotent). Signature&#160;: <c>(peerId, reason)</c>.
+	/// Hook prévu pour le futur service de stats.
+	/// </summary>
+	public event System.Action<int, DeathReason> Died;
+
+	/// <summary>
+	/// Bascule le personnage en mort. Application locale uniquement&#160;: la propagation réseau
+	/// (RPC) est faite par <see cref="Player.RequestDeath"/> côté authority/serveur.
+	/// Idempotent&#160;: ne fait rien si déjà mort.
+	/// </summary>
+	/// <param name="InReason">Cause de la mort, transmise au futur système de stats.</param>
+	public virtual void Die(DeathReason InReason)
+	{
+		if (_characterState == CharacterState.Dead) return;
+		LastDeathReason = InReason;
+		TransitionTo(CharacterState.Dead);
+		Died?.Invoke(PeerId, InReason);
+	}
+
+	public virtual PlayerNetState SnapshotState()
+	{
+		byte flags = 0;
+		if (PhysicsSkelton.Aiming) flags |= 0x01;
+		if (PhysicsSkelton.ArmsUp) flags |= 0x02;
+
+		if (_characterState == CharacterState.Ragdoll || _characterState == CharacterState.Dead)
+		{
+			// Position and Velocity are repurposed: spine physics world position
+			// and velocity so remote players can anchor their local simulation.
 			// BodyYaw and HeadPitch carry the head physical bone's world rotation
 			// so the remote correction steers head orientation correctly.
 			var (headPitch, headYaw) = PhysicsSkelton.GetHeadPhysicsWorldAngles();
@@ -162,6 +192,17 @@ public partial class Character : CharacterBody3D
 				velocity = Vector3.Zero;
 				Velocity = Vector3.Zero;
 				break;
+			case CharacterState.Dead:
+				// La mort déclenche un ragdoll permanent pour le round&#160;: corps qui s'effondre,
+				// capsule désactivée pour ne pas interférer avec la simulation physique.
+				if (_capsule != null) _capsule.Disabled = true;
+				PhysicsSkelton.IsRagdoll = true;
+				PhysicsSkelton.RagdollTriggered = false;
+				velocity = Vector3.Zero;
+				Velocity = Vector3.Zero;
+				moveVec = Vector3.Zero;
+				aimVec = Vector3.Zero;
+				break;
 		}
 	}
 
@@ -170,6 +211,12 @@ public partial class Character : CharacterBody3D
 		switch (state)
 		{
 			case CharacterState.Ragdoll:
+				PhysicsSkelton.IsRagdoll = false;
+				if (_capsule != null) _capsule.Disabled = false;
+				break;
+			case CharacterState.Dead:
+				// La sortie de Dead n'est pas utilisée pendant un round (mort permanente),
+				// mais on rétablit l'état physique au cas où un futur Revive() l'invoque.
 				PhysicsSkelton.IsRagdoll = false;
 				if (_capsule != null) _capsule.Disabled = false;
 				break;
@@ -208,6 +255,10 @@ public partial class Character : CharacterBody3D
 		switch (_characterState)
 		{
 			case CharacterState.Ragdoll:
+				return;
+
+			case CharacterState.Dead:
+				// Corps livré au ragdoll&#160;: pas de locomotion, pas de transitions FSM.
 				return;
 
 			case CharacterState.Recovering:
@@ -294,7 +345,7 @@ public partial class Character : CharacterBody3D
 		return _characterState switch
 		{
 			CharacterState.Moving => MovementState.Walking,
-			CharacterState.Ragdoll or CharacterState.Recovering => MovementState.Ragdolling,
+			CharacterState.Ragdoll or CharacterState.Recovering or CharacterState.Dead => MovementState.Ragdolling,
 			_ => MovementState.Idle
 		};
 	}
