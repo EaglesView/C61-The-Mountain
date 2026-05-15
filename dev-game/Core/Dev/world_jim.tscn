@@ -1,10 +1,9 @@
 [gd_scene format=3 uid="uid://bh01ma0t3rrth"]
 
 [ext_resource type="Script" uid="uid://bivbri8k5yp3h" path="res://Core/World/World.cs" id="1_e3c1y"]
-[ext_resource type="PackedScene" uid="uid://pyyf2q46j574" path="res://Core/World/CharacterModel/Player/Player.tscn" id="3_e3c1y"]
 [ext_resource type="PackedScene" uid="uid://bqm28efgwql4h" path="res://Core/UI/Debug/debug.tscn" id="4_uskl1"]
 [ext_resource type="PackedScene" uid="uid://c6b388a8o2od" path="res://Core/UI/GameMenu/game_menu.tscn" id="5_cctn4"]
-[ext_resource type="PackedScene" uid="uid://d1fshm7mq3au7" path="res://Core/World/MapAssets/MainAssets/player_spawner.tscn" id="6_y36ud"]
+[ext_resource type="PackedScene" uid="uid://d1fshm7mq3au7" path="res://Core/World/MapAssets/MainAssets/PlayerSpawner/player_spawner.tscn" id="6_y36ud"]
 [ext_resource type="PackedScene" uid="uid://cxvenxb1m26wm" path="res://Core/Dev/dev_map.tscn" id="7_jgda3"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_qaqi3"]
@@ -30,7 +29,6 @@ dof_blur_near_enabled = true
 
 [node name="World" type="Node3D" unique_id=500049071]
 script = ExtResource("1_e3c1y")
-_playerScene = ExtResource("3_e3c1y")
 
 [node name="Players" type="Node3D" parent="." unique_id=401850001]
 
