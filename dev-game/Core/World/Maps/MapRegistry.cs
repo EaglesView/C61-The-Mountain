@@ -1,29 +1,29 @@
 public static class MapRegistry
 {
-    public const string DefaultMapId = "dev";
+	public const string DefaultMapId = "dev";
 
-    /// <summary>
-    /// Texture placeholder utilisée pour les maps qui n'ont pas encore d'aperçu
-    /// dédié : réutilise la base color du penguin déjà présente dans les
-    /// assets. Remplacer par des renders propres au moment voulu.
-    /// </summary>
-    public const string PlaceholderImagePath = "res://Assets/Models/penguin01_private_baseColor.png";
+	/// <summary>
+	/// Texture placeholder utilisée pour les maps qui n'ont pas encore d'aperçu
+	/// dédié : réutilise la base color du penguin déjà présente dans les
+	/// assets. Remplacer par des renders propres au moment voulu.
+	/// </summary>
+	public const string PlaceholderImagePath = "res://Assets/Models/penguin01_private_baseColor.png";
 
-    public sealed class MapDefinition
-    {
-        public string Id { get; init; } = "";
-        public string DisplayName { get; init; } = "";
-        /// <summary>
-        /// Chemin vers la scène du niveau. Le root de cette scène doit porter un
-        /// script qui implémente <c>IPhase</c> + <c>IGameMode</c> — c'est lui qui
+	public sealed class MapDefinition
+	{
+		public string Id { get; init; } = "";
+		public string DisplayName { get; init; } = "";
+		/// <summary>
+		/// Chemin vers la scène du niveau. Le root de cette scène doit porter un
+		/// script qui implémente <c>IPhase</c> + <c>IGameMode</c> — c'est lui qui
         /// sera consommé par le <c>GameController</c> comme mode de jeu actif.
         /// </summary>
         public string ScenePath { get; init; } = "";
 
         /// <summary>
-        /// Chemin vers une <c>Texture2D</c> d'aperçu de la map, utilisée par
-        /// l'écran de vote (<c>MapGridItem</c>). Par défaut, le placeholder
-        /// partagé : laisser tel quel jusqu'à ce qu'un asset propre soit
+		/// Chemin vers une <c>Texture2D</c> d'aperçu de la map, utilisée par
+		/// l'écran de vote (<c>MapGridItem</c>). Par défaut, le placeholder
+		/// partagé : laisser tel quel jusqu'à ce qu'un asset propre soit
         /// disponible.
         /// </summary>
         public string ImagePath { get; init; } = PlaceholderImagePath;
