@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://bj2yb0mj346fv"]
+
+[ext_resource type="Script" uid="uid://bumc100wfkdpv" path="res://Core/World/MapAssets/MainAssets/PressurePlate/PressurePlate.cs" id="1_fg0mt"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_5fops"]
+size = Vector2(1, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fg0mt"]
+albedo_color = Color(1, 0, 0, 1)
+emission = Color(1, 0, 0, 1)
+emission_energy_multiplier = 39.95
+
+[sub_resource type="BoxMesh" id="BoxMesh_21if1"]
+material = SubResource("StandardMaterial3D_fg0mt")
+size = Vector3(0.8, 0.1, 0.8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_5fops"]
+size = Vector3(0.8, 0.1, 0.8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_area"]
+size = Vector3(1, 0.2, 1)
+
+[node name="PressurePlate" type="Node3D" unique_id=1267897136 node_paths=PackedStringArray("Button", "DetectionArea", "Light")]
+script = ExtResource("1_fg0mt")
+Button = NodePath("Button")
+DetectionArea = NodePath("DetectionArea")
+Light = NodePath("Button/OmniLight3D")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=688322733]
+mesh = SubResource("PlaneMesh_5fops")
+
+[node name="Button" type="AnimatableBody3D" parent="." unique_id=1997944615]
+collision_layer = 2
+collision_mask = 3
+sync_to_physics = false
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Button" unique_id=1500392338]
+mesh = SubResource("BoxMesh_21if1")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Button" unique_id=2074752447]
+shape = SubResource("BoxShape3D_5fops")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="Button" unique_id=-1292967295]
+visible = false
+light_color = Color(1, 0.2, 0.2, 1)
+light_energy = 3.0
+omni_range = 4.0
+
+[node name="DetectionArea" type="Area3D" parent="." unique_id=-1293967295]
+collision_layer = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DetectionArea" unique_id=-1293967294]
+shape = SubResource("BoxShape3D_area")

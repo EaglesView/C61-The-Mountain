@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://7f5ysctvudb8"]
+
+[ext_resource type="PackedScene" uid="uid://r7te2242k3ej" path="res://Core/World/MapAssets/MainAssets/VentBlowerCharacter/ModelFan.tscn" id="1_ptj31"]
+[ext_resource type="Script" uid="uid://c0qvjlua6u7hc" path="res://Core/World/MapAssets/MainAssets/VentBlowerCharacter/Fan.cs" id="1_ybmrj"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_uvf2o"]
+size = Vector3(1.3723145, 2.7026978, 1.3821716)
+
+[node name="fan" type="Node3D" unique_id=1376072467]
+script = ExtResource("1_ybmrj")
+ModelFanPath = NodePath("modelfan")
+AreaPath = NodePath("Area3D")
+MarkerPath = NodePath("Marker3D")
+
+[node name="modelfan" parent="." unique_id=1730918266 instance=ExtResource("1_ptj31")]
+
+[node name="Area3D" type="Area3D" parent="." unique_id=578547510]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3015776, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D" unique_id=1357932092]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0030517578, 0.21609497, 0.001083374)
+shape = SubResource("BoxShape3D_uvf2o")
+
+[node name="Marker3D" type="Marker3D" parent="." unique_id=1392774409]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 1.1704279, 0)
