@@ -57,14 +57,24 @@ curve = SubResource("Curve_w6bd1")
 lifetime_randomness = 0.11
 emission_shape = 3
 emission_box_extents = Vector3(1, 1, 7.5)
+direction = Vector3(1, 0.16, 0)
+spread = 16.941
 initial_velocity_min = 5.0
 initial_velocity_max = 20.0
 angular_velocity_min = 46.44998
-angular_velocity_max = 294.18997
+angular_velocity_max = 719.99994
+orbit_velocity_min = 9.49949e-08
+orbit_velocity_max = 0.4730001
+radial_velocity_min = -2.2351742e-05
+radial_velocity_max = -2.2351742e-05
 gravity = Vector3(0, 0, 0)
 linear_accel_min = -2.2351742e-06
 linear_accel_max = 39.78
 linear_accel_curve = SubResource("CurveTexture_jydlo")
+radial_accel_min = -20.430002
+radial_accel_max = -20.430002
+tangential_accel_min = -2.2351742e-06
+tangential_accel_max = -2.2351742e-06
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3ujl7"]
 transparency = 1
@@ -76,7 +86,7 @@ particles_anim_loop = false
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_r6ymk"]
 material = SubResource("StandardMaterial3D_3ujl7")
-size = Vector2(0.5, 0.5)
+size = Vector2(0.1, 0.1)
 orientation = 2
 
 [node name="RotatingThing" type="AnimatableBody3D" unique_id=903562714]
@@ -128,13 +138,17 @@ transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0
 shape = SubResource("CylinderShape3D_w6bd1")
 
 [node name="GPUParticles3D" type="GPUParticles3D" parent="." unique_id=456866591]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -7.6)
-amount = 43
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.5, 0, 0, -11.200001)
+amount = 512
+lifetime = 0.46
+speed_scale = 0.5
 process_material = SubResource("ParticleProcessMaterial_cjfw0")
 draw_pass_1 = SubResource("PlaneMesh_r6ymk")
 
-[node name="GPUParticles3D2" type="GPUParticles3D" parent="." unique_id=1684466029]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 7.6)
-amount = 43
+[node name="GPUParticles3D2" type="GPUParticles3D" parent="." unique_id=1270675743]
+transform = Transform3D(-1, 0, -4.371139e-08, 0, 1, 0, 8.742278e-08, 0, -0.5, 0, 0, 11.2)
+amount = 512
+lifetime = 0.46
+speed_scale = 0.5
 process_material = SubResource("ParticleProcessMaterial_cjfw0")
 draw_pass_1 = SubResource("PlaneMesh_r6ymk")
