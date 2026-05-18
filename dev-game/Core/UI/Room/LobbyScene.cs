@@ -25,11 +25,21 @@ public partial class LobbyScene : Control
     private bool _leaving = false;
     private bool _wasHost = false;
     private int _mapIndex = 0;
+    private ulong _instantiatedAtMsec;
     private const string Root = "PanelContainer/MarginContainer/VBoxContainer";
     private const float PollInterval = 4.0f;
+    /// <summary>
+    /// Période de grâce après instanciation pendant laquelle on ignore un
+    /// statut "started" lu depuis Firestore. Évite qu'un non-hôte re-entrant
+    /// dans le lobby (cycle Winning → Lobby) déclenche immédiatement
+    /// GameStartRequested sur un snapshot encore stale, avant que l'hôte
+    /// ait eu le temps de remettre le statut à "waiting".
+    /// </summary>
+    private const ulong StartedTriggerGraceMsec = 4_000;
 
     public override void _Ready()
     {
+        _instantiatedAtMsec = Time.GetTicksMsec();
         _codeValue = GetNode<Label>($"{Root}/CodeBox/CodeValue");
         _serverValue = GetNode<Label>($"{Root}/ServerBox/ServerValue");
         _statusValue = GetNode<Label>($"{Root}/StatusBox/StatusValue");
@@ -102,6 +112,13 @@ public partial class LobbyScene : Control
 
             if (fresh.Status == "started" && !_leaving)
             {
+                // Période de grâce : un re-entry depuis Winning peut voir
+                // Status="started" en stale tant que l'hôte n'a pas reset
+                // (async). Sans ce check, le polling de chaque non-hôte
+                // redémarre la partie immédiatement.
+                ulong sinceReady = Time.GetTicksMsec() - _instantiatedAtMsec;
+                if (sinceReady < StartedTriggerGraceMsec) return;
+
                 _leaving = true;
                 _wasHost = LobbyState.IsHost;
                 EmitSignal(SignalName.GameStartRequested);
