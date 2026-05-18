@@ -110,6 +110,20 @@ public partial class NetworkManager : Node
         _localPlayer = null;
     }
 
+    /// <summary>
+    /// Vide les caches per-peer (positions connues, spawns enregistrés, cooldowns
+    /// de correction) sans toucher au transport. À appeler entre deux parties
+    /// quand la connexion ENet est conservée mais qu'on veut éviter qu'un
+    /// <c>_lastKnownState</c> hérité de la manche précédente déclenche une
+    /// correction anti-téléport au premier snapshot de la manche suivante.
+    /// </summary>
+    public void ResetSessionState()
+    {
+        _lastKnownState.Clear();
+        _peerSpawn.Clear();
+        _lastCorrectionMsec.Clear();
+    }
+
     public override void _Ready()
     {
         Instance = this;
