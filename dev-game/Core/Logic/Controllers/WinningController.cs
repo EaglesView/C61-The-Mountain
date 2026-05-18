@@ -57,6 +57,18 @@ public sealed partial class WinningController : Node3D, IPhase
 	private bool _continuePressed;
 	private bool _voteConfirmed;
 	private bool _done;
+	private bool _quittingToMenu;
+
+	/// <summary>
+	/// Levé par <see cref="OnQuitPressed"/> pour signaler à <c>MainController</c>
+	/// qu'on veut court-circuiter la FSM principale et rebasculer vers le main menu.
+	/// Le <c>MainController</c> détecte ce flag avant la prochaine évaluation FSM,
+	/// fait le ménage (Disconnect, Clear, mouse mode) puis appelle <c>ChangeSceneToFile</c>.
+	/// Évite la race «&#160;_done=true + ChangeSceneToFile la même frame&#160;» qui
+	/// laissait <see cref="LobbyController.Enter"/> s'exécuter sur une scène en
+	/// train d'être détruite.
+	/// </summary>
+	public bool QuittingToMenu => _quittingToMenu;
 
 	// État de vote côté serveur (et miroir client après chaque broadcast).
 	// Clé&#160;: peerId. Valeur&#160;: identifiant de map sélectionné.
@@ -74,49 +86,50 @@ public sealed partial class WinningController : Node3D, IPhase
 		_done = false;
 		_continuePressed = false;
 		_voteConfirmed = false;
+		_quittingToMenu = false;
 		_votes.Clear();
 		_majorityMapId = "";
 		_serverElapsed = 0f;
 
 		// Serveur dédié&#160;: pas d'UI mais on reste en vie pour traiter les
-        // RPCs de vote et broadcaster les tallies pendant la fenêtre Winning.
-        if (IsNetworkedServer())
-        {
-            Multiplayer.PeerDisconnected += OnPeerDisconnectedServer;
-            return;
-        }
+		// RPCs de vote et broadcaster les tallies pendant la fenêtre Winning.
+		if (IsNetworkedServer())
+		{
+			Multiplayer.PeerDisconnected += OnPeerDisconnectedServer;
+			return;
+		}
 
-        if (_winningSceneAsset is null)
-        {
+		if (_winningSceneAsset is null)
+		{
 			GD.PrintErr("[WinningController] _winningSceneAsset non assigné dans l'inspecteur.");
-            _fsm = new StateMachine<State>(State.Failure, OnSubEnter, OnSubExit);
-            OnSubEnter(State.Failure);
-            return;
-        }
+			_fsm = new StateMachine<State>(State.Failure, OnSubEnter, OnSubExit);
+			OnSubEnter(State.Failure);
+			return;
+		}
 
-        _winningInstance = _winningSceneAsset.Instantiate<WinningScene>();
-        _winningInstance.MapVoteCast += OnMapVoteCast;
-        _winningInstance.ContinuePressed += OnContinuePressed;
-        _winningInstance.VoteConfirmed += OnVoteConfirmed;
-        _winningInstance.QuitPressed += OnQuitPressed;
-        _winningInstance.LaunchNewLobby += OnLaunchNewLobby;
-        AddChild(_winningInstance);
+		_winningInstance = _winningSceneAsset.Instantiate<WinningScene>();
+		_winningInstance.MapVoteCast += OnMapVoteCast;
+		_winningInstance.ContinuePressed += OnContinuePressed;
+		_winningInstance.VoteConfirmed += OnVoteConfirmed;
+		_winningInstance.QuitPressed += OnQuitPressed;
+		_winningInstance.LaunchNewLobby += OnLaunchNewLobby;
+		AddChild(_winningInstance);
 
-        // Pousse le libellé du gagnant principal à la slide 1 et remplit les
-        // panneaux de sous-gagnants de la slide 2 à partir des données stockées
-        // dans LobbyState par GameController.
-        ApplyWinnerLabel();
-        ApplySubWinners();
+		// Pousse le libellé du gagnant principal à la slide 1 et remplit les
+		// panneaux de sous-gagnants de la slide 2 à partir des données stockées
+		// dans LobbyState par GameController.
+		ApplyWinnerLabel();
+		ApplySubWinners();
 
-        _fsm = new StateMachine<State>(State.Init, OnSubEnter, OnSubExit);
+		_fsm = new StateMachine<State>(State.Init, OnSubEnter, OnSubExit);
 
-        // Init -> Slide1 dès que l'instance est dans l'arbre.
-        _fsm.When(State.Init,
-            new PredicateCondition<State>(() => _winningInstance is not null && _winningInstance.IsInsideTree()),
-            State.Slide1
-        );
+		// Init -> Slide1 dès que l'instance est dans l'arbre.
+		_fsm.When(State.Init,
+			new PredicateCondition<State>(() => _winningInstance is not null && _winningInstance.IsInsideTree()),
+			State.Slide1
+		);
 
-        // Slide1 -> Slide2WaitButton après le délai d'affichage du gagnant.
+		// Slide1 -> Slide2WaitButton après le délai d'affichage du gagnant.
         _fsm.When(State.Slide1,
             new TimeElapsedCondition<State>(_celebrationDuration),
             State.Slide2WaitButton
@@ -128,8 +141,8 @@ public sealed partial class WinningController : Node3D, IPhase
             State.Slide2ButtonShown
         );
 
-        // Slide2ButtonShown -> Slide3 quand l'utilisateur appuie sur Continue
-        // ou après le délai d'auto-avance.
+		// Slide2ButtonShown -> Slide3 quand l'utilisateur appuie sur Continue
+		// ou après le délai d'auto-avance.
         _fsm.When(State.Slide2ButtonShown,
             new PredicateCondition<State>(() => _continuePressed),
             State.Slide3
@@ -159,8 +172,8 @@ public sealed partial class WinningController : Node3D, IPhase
             _fsm.Tick(InDelta);
             return;
         }
-        // Serveur dédié&#160;: aucun FSM UI. Attendre l'enveloppe totale puis
-        // finaliser, sauf si un ServerConfirmVote l'a déjà fait avant.
+		// Serveur dédié&#160;: aucun FSM UI. Attendre l'enveloppe totale puis
+		// finaliser, sauf si un ServerConfirmVote l'a déjà fait avant.
         _serverElapsed += InDelta;
         float totalWindow = _celebrationDuration + _slide2ButtonDelay + _slide2ForceAdvance + _voteTimeout;
         if (_serverElapsed >= totalWindow)
@@ -206,38 +219,36 @@ public sealed partial class WinningController : Node3D, IPhase
 
     private void OnVoteConfirmed(string InMapId)
     {
-        //  seul l'hôte peut confirmer. Le bouton est aussi désactivé
-        // côté UI, ce check est une ceinture de sécurité.
-        if (!LobbyState.IsHost) return;
+		//  seul l'hôte peut confirmer. Le bouton est aussi désactivé
+		// côté UI, ce check est une ceinture de sécurité.
+		if (!LobbyState.IsHost) return;
 
-        if (IsNetworkedClient())
-        {
-            RpcId(1, MethodName.ServerConfirmVote);
-            return;
-        }
-        // Offline : pas de réseau, finalise directement sur la map majoritaire
-        // (ou la sélection locale en repli).
-        string winner = !string.IsNullOrEmpty(_majorityMapId) ? _majorityMapId : InMapId;
-        FinalizeVoteLocal(winner);
-    }
+		if (IsNetworkedClient())
+		{
+			RpcId(1, MethodName.ServerConfirmVote);
+			return;
+		}
+		// Offline : pas de réseau, finalise directement sur la map majoritaire
+		// (ou la sélection locale en repli).
+		string winner = !string.IsNullOrEmpty(_majorityMapId) ? _majorityMapId : InMapId;
+		FinalizeVoteLocal(winner);
+	}
 
-    private void OnLaunchNewLobby() { /* legacy, conservé pour rétro-compat */ }
+	private void OnLaunchNewLobby() { /* legacy, conservé pour rétro-compat */ }
 
-    /// <summary>
-    /// Bouton QUIT de la slide 3&#160;: l'utilisateur quitte volontairement le
-    /// post-game. On coupe la session réseau (si active) et on rebascule la
-    /// scène vers le main menu plutôt que de laisser la FSM principale
-	/// reboucler vers Lobby. <see cref="_done"/> est levé pour que la phase
-    /// se termine proprement côté MainController au cas où le scene change
-    /// ne se produirait pas immédiatement.
+	/// <summary>
+	/// Bouton QUIT de la slide 3&#160;: l'utilisateur quitte volontairement le
+	/// post-game. On lève <see cref="_quittingToMenu"/> et on s'arrête là&#160;:
+	/// le <c>MainController</c> prend le relai (Exit propre + Disconnect +
+	/// Clear + ChangeSceneToFile) au prochain _Process avant d'évaluer la FSM,
+	/// ce qui évite que <see cref="LobbyController.Enter"/> ne s'exécute sur
+	/// une scène en train d'être remplacée. <see cref="_done"/> n'est PAS
+	/// levé&#160;: la transition Winning → Lobby ne doit pas se produire,
+	/// puisqu'on quitte vers le main menu.
     /// </summary>
     private void OnQuitPressed()
     {
-        NetworkManager.Instance?.Disconnect();
-        LobbyState.Clear();
-        Input.MouseMode = Input.MouseModeEnum.Visible;
-        _done = true;
-		GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
+        _quittingToMenu = true;
     }
 
     // ── Logique de vote (serveur ou offline) ─────────────────────────────────
@@ -245,16 +256,16 @@ public sealed partial class WinningController : Node3D, IPhase
     /// <summary>
 	/// Applique un vote dans <see cref="_votes"/>, recalcule la majorité et
     /// pousse la mise à jour: broadcast aux peers en mode serveur, mise à
-    /// jour locale de l'UI en offline. Idempotent par peer: re-voter écrase
-    /// le choix précédent.
-    /// </summary>
-    private void ApplyVoteLocal(int InPeerId, string InMapId)
-    {
-        _votes[InPeerId] = InMapId;
-        RecomputeMajority();
-        // En mode connecté serveur, on propage à tous les peers. En offline
-        // (ou côté client&#160;: ne devrait pas arriver), on met simplement à
-        // jour l'UI locale.
+	/// jour locale de l'UI en offline. Idempotent par peer: re-voter écrase
+	/// le choix précédent.
+	/// </summary>
+	private void ApplyVoteLocal(int InPeerId, string InMapId)
+	{
+		_votes[InPeerId] = InMapId;
+		RecomputeMajority();
+		// En mode connecté serveur, on propage à tous les peers. En offline
+		// (ou côté client&#160;: ne devrait pas arriver), on met simplement à
+		// jour l'UI locale.
         if (IsNetworkedServer())
             BroadcastTally();
         else
@@ -312,8 +323,8 @@ public sealed partial class WinningController : Node3D, IPhase
 
     private int GetTotalVoters()
     {
-        // Offline&#160;: seul le joueur local vote. En mode connecté, on s'aligne
-        // sur le nombre de joueurs présents dans la salle (source d'autorité du
+		// Offline&#160;: seul le joueur local vote. En mode connecté, on s'aligne
+		// sur le nombre de joueurs présents dans la salle (source d'autorité du
         // lobby) plutôt que sur la liste de peers ENet du moment, qui peut
         // fluctuer en cas de reconnexion.
         if (!IsNetworked()) return 1;
@@ -381,20 +392,20 @@ public sealed partial class WinningController : Node3D, IPhase
     /// <summary>
     /// Reçu par les clients (et appelé localement sur le serveur via
 	/// <c>CallLocal=true</c>)&#160;: reconstruit <see cref="_votes"/> et pousse
-    /// les counts à l'UI.
-    /// </summary>
-    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void ClientReceiveTally(int[] InPeerIds, string[] InMapIds, string InMajorityMapId)
-    {
-        _votes.Clear();
-        int n = Mathf.Min(InPeerIds?.Length ?? 0, InMapIds?.Length ?? 0);
-        for (int i = 0; i < n; i++) _votes[InPeerIds[i]] = InMapIds[i];
+	/// les counts à l'UI.
+	/// </summary>
+	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void ClientReceiveTally(int[] InPeerIds, string[] InMapIds, string InMajorityMapId)
+	{
+		_votes.Clear();
+		int n = Mathf.Min(InPeerIds?.Length ?? 0, InMapIds?.Length ?? 0);
+		for (int i = 0; i < n; i++) _votes[InPeerIds[i]] = InMapIds[i];
 		_majorityMapId = InMajorityMapId ?? "";
-        ApplyTallyToUi();
-    }
+		ApplyTallyToUi();
+	}
 
-    /// <summary>
-    /// Reçu par le serveur quand l'hôte clique sur CONFIRM&#160;: verrouille la
+	/// <summary>
+	/// Reçu par le serveur quand l'hôte clique sur CONFIRM&#160;: verrouille la
 	/// map majoritaire courante et broadcast <see cref="ClientFinalizeVote"/>.
     /// </summary>
     [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
@@ -434,15 +445,15 @@ public sealed partial class WinningController : Node3D, IPhase
                 break;
             case State.Slide3:
                 _winningInstance?.TweenToSlide3();
-                // En offline, le joueur unique est de facto l'hôte du vote.
-                // En réseau, on se fie au flag LobbyState renseigné à la
-                // création de la salle.
-                _winningInstance?.SetIsHost(LobbyState.IsHost || !IsNetworked());
-                ApplyTallyToUi();
-                break;
-            case State.NewGame:
-            case State.Failure:
-                // Filet de sécurité côté UI&#160;: si rien n'a été confirmé via le
+				// En offline, le joueur unique est de facto l'hôte du vote.
+				// En réseau, on se fie au flag LobbyState renseigné à la
+				// création de la salle.
+				_winningInstance?.SetIsHost(LobbyState.IsHost || !IsNetworked());
+				ApplyTallyToUi();
+				break;
+			case State.NewGame:
+			case State.Failure:
+				// Filet de sécurité côté UI&#160;: si rien n'a été confirmé via le
                 // flux serveur, applique la majorité courante (ou la sélection
                 // locale en repli) pour ne pas laisser le prochain Lobby sans
                 // map. Le serveur réseau passe par ServerFinalizeIfNeeded.
@@ -465,15 +476,15 @@ public sealed partial class WinningController : Node3D, IPhase
 	/// Lit les données de gagnant persistées par <see cref="GameController"/> dans
 	/// <see cref="LobbyState"/> et les pousse au titre de la slide 1 via
 	/// <see cref="WinningScene"/>. Sans effet si aucun gagnant n'est enregistré (ex.&#160;:
-    /// première partie, partie avortée).
-    /// </summary>
-    private void ApplyWinnerLabel()
-    {
-        if (_winningInstance is null) return;
-        int peerId = LobbyState.LastWinnerPeerId;
-        if (peerId == 0) return;
-        string username = ResolveUsername(peerId);
-        string label = string.IsNullOrEmpty(LobbyState.LastWinnerConditionLabel)
+	/// première partie, partie avortée).
+	/// </summary>
+	private void ApplyWinnerLabel()
+	{
+		if (_winningInstance is null) return;
+		int peerId = LobbyState.LastWinnerPeerId;
+		if (peerId == 0) return;
+		string username = ResolveUsername(peerId);
+		string label = string.IsNullOrEmpty(LobbyState.LastWinnerConditionLabel)
 			? $"{username} Won"
 			: $"{username} — {LobbyState.LastWinnerConditionLabel}";
 		// Le _Ready des slides a tourné synchroniquement à l'AddChild du Winning
@@ -484,50 +495,50 @@ public sealed partial class WinningController : Node3D, IPhase
 
     /// <summary>
 	/// Pousse les sous-gagnants persistés par <see cref="GameController"/> à la
-    /// slide 2 sous forme d'entrées (titre, username, détail). Les panneaux sans
-    /// sous-gagnant correspondant seront masqués par
+	/// slide 2 sous forme d'entrées (titre, username, détail). Les panneaux sans
+	/// sous-gagnant correspondant seront masqués par
 	/// <see cref="WinningSlide2.Populate"/>.
-    /// </summary>
-    private void ApplySubWinners()
-    {
-        if (_winningInstance is null) return;
+	/// </summary>
+	private void ApplySubWinners()
+	{
+		if (_winningInstance is null) return;
 		var slide2 = _winningInstance.GetNodeOrNull<WinningSlide2>("Winning_UI/SCR_02_SUBWINNERS");
-        if (slide2 is null) return;
-        var subs = LobbyState.LastSubWinners;
-        var entries = new List<WinningSlide2.SubEntry>(subs?.Count ?? 0);
-        if (subs is not null)
-        {
-            for (int i = 0; i < subs.Count; i++)
-            {
-                var sw = subs[i];
-                entries.Add(new WinningSlide2.SubEntry
-                {
+		if (slide2 is null) return;
+		var subs = LobbyState.LastSubWinners;
+		var entries = new List<WinningSlide2.SubEntry>(subs?.Count ?? 0);
+		if (subs is not null)
+		{
+			for (int i = 0; i < subs.Count; i++)
+			{
+				var sw = subs[i];
+				entries.Add(new WinningSlide2.SubEntry
+				{
 					Title = sw.Label ?? "",
-                    Username = ResolveUsername(sw.PeerId),
+					Username = ResolveUsername(sw.PeerId),
 					Detail = "",
-                });
-            }
-        }
-        slide2.Populate(entries);
-    }
+				});
+			}
+		}
+		slide2.Populate(entries);
+	}
 
-    /// <summary>
+	/// <summary>
 	/// Résout un nom d'usager affichable pour <paramref name="InPeerId"/>. Pour
 	/// le joueur local (peer == <see cref="NetworkManager.LocalPeerId"/> ou peer
     /// == 1 en offline) on utilise le username Firebase courant. Sans mapping
     /// peer→userId broadcasté pour les autres joueurs, on retombe sur
-    /// «&#160;Player N&#160;» jusqu'à ce que ce mapping soit ajouté au protocole.
-    /// </summary>
-    private static string ResolveUsername(int InPeerId)
-    {
-        int localPeer = NetworkManager.Instance?.LocalPeerId ?? 1;
-        bool isLocal = InPeerId == localPeer
-            || (InPeerId == 1 && (NetworkManager.Instance is null || !NetworkManager.Instance.IsRunning));
-        if (isLocal)
-        {
-            var u = AuthServiceProvider.Instance.CurrentUser?.Username;
-            if (!string.IsNullOrEmpty(u)) return u;
-        }
+	/// «&#160;Player N&#160;» jusqu'à ce que ce mapping soit ajouté au protocole.
+	/// </summary>
+	private static string ResolveUsername(int InPeerId)
+	{
+		int localPeer = NetworkManager.Instance?.LocalPeerId ?? 1;
+		bool isLocal = InPeerId == localPeer
+			|| (InPeerId == 1 && (NetworkManager.Instance is null || !NetworkManager.Instance.IsRunning));
+		if (isLocal)
+		{
+			var u = AuthServiceProvider.Instance.CurrentUser?.Username;
+			if (!string.IsNullOrEmpty(u)) return u;
+		}
 		return $"Player {InPeerId}";
-    }
+	}
 }
