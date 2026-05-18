@@ -14,7 +14,7 @@ namespace Core.World;
 /// </summary>
 public sealed partial class LobbyController : Node3D, IPhase
 {
-	/// <summary>Scène <c>lobby.tscn</c> à instancier à l'entrée de la phase.</summary>
+    /// <summary>Scène <c>lobby.tscn</c> à instancier à l'entrée de la phase.</summary>
     [Export] private PackedScene _lobbySceneAsset;
 
     public enum State { Init, Failure, Waiting, Ready }
@@ -33,109 +33,118 @@ public sealed partial class LobbyController : Node3D, IPhase
         _connectionSucceeded = false;
         _connectionFailed = false;
 
-		// Serveur dédié : pas d'UI ni de polling Firestore. La state StateMachine attends
-		// a Game les peers
-		if (NetworkManager.Instance is not null && NetworkManager.Instance.IsServer)
-		{
-			// Belt-and-suspenders : vide les caches per-peer pour éviter qu'un
-			// _lastKnownState hérité de la partie précédente déclenche une
-			// correction anti-téléport sur le premier snapshot de la suivante.
-			NetworkManager.Instance.ResetSessionState();
-			_done = true;
-			return;
-		}
+        // Serveur dédié : pas d'UI ni de polling Firestore. La state StateMachine attends
+        // a Game les peers
+        if (NetworkManager.Instance is not null && NetworkManager.Instance.IsServer)
+        {
+            // Belt-and-suspenders : vide les caches per-peer pour éviter qu'un
+            // _lastKnownState hérité de la partie précédente déclenche une
+            // correction anti-téléport sur le premier snapshot de la suivante.
+            NetworkManager.Instance.ResetSessionState();
+            _done = true;
+            return;
+        }
 
-		// Côté client, même mesure : si la connexion ENet est conservée entre
-		// les manches (cf. court-circuit dans OnGameStartRequested), purger les
-		// caches locaux ne fait aucun mal.
-		NetworkManager.Instance?.ResetSessionState();
+        // Côté client, même mesure : si la connexion ENet est conservée entre
+        // les manches (cf. court-circuit dans OnGameStartRequested), purger les
+        // caches locaux ne fait aucun mal.
+        NetworkManager.Instance?.ResetSessionState();
 
-		// Cas re-entrée Winning -> Lobby : le statut Firestore peut être encore
-		// "started" depuis la partie précédente. Si on est l'hôte, on le remet
-		// à "waiting" — sinon le polling de LobbyScene déclencherait un nouveau
-		// GameStartRequested dès le prochain tick.
-		var snapshot = LobbyState.Current;
-		if (LobbyState.IsHost && snapshot is not null && snapshot.Status == "started")
-		{
-			_ = ResetRoomStatusAsync(snapshot.Code);
-		}
+        // Cas re-entrée Winning -> Lobby : le statut Firestore peut être encore
+        // "started" depuis la partie précédente. Si on est l'hôte, on le remet
+        // à "waiting" — sinon le polling de LobbyScene déclencherait un nouveau
+        // GameStartRequested dès le prochain tick.
+        var snapshot = LobbyState.Current;
+        if (LobbyState.IsHost && snapshot is not null && snapshot.Status == "started")
+        {
+            _ = ResetRoomStatusAsync(snapshot.Code);
+        }
 
-		if (_lobbySceneAsset is null)
-		{
-			GD.PrintErr("[LobbyController] _lobbySceneAsset non assigné dans l'inspecteur.");
-			_fsm = new StateMachine<State>(State.Failure, OnSubEnter, OnSubExit);
-			OnSubEnter(State.Failure);
-			return;
-		}
+        if (_lobbySceneAsset is null)
+        {
+            GD.PrintErr("[LobbyController] _lobbySceneAsset non assigné dans l'inspecteur.");
+            _fsm = new StateMachine<State>(State.Failure, OnSubEnter, OnSubExit);
+            OnSubEnter(State.Failure);
+            return;
+        }
 
-		_lobbyInstance = _lobbySceneAsset.Instantiate<LobbyScene>();
-		_lobbyInstance.GameStartRequested += OnGameStartRequested;
-		AddChild(_lobbyInstance);
+        _lobbyInstance = _lobbySceneAsset.Instantiate<LobbyScene>();
+        _lobbyInstance.GameStartRequested += OnGameStartRequested;
+        AddChild(_lobbyInstance);
 
-		_fsm = new StateMachine<State>(State.Init, OnSubEnter, OnSubExit);
+        _fsm = new StateMachine<State>(State.Init, OnSubEnter, OnSubExit);
 
-		// Init -> Waiting dès que l'instance est dans l'arbre.
-		_fsm.When(State.Init,
-			new PredicateCondition<State>(() => _lobbyInstance is not null && _lobbyInstance.IsInsideTree()),
-			State.Waiting
-		);
+        // Init -> Waiting dès que l'instance est dans l'arbre.
+        _fsm.When(State.Init,
+            new PredicateCondition<State>(() => _lobbyInstance is not null && _lobbyInstance.IsInsideTree()),
+            State.Waiting
+        );
 
-		// Waiting -> Ready quand la connexion au serveur a réussi.
-		_fsm.When(State.Waiting,
-			new PredicateCondition<State>(() => _connectionSucceeded),
-			State.Ready
-		);
+        // Waiting -> Ready quand la connexion au serveur a réussi.
+        _fsm.When(State.Waiting,
+            new PredicateCondition<State>(() => _connectionSucceeded),
+            State.Ready
+        );
 
-		// Waiting -> Failure si la connexion échoue.
-		_fsm.When(State.Waiting,
-			new PredicateCondition<State>(() => _connectionFailed),
-			State.Failure
-		);
+        // Waiting -> Failure si la connexion échoue.
+        _fsm.When(State.Waiting,
+            new PredicateCondition<State>(() => _connectionFailed),
+            State.Failure
+        );
 
-		OnSubEnter(State.Init);
-	}
+        OnSubEnter(State.Init);
+    }
 
-	public void Tick(float InDelta) => _fsm?.Tick(InDelta);
+    public void Tick(float InDelta) => _fsm?.Tick(InDelta);
 
-	public void Exit()
-	{
-		UnsubscribeNetwork();
+    public void Exit()
+    {
+        UnsubscribeNetwork();
 
-		if (_lobbyInstance is not null)
-		{
-			_lobbyInstance.GameStartRequested -= OnGameStartRequested;
-			_lobbyInstance.QueueFree();
-			_lobbyInstance = null;
-		}
-		_fsm = null;
-	}
+        if (_lobbyInstance is not null)
+        {
+            _lobbyInstance.GameStartRequested -= OnGameStartRequested;
+            _lobbyInstance.QueueFree();
+            _lobbyInstance = null;
+        }
+        _fsm = null;
+    }
 
-	private void OnGameStartRequested()
-	{
-		var snapshot = LobbyState.Current;
-		if (snapshot is null)
-		{
-			GD.PrintErr("[LobbyController] LobbyState.Current null à GameStartRequested.");
-			_connectionFailed = true;
-			return;
-		}
+    private void OnGameStartRequested()
+    {
+        var snapshot = LobbyState.Current;
+        if (snapshot is null)
+        {
+            GD.PrintErr("[LobbyController] LobbyState.Current null à GameStartRequested.");
+            _connectionFailed = true;
+            return;
+        }
 
-		LobbyState.SetSelectedMap(snapshot.MapId ?? MapRegistry.DefaultMapId);
-		LoadingScreen.Show(GetTree());
+        LobbyState.SetSelectedMap(snapshot.MapId ?? MapRegistry.DefaultMapId);
 
-		var net = NetworkManager.Instance;
-		// Réutilisation de la connexion si on est déjà client connecté (cycle
-		// Winning → Lobby → Game sans Disconnect intermédiaire). Un second
-		// ConnectToServer allouerait un nouveau ENetMultiplayerPeer en
-		// écrasant l'existant sans le fermer — fuite + état réseau zombie.
+        // Récupère le HatId du joueur local depuis sa propre entrée dans le
+        // snapshot. Si l'utilisateur n'est pas (encore) authentifié ou n'a pas
+        // d'entrée résolue, on retombe sur le défaut — pas de chapeau.
+        string localUserId = Core.Auth.AuthServiceProvider.Instance.CurrentUser?.Id ?? "";
+        string localHatId = HatRegistry.DefaultHatId;
+        if (!string.IsNullOrEmpty(localUserId) && snapshot.Players.TryGetValue(localUserId, out var entry))
+            localHatId = entry.HatId;
+        LobbyState.SetSelectedHat(localHatId);
+        LoadingScreen.Show(GetTree());
+
+        var net = NetworkManager.Instance;
+        // Réutilisation de la connexion si on est déjà client connecté (cycle
+        // Winning → Lobby → Game sans Disconnect intermédiaire). Un second
+        // ConnectToServer allouerait un nouveau ENetMultiplayerPeer en
+        // écrasant l'existant sans le fermer — fuite + état réseau zombie.
         if (net is not null && net.IsRunning && net.IsClient)
         {
-			LoadingScreen.SetStatus("Connexion existante — préparation de la partie", 0.35f);
+            LoadingScreen.SetStatus("Connexion existante — préparation de la partie", 0.35f);
             _connectionSucceeded = true;
             return;
         }
 
-		LoadingScreen.SetStatus("Connexion au serveur…", 0.10f);
+        LoadingScreen.SetStatus("Connexion au serveur…", 0.10f);
 
         var serverIp = snapshot.ServerIp ?? Room.HardcodedServerIp;
         var serverPort = snapshot.ServerPort != 0 ? snapshot.ServerPort : Room.HardcodedServerPort;
@@ -147,14 +156,18 @@ public sealed partial class LobbyController : Node3D, IPhase
     private void OnNetConnected(int _)
     {
         UnsubscribeNetwork();
-		LoadingScreen.SetStatus("Connecté — préparation de la partie", 0.35f);
+        LoadingScreen.SetStatus("Connecté — préparation de la partie", 0.35f);
         _connectionSucceeded = true;
     }
 
     private void OnNetConnectionFailed(string InMessage)
     {
         UnsubscribeNetwork();
-		GD.PrintErr($"[LobbyController] Connexion échouée&#160;: {InMessage}");
+        ErrorDialog.Show(GetTree(),
+            $"Impossible de se connecter au serveur. \nMessage d'erreur:\n{InMessage}",
+            InOkText: "Retour au Menu Principal",
+            InOnOk: () => GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn")
+        );
         LoadingScreen.Hide();
         _connectionFailed = true;
     }
@@ -171,11 +184,12 @@ public sealed partial class LobbyController : Node3D, IPhase
     {
         try
         {
-			await RoomServiceProvider.Repository.UpdateStatusAsync(InCode, "waiting");
+            await RoomServiceProvider.Repository.UpdateStatusAsync(InCode, "waiting");
         }
         catch (Exception ex)
         {
-			GD.PrintErr($"[LobbyController] Reset statut salle échoué&#160;: {ex.Message}");
+
+            GD.PrintErr($"[LobbyController] Reset statut salle échoué: {ex.Message}");
         }
     }
 
@@ -184,8 +198,10 @@ public sealed partial class LobbyController : Node3D, IPhase
         switch (InState)
         {
             case State.Ready:
-            case State.Failure:
                 _done = true;
+                break;
+            case State.Failure:
+                //vide pour laisser le dialog ouvrir
                 break;
         }
     }

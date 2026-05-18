@@ -17,6 +17,9 @@ public partial class LobbyScene : Control
     private Label _mapValue = null!;
     private Button _mapPrevButton = null!;
     private Button _mapNextButton = null!;
+    private Label _hatValue = null!;
+    private Button _hatPrevButton = null!;
+    private Button _hatNextButton = null!;
     private Label _playersTitle = null!;
     private VBoxContainer _playersList = null!;
     private Button _leaveButton = null!;
@@ -25,6 +28,7 @@ public partial class LobbyScene : Control
     private bool _leaving = false;
     private bool _wasHost = false;
     private int _mapIndex = 0;
+    private int _hatIndex = 0;
     private ulong _instantiatedAtMsec;
     private const string Root = "PanelContainer/MarginContainer/VBoxContainer";
     private const float PollInterval = 4.0f;
@@ -46,6 +50,9 @@ public partial class LobbyScene : Control
         _mapValue = GetNode<Label>($"{Root}/MapBox/MapValue");
         _mapPrevButton = GetNode<Button>($"{Root}/MapBox/MapPrev");
         _mapNextButton = GetNode<Button>($"{Root}/MapBox/MapNext");
+        _hatValue = GetNode<Label>($"{Root}/HatBox/HatValue");
+        _hatPrevButton = GetNode<Button>($"{Root}/HatBox/HatPrev");
+        _hatNextButton = GetNode<Button>($"{Root}/HatBox/HatNext");
         _playersTitle = GetNode<Label>($"{Root}/PlayersTitle");
         _playersList = GetNode<VBoxContainer>($"{Root}/PlayersPanel/ScrollContainer/PlayersList");
         _leaveButton = GetNode<Button>($"{Root}/ButtonsBox/LeaveButton");
@@ -55,6 +62,8 @@ public partial class LobbyScene : Control
         _startButton.Pressed += OnStartPressed;
         _mapPrevButton.Pressed += OnMapPrev;
         _mapNextButton.Pressed += OnMapNext;
+        _hatPrevButton.Pressed += OnHatPrev;
+        _hatNextButton.Pressed += OnHatNext;
 
         var snapshot = LobbyState.Current;
         if (snapshot is null)
@@ -74,6 +83,10 @@ public partial class LobbyScene : Control
         // Only the host can change the map
         _mapPrevButton.Visible = LobbyState.IsHost;
         _mapNextButton.Visible = LobbyState.IsHost;
+
+        // Chapeau : chacun choisit le sien — toujours visible et toujours actif.
+        _hatIndex = HatRegistry.IndexOf(_LocalHatIdFromSnapshot(snapshot));
+        _RefreshHatDisplay();
 
         if (LobbyState.IsHost)
             _startButton.Disabled = false;
@@ -109,6 +122,12 @@ public partial class LobbyScene : Control
                 _mapIndex = MapRegistry.IndexOf(fresh.MapId);
                 _RefreshMapDisplay();
             }
+
+            // Le chapeau du joueur local peut avoir été modifié depuis une
+            // autre session : on resynchronise l'affichage sur la valeur
+            // canonique de Firestore.
+            _hatIndex = HatRegistry.IndexOf(_LocalHatIdFromSnapshot(fresh));
+            _RefreshHatDisplay();
 
             if (fresh.Status == "started" && !_leaving)
             {
@@ -168,6 +187,73 @@ public partial class LobbyScene : Control
         _mapIndex = (_mapIndex + 1) % MapRegistry.All.Length;
         _RefreshMapDisplay();
         await _PushMapUpdate();
+    }
+
+    private void _RefreshHatDisplay()
+    {
+        _hatValue.Text = HatRegistry.All[_hatIndex].DisplayName;
+    }
+
+    private async void OnHatPrev()
+    {
+        _hatIndex = (_hatIndex - 1 + HatRegistry.All.Length) % HatRegistry.All.Length;
+        _RefreshHatDisplay();
+        await _PushHatUpdate();
+    }
+
+    private async void OnHatNext()
+    {
+        _hatIndex = (_hatIndex + 1) % HatRegistry.All.Length;
+        _RefreshHatDisplay();
+        await _PushHatUpdate();
+    }
+
+    /// <summary>
+    /// Renvoie le HatId du joueur local dans le snapshot fourni, ou le défaut
+    /// si l'utilisateur n'est pas authentifié / n'a pas encore d'entrée.
+    /// </summary>
+    private static string _LocalHatIdFromSnapshot(RoomSnapshot snapshot)
+    {
+        var me = Core.Auth.AuthServiceProvider.Instance.CurrentUser;
+        if (me is null) return HatRegistry.DefaultHatId;
+        if (!snapshot.Players.TryGetValue(me.Id, out var entry)) return HatRegistry.DefaultHatId;
+        return string.IsNullOrEmpty(entry.HatId) ? HatRegistry.DefaultHatId : entry.HatId;
+    }
+
+    private async System.Threading.Tasks.Task _PushHatUpdate()
+    {
+        var snapshot = LobbyState.Current;
+        var me = Core.Auth.AuthServiceProvider.Instance.CurrentUser;
+        if (snapshot is null || me is null) return;
+        _hatPrevButton.Disabled = true;
+        _hatNextButton.Disabled = true;
+        try
+        {
+            var newHatId = HatRegistry.All[_hatIndex].Id;
+            await RoomServiceProvider.Repository.UpdateHatAsync(snapshot.Code, me.Id, newHatId);
+
+            // Mise à jour locale du snapshot pour qu'un futur poll ne réécrase
+            // pas le choix avec un état stale, et pour que LobbyController.Enter
+            // lise la bonne valeur s'il s'exécute avant le prochain poll.
+            if (snapshot.Players.TryGetValue(me.Id, out var existing))
+            {
+                snapshot.Players[me.Id] = new RoomSnapshot.PlayerEntry
+                {
+                    Username = existing.Username,
+                    IsHost = existing.IsHost,
+                    HatId = newHatId
+                };
+            }
+        }
+        catch (System.Exception ex)
+        {
+            GD.PrintErr($"[Lobby] Hat update failed: {ex.Message}");
+        }
+        finally
+        {
+            _hatPrevButton.Disabled = false;
+            _hatNextButton.Disabled = false;
+        }
     }
 
     private async System.Threading.Tasks.Task _PushMapUpdate()

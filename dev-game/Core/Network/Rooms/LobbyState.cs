@@ -9,6 +9,13 @@ public static class LobbyState
     // Survives Clear() so World._Ready can read it after LobbyState is torn down
     public static string SelectedMapId { get; private set; } = MapRegistry.DefaultMapId;
 
+    /// <summary>
+    /// Chapeau cosmétique sélectionné par le joueur local pour la partie en
+    /// cours. Survit à <see cref="Clear"/> pour que <c>GameController.Enter</c>
+    /// puisse le transmettre via le RPC <c>ClientReady</c> au moment du spawn.
+    /// </summary>
+    public static string SelectedHatId { get; private set; } = HatRegistry.DefaultHatId;
+
     /// <summary>Peer ID du gagnant principal de la dernière partie (0 si aucune).</summary>
     public static int LastWinnerPeerId { get; private set; }
 
@@ -26,6 +33,7 @@ public static class LobbyState
         = Array.Empty<(int, string, string)>();
 
     public static void SetSelectedMap(string mapId) => SelectedMapId = mapId;
+    public static void SetSelectedHat(string hatId) => SelectedHatId = string.IsNullOrEmpty(hatId) ? HatRegistry.DefaultHatId : hatId;
 
     /// <summary>
     /// Mémorise les gagnants de la dernière partie. Survit à <see cref="Clear"/> pour que
