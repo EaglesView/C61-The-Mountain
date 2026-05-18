@@ -35,6 +35,16 @@ public partial class Player : Character
 	private Label3D? _nameLabel;
 
 	/// <summary>
+	/// Identifiant du chapeau cosmétique à instancier sur la tête du
+	/// personnage. Assigné par <c>GameController.SpawnPlayerNode</c> à partir
+	/// du <c>RoomSnapshot</c> (ou <c>LobbyState.SelectedHatId</c> en offline).
+	/// Voir <see cref="HatRegistry"/> pour le catalogue.
+	/// </summary>
+	public string HatId { get; set; } = HatRegistry.DefaultHatId;
+	private Node3D? _hatInstance;
+	private CameraType _lastCamTypeForHat = CameraType.ThirdPerson;
+
+	/// <summary>
 	/// Verrou d'entrée pour le joueur local. Activé par le GameController quand la
     /// partie est avortée (host parti) ou par toute autre logique qui veut figer
 	/// l'input sans ouvrir le menu pause. Quand <c>true</c>&#160;: <see cref="_Input"/>
@@ -133,6 +143,7 @@ public partial class Player : Character
 			_nameLabel.Position = new Vector3(0f, 2.2f, 0f);
 			_nameLabel.NoDepthTest = true;
 			AddChild(_nameLabel);
+			_SpawnHat();
 			return;
 		}
 
@@ -143,14 +154,56 @@ public partial class Player : Character
 		NetworkManager.Instance.SetLocalPlayer(this);
 		AddToGroup("local_player");
 
-		if (_cameraMan == null) return;
+		if (_cameraMan == null) { _SpawnHat(); return; }
 		_currentCamOffset = _offsetFP;
 		if (Raycaster == null) Raycaster = _cameraMan.GetNode<RayCast3D>("PlayerCamera/RayCastTo");
 		if (DisplayServer.GetName() != "headless")
 			_playerFocused = ToggleCharacterFocus(_playerFocused);
-		if (PhysicsSkelton == null) return;
+		if (PhysicsSkelton == null) { _SpawnHat(); return; }
 		if (AnimPlayer == null) AnimPlayer = PhysicsSkelton.AnimPlayer;
 		speed = WalkSpeed;
+		_SpawnHat();
+	}
+
+	/// <summary>
+	/// Instancie la scène du chapeau (si <see cref="HatId"/> en désigne un)
+	/// sous un <c>BoneAttachment3D</c> créé à la volée et parenté au squelette
+	/// animé (<c>PhysicsRig/AnimatedRig/Armature/Skeleton3D</c>), suiveur du
+	/// bone <c>Head.001</c>. On attache au rig animé plutôt qu'au rig physique
+	/// pour que le chapeau colle au mesh visible — durant un ragdoll actif,
+	/// le rig animé est ressorté sur la simulation physique, donc le chapeau
+	/// suit malgré tout. Le placement local (offset / rotation / scale) doit
+	/// être réglé directement dans la scène du chapeau&#160;: la racine
+	/// <c>Node3D</c> sert d'ancre.
+	/// </summary>
+	private void _SpawnHat()
+	{
+		if (_hatInstance != null) return;
+		var hatDef = HatRegistry.Get(HatId) ?? HatRegistry.Get(HatRegistry.DefaultHatId);
+		if (hatDef == null || string.IsNullOrEmpty(hatDef.ScenePath)) return;
+
+		var animSkel = GetNodeOrNull<Skeleton3D>("PhysicsRig/AnimatedRig/Armature/Skeleton3D");
+		if (animSkel == null)
+		{
+			GD.PrintErr($"[Player] AnimatedRig Skeleton3D introuvable — chapeau ignoré (peer={PeerId}).");
+			return;
+		}
+
+		var hatScene = ResourceLoader.Load<PackedScene>(hatDef.ScenePath);
+		if (hatScene == null)
+		{
+			GD.PrintErr($"[Player] Scène chapeau introuvable&#160;: {hatDef.ScenePath}");
+			return;
+		}
+
+		var attachment = new BoneAttachment3D();
+		attachment.Name = "HatAttachment";
+		attachment.BoneName = "Head.001";
+		animSkel.AddChild(attachment);
+
+		var hatNode = hatScene.Instantiate<Node3D>();
+		attachment.AddChild(hatNode);
+		_hatInstance = hatNode;
 	}
 
 	/// <summary>
@@ -399,6 +452,16 @@ public partial class Player : Character
 		base._Process(delta);
 		int boneIdx = PhysicsSkelton.FindBone("Head.001");
 		Transform3D headWorld = PhysicsSkelton.GlobalTransform * PhysicsSkelton.GetBoneGlobalPose(boneIdx);
+
+		// Cacher le chapeau du joueur local en vue à la première personne&#160;:
+		// l'attachement est à l'intérieur de la tête, on verrait sa face
+		// interne devant la caméra. Toggle déclenché uniquement sur
+		// changement de mode pour éviter les écritures inutiles à chaque frame.
+		if (_hatInstance != null && _cameraMan != null && _cameraMan.CamType != _lastCamTypeForHat)
+		{
+			_lastCamTypeForHat = _cameraMan.CamType;
+			_hatInstance.Visible = _cameraMan.CamType != CameraType.FirstPerson;
+		}
 
 		var interactable = GetInteractableFromRaycast(Raycaster);
 		if (interactable != _highlightedInteractable)

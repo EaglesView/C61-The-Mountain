@@ -55,12 +55,22 @@ public partial class MainMenu : Control
                 && snapshot.Status == Room.DefaultStatus
                 && snapshot.Players.Count < snapshot.MaxPlayers)
             {
-                // Slot in the existing open lobby
+                // Si le lobby existant n'a plus aucun hôte vivant (zombie : tous
+                // les joueurs ont Quitté, ou l'hôte est parti sans migration),
+                // le nouveau venu en prend possession. Sinon il rejoint comme
+                // invité de l'hôte courant.
+                bool lobbyHasLivingHost = false;
+                foreach (var p in snapshot.Players.Values)
+                    if (p.IsHost) { lobbyHasLivingHost = true; break; }
+
+                isHost = !lobbyHasLivingHost;
                 await RoomServiceProvider.Repository.AddPlayerAsync(
-                    Room.SharedLobbyCode, user.Id, user.Username);
+                    Room.SharedLobbyCode, user.Id, user.Username, isHost);
+                if (isHost)
+                    await RoomServiceProvider.Repository.UpdateHostAsync(
+                        Room.SharedLobbyCode, user.Id);
                 snapshot.Players[user.Id] = new RoomSnapshot.PlayerEntry
-                { Username = user.Username, IsHost = false };
-                isHost = false;
+                { Username = user.Username, IsHost = isHost, HatId = HatRegistry.DefaultHatId };
             }
             else
             {
@@ -78,7 +88,7 @@ public partial class MainMenu : Control
                     Players = new Dictionary<string, RoomSnapshot.PlayerEntry>
                     {
                         [user.Id] = new RoomSnapshot.PlayerEntry
-                        { Username = user.Username, IsHost = true }
+                        { Username = user.Username, IsHost = true, HatId = HatRegistry.DefaultHatId }
                     }
                 };
                 isHost = true;
