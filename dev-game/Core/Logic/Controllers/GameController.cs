@@ -205,7 +205,7 @@ public sealed partial class GameController : Node3D, IPhase
 			if (!LoadLevel(LobbyState.SelectedMapId)) return;
 			//GD.Print($"[GameController] Online client — sending HostMapPick('{LobbyState.SelectedMapId}') + ClientReady(isHost={LobbyState.IsHost}).");
 			RpcId(1, MethodName.HostMapPick, LobbyState.SelectedMapId);
-			RpcId(1, MethodName.ClientReady, LobbyState.IsHost);
+			RpcId(1, MethodName.ClientReady, LobbyState.IsHost, LobbyState.SelectedHatId);
 		}
 		else
 		{
@@ -397,19 +397,21 @@ public sealed partial class GameController : Node3D, IPhase
 		var dict = data.As<Godot.Collections.Dictionary>();
 		int peerId = dict["id"].As<int>();
 		Vector3 pos = dict["pos"].As<Vector3>();
+		string hatId = dict.ContainsKey("hat") ? dict["hat"].As<string>() : HatRegistry.DefaultHatId;
 
 		var player = _playerScene.Instantiate<Player>();
 		player.Name = peerId.ToString();
 		player.PeerId = peerId;
 		player.SetMultiplayerAuthority(peerId);
 		player.SpawnPosition = pos;
+		player.HatId = hatId;
 
-		//GD.Print($"[GameController] SpawnPlayerNode&#160;: peerId={peerId}, pos={pos}, isLocal={player.IsMultiplayerAuthority()}");
+		//GD.Print($"[GameController] SpawnPlayerNode&#160;: peerId={peerId}, pos={pos}, hat={hatId}, isLocal={player.IsMultiplayerAuthority()}");
 		return player;
 	}
 
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-	private void ClientReady(bool InIsHost)
+	private void ClientReady(bool InIsHost, string InHatId)
 	{
 		if (!Multiplayer.IsServer()) return;
 		int peerId = Multiplayer.GetRemoteSenderId();
@@ -421,8 +423,8 @@ public sealed partial class GameController : Node3D, IPhase
             _hostPeerId = peerId;
             //GD.Print($"[GameController] Host registered: peer {peerId}");
         }
-        //GD.Print($"[GameController] ClientReady from peer {peerId} (isHost={InIsHost})");
-        ServerSpawnPeer(peerId);
+        //GD.Print($"[GameController] ClientReady from peer {peerId} (isHost={InIsHost}, hat={InHatId})");
+        ServerSpawnPeer(peerId, InHatId);
     }
 
     /// <summary>
@@ -441,16 +443,21 @@ public sealed partial class GameController : Node3D, IPhase
 		LoadLevel(InMapId);
 	}
 
-	private void ServerSpawnPeer(int peerId)
+	private void ServerSpawnPeer(int peerId, string hatId = null)
 	{
 		if (_spawner is null || _playerSpawner is null) return;
 		Vector3 spawnPos = _playerSpawner.GetNextSpawnPoint();
-		var data = new Godot.Collections.Dictionary { ["id"] = peerId, ["pos"] = spawnPos };
+		var data = new Godot.Collections.Dictionary
+		{
+			["id"] = peerId,
+			["pos"] = spawnPos,
+			["hat"] = hatId ?? HatRegistry.DefaultHatId,
+		};
 		_spawner.Spawn(data);
 		// Donne au NetworkManager le spawn par peer pour son respawn autoritaire
 		// (chute sous FallThreshold dans OnPacketReceived).
 		NetworkManager.Instance?.RegisterPeerSpawn(peerId, spawnPos);
-		//GD.Print($"[GameController] Server spawned peer {peerId} at {spawnPos}");
+		//GD.Print($"[GameController] Server spawned peer {peerId} at {spawnPos} hat={hatId}");
 	}
 
 	private void OnPeerDisconnected(long peerId)
@@ -491,6 +498,7 @@ public sealed partial class GameController : Node3D, IPhase
         player.Name = "1";
         player.PeerId = 1;
         player.SpawnPosition = _playerSpawner?.GetNextSpawnPoint() ?? Vector3.Zero;
+        player.HatId = LobbyState.SelectedHatId;
         var players = _mapContainerInstance.GetNodeOrNull("Players");
         if (players is null)
         {

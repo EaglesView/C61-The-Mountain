@@ -35,7 +35,7 @@ public sealed class RoomRepository
             mapId      = Room.DefaultMapId,
             players    = new Dictionary<string, PlayerEntryDto>
             {
-                [room.HostUserId] = new PlayerEntryDto(room.HostUsername, true)
+                [room.HostUserId] = new PlayerEntryDto(room.HostUsername, true, HatRegistry.DefaultHatId)
             }
         };
 
@@ -66,7 +66,12 @@ public sealed class RoomRepository
         var players = new Dictionary<string, RoomSnapshot.PlayerEntry>();
         if (dto.Players is not null)
             foreach (var (uid, p) in dto.Players)
-                players[uid] = new RoomSnapshot.PlayerEntry { Username = p.Username ?? "", IsHost = p.IsHost };
+                players[uid] = new RoomSnapshot.PlayerEntry
+                {
+                    Username = p.Username ?? "",
+                    IsHost = p.IsHost,
+                    HatId = string.IsNullOrEmpty(p.HatId) ? HatRegistry.DefaultHatId : p.HatId
+                };
 
         return new RoomSnapshot
         {
@@ -81,12 +86,44 @@ public sealed class RoomRepository
         };
     }
 
-    public async Task AddPlayerAsync(string code, string userId, string username)
+    public async Task AddPlayerAsync(string code, string userId, string username, bool isHost = false)
     {
         var token = _getToken();
-        var body  = JsonSerializer.Serialize(new { username, isHost = false });
+        var body  = JsonSerializer.Serialize(new { username, isHost, hatId = HatRegistry.DefaultHatId });
         var request = new HttpRequestMessage(HttpMethod.Put,
             $"{BaseUrl}/{Uri.EscapeDataString(code)}/players/{Uri.EscapeDataString(userId)}.json?auth={token}");
+        request.Content = new StringContent(body, Encoding.UTF8, "application/json");
+        var response = await Http.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+    }
+
+    /// <summary>
+    /// Met à jour le champ <c>hostUserId</c> de la salle. Utilisé quand un
+    /// joueur prend la place d'un hôte zombie (cf. <c>MainMenu.OnPlayPressed</c>).
+    /// </summary>
+    public async Task UpdateHostAsync(string code, string hostUserId)
+    {
+        var token = _getToken();
+        var body  = JsonSerializer.Serialize(hostUserId);
+        var request = new HttpRequestMessage(HttpMethod.Put,
+            $"{BaseUrl}/{Uri.EscapeDataString(code)}/hostUserId.json?auth={token}");
+        request.Content = new StringContent(body, Encoding.UTF8, "application/json");
+        var response = await Http.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+    }
+
+    /// <summary>
+    /// Met à jour le chapeau cosmétique du joueur <paramref name="userId"/>
+    /// dans la salle <paramref name="code"/>. Chaque joueur n'écrit que sa
+    /// propre entrée — pas de check d'autorisation côté DB&#160;: on s'appuie
+    /// sur le fait que le client ne pousse que pour son propre userId.
+    /// </summary>
+    public async Task UpdateHatAsync(string code, string userId, string hatId)
+    {
+        var token = _getToken();
+        var body  = JsonSerializer.Serialize(hatId);
+        var request = new HttpRequestMessage(HttpMethod.Put,
+            $"{BaseUrl}/{Uri.EscapeDataString(code)}/players/{Uri.EscapeDataString(userId)}/hatId.json?auth={token}");
         request.Content = new StringContent(body, Encoding.UTF8, "application/json");
         var response = await Http.SendAsync(request);
         response.EnsureSuccessStatusCode();
@@ -139,5 +176,6 @@ public sealed class RoomRepository
 
     private sealed record PlayerEntryDto(
         [property: JsonPropertyName("username")] string? Username,
-        [property: JsonPropertyName("isHost")]   bool    IsHost);
+        [property: JsonPropertyName("isHost")]   bool    IsHost,
+        [property: JsonPropertyName("hatId")]    string? HatId = HatRegistry.DefaultHatId);
 }
