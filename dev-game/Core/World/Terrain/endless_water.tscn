@@ -1,0 +1,84 @@
+[gd_scene format=3 uid="uid://blxnhy8a0mxon"]
+
+[ext_resource type="Shader" uid="uid://c3d638behmwd8" path="res://Core/Shaders/water.gdshader" id="1_7cnv1"]
+[ext_resource type="Texture2D" uid="uid://cpqx5abj7gsp5" path="res://Assets/Textures/Tiles/water_normal.jpg" id="2_w1jjf"]
+[ext_resource type="Script" uid="uid://cdfswdfbbsu8s" path="res://Core/World/Terrain/Water.cs" id="3_w1jjf"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_d6caa"]
+render_priority = 0
+shader = ExtResource("1_7cnv1")
+shader_parameter/color_shallow = Color(0.01, 0.2, 0.3, 1)
+shader_parameter/color_deep = Color(0.3, 0.5, 0.6, 1)
+shader_parameter/transparency = 0.6
+shader_parameter/metallic = 0.0
+shader_parameter/roughness = 0.25
+shader_parameter/max_visible_depth = 20.0
+shader_parameter/wave_a = ExtResource("2_w1jjf")
+shader_parameter/wave_b = ExtResource("2_w1jjf")
+shader_parameter/wave_move_direction_a = Vector2(-0.5, 0)
+shader_parameter/wave_move_direction_b = Vector2(0, 2)
+shader_parameter/wave_noise_scale_a = 24.0
+shader_parameter/wave_noise_scale_b = 24.0
+shader_parameter/wave_time_scale_a = 0.15
+shader_parameter/wave_time_scale_b = 0.15
+shader_parameter/wave_height_scale = 0.815
+shader_parameter/wave_normal_flatness = 100.0
+shader_parameter/surface_normals_a = ExtResource("2_w1jjf")
+shader_parameter/surface_normals_b = ExtResource("2_w1jjf")
+shader_parameter/surface_normals_move_direction_a = Vector2(-1, -2.775)
+shader_parameter/surface_normals_move_direction_b = Vector2(0.2, 1)
+shader_parameter/surface_texture_roughness = 0.32999999262384
+shader_parameter/surface_texture_scale = 0.1
+shader_parameter/surface_texture_time_scale = 0.12400000589
+shader_parameter/ssr_resolution = 1.91000002808876
+shader_parameter/ssr_max_travel = 44.5000006631034
+shader_parameter/ssr_max_diff = 7.500000111758999
+shader_parameter/ssr_mix_strength = 0.78999998234192
+shader_parameter/ssr_screen_border_fadeout = 1.0
+shader_parameter/refraction_intensity = 0.4
+shader_parameter/border_color = Color(1, 1, 1, 1)
+shader_parameter/border_scale = 2.0
+shader_parameter/border_near = 0.5
+shader_parameter/border_far = 300.0
+shader_parameter/cut_out_x = 0.0
+shader_parameter/cut_out_z = 0.0
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_xhr76"]
+material = SubResource("ShaderMaterial_d6caa")
+size = Vector2(2000, 2000)
+subdivide_width = 500
+subdivide_depth = 500
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_w1jjf"]
+size = Vector3(2000, 274.35, 2000)
+
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_w1jjf"]
+
+[node name="Water" type="MeshInstance3D" unique_id=2121387950 node_paths=PackedStringArray("WaterArea")]
+transform = Transform3D(0.86942166, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("PlaneMesh_xhr76")
+script = ExtResource("3_w1jjf")
+WaterArea = NodePath("WaterArea")
+
+[node name="WaterArea" type="Area3D" parent="." unique_id=63806210]
+collision_layer = 32
+collision_mask = 5
+gravity_space_override = 2
+gravity_point_center = Vector3(0, 1, 0)
+gravity_direction = Vector3(0, 1, 0)
+linear_damp_space_override = 1
+linear_damp = 26.0
+angular_damp_space_override = 1
+angular_damp = 26.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WaterArea" unique_id=1203533026]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -137.3489, 0)
+shape = SubResource("BoxShape3D_w1jjf")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=2133466138]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.9731808, 0)
+collision_layer = 2
+collision_mask = 5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=848649402]
+shape = SubResource("WorldBoundaryShape3D_w1jjf")

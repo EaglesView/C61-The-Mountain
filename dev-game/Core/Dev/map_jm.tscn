@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bq4rndu6x2g14"]
 
 [ext_resource type="PackedScene" uid="uid://cxvenxb1m26wm" path="res://Core/Dev/dev_map.tscn" id="2_c22ky"]
-[ext_resource type="PackedScene" uid="uid://d1fshm7mq3au7" path="res://Core/World/MapAssets/MainAssets/player_spawner.tscn" id="3_0q453"]
+[ext_resource type="PackedScene" uid="uid://d1fshm7mq3au7" path="res://Core/World/MapAssets/MainAssets/PlayerSpawner/player_spawner.tscn" id="3_0q453"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_c4q17"]
 

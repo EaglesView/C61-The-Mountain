@@ -17,5 +17,6 @@ public sealed class RoomSnapshot
     {
         public string Username { get; init; } = "";
         public bool   IsHost   { get; init; }
+        public string HatId    { get; init; } = HatRegistry.DefaultHatId;
     }
 }

@@ -1,0 +1,104 @@
+using System.Collections.Generic;
+using Godot;
+
+/// <summary>
+/// Deuxième slide de l'écran Winning (<c>SCR_02_SUBWINNERS</c>)&#160;: présente
+/// les sous-catégories (Most Ragdolls, Quickest to Die, etc.) puis affiche un
+/// bouton «&#160;Continue&#160;» après un délai pour permettre au joueur d'avancer
+/// vers la slide de vote. Le bouton est révélé par
+/// <see cref="ShowContinueButton"/>&#160;; son clic émet <see cref="ContinuePressed"/>.
+/// </summary>
+public sealed partial class WinningSlide2 : MarginContainer
+{
+	/// <summary>Émis lorsque l'utilisateur clique sur le bouton «&#160;Continue&#160;».</summary>
+	[Signal] public delegate void ContinuePressedEventHandler();
+
+	/// <summary>Entrée «&#160;un sous-gagnant&#160;» à afficher dans un des panneaux.</summary>
+	public readonly struct SubEntry
+	{
+		public string Title { get; init; }
+		public string Username { get; init; }
+		public string Detail { get; init; }
+	}
+
+	private Button _continueButton;
+	private Panel[] _panels;
+	private Label[] _titleLabels;
+	private Label[] _usrLabels;
+	private Label[] _amtLabels;
+
+	/// <summary>Rend le bouton «&#160;Continue&#160;» visible et cliquable.</summary>
+	public void ShowContinueButton()
+	{
+		if (_continueButton is null) return;
+		_continueButton.Visible = true;
+		_continueButton.Disabled = false;
+	}
+
+	/// <summary>Cache le bouton (état initial, ou re-entrée propre).</summary>
+	public void HideContinueButton()
+	{
+		if (_continueButton is null) return;
+		_continueButton.Visible = false;
+	}
+
+	/// <summary>
+	/// Remplit les trois panneaux de sous-gagnants. Pour chaque slot&#160;: titre
+	/// = libellé de la condition, usr_label = nom du joueur résolu via la
+	/// callback, amt_label = texte court (placeholder si non fourni). Les
+	/// panneaux sans entrée correspondante sont masqués.
+	/// </summary>
+	public void Populate(IReadOnlyList<SubEntry> InEntries)
+	{
+		if (_panels is null) return;
+		for (int i = 0; i < _panels.Length; i++)
+		{
+			bool hasEntry = InEntries is not null && i < InEntries.Count;
+			if (_panels[i] is not null) _panels[i].Visible = hasEntry;
+			if (!hasEntry) continue;
+			var e = InEntries[i];
+			if (_titleLabels[i] is not null) _titleLabels[i].Text = e.Title ?? "";
+			if (_usrLabels[i] is not null) _usrLabels[i].Text = e.Username ?? "";
+			if (_amtLabels[i] is not null) _amtLabels[i].Text = e.Detail ?? "";
+		}
+	}
+
+	public override void _Ready()
+	{
+		_continueButton = GetNodeOrNull<Button>("ContinueBar/ContinueButton");
+		// Le bouton ContinueButton vit en réalité sous Panel3 dans winning.tscn —
+		// chemin alternatif tenté avant de baisser les bras.
+		_continueButton ??= GetNodeOrNull<Button>("HBoxContainer/Panel3/ContinueBar/ContinueButton");
+		if (_continueButton is not null)
+		{
+			_continueButton.Visible = false;
+			_continueButton.Pressed += OnContinuePressed;
+		}
+
+		_panels = new Panel[3];
+		_titleLabels = new Label[3];
+		_usrLabels = new Label[3];
+		_amtLabels = new Label[3];
+
+		// Panel 1 (le plus important — gagnant principal des sous-conditions).
+		_panels[0] = GetNodeOrNull<Panel>("HBoxContainer/Panel");
+		_titleLabels[0] = GetNodeOrNull<Label>("HBoxContainer/Panel/VBoxContainer/Title");
+		_usrLabels[0] = GetNodeOrNull<Label>("HBoxContainer/Panel/VBoxContainer/usr_label");
+		_amtLabels[0] = GetNodeOrNull<Label>("HBoxContainer/Panel/VBoxContainer/amt_label");
+
+		_panels[1] = GetNodeOrNull<Panel>("HBoxContainer/Panel2");
+		_titleLabels[1] = GetNodeOrNull<Label>("HBoxContainer/Panel2/VBoxContainer2/Title2");
+		_usrLabels[1] = GetNodeOrNull<Label>("HBoxContainer/Panel2/VBoxContainer2/usr_label");
+		_amtLabels[1] = GetNodeOrNull<Label>("HBoxContainer/Panel2/VBoxContainer2/amt_label");
+
+		_panels[2] = GetNodeOrNull<Panel>("HBoxContainer/Panel3");
+		_titleLabels[2] = GetNodeOrNull<Label>("HBoxContainer/Panel3/VBoxContainer3/Title3");
+		_usrLabels[2] = GetNodeOrNull<Label>("HBoxContainer/Panel3/VBoxContainer3/usr_label");
+		_amtLabels[2] = GetNodeOrNull<Label>("HBoxContainer/Panel3/VBoxContainer3/amt_label");
+
+		// État initial&#160;: les panneaux restent visibles avec leur texte de scène
+		// (placeholders) jusqu'à ce que Populate() les remplace ou les masque.
+	}
+
+	private void OnContinuePressed() => EmitSignal(SignalName.ContinuePressed);
+}

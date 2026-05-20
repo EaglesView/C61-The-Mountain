@@ -23,7 +23,7 @@ public static class RayCastUtils
             Vector3 hitPoint = raycaster.GetCollisionPoint();
             Vector3 hitNormal = raycaster.GetCollisionNormal();
 
-            GD.Print("Hit: ", hit.GetType().Name);
+            //GD.Print\("Hit: ", hit.GetType().Name);
             return hit;
         }
     }
