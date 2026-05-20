@@ -13,10 +13,10 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("2_theme")
 script = ExtResource("1_script")
-_tabs = NodePath("PanelContainer/MarginContainer/VBoxContainer/TabContainer")
-_audioContainer = NodePath("PanelContainer/MarginContainer/VBoxContainer/TabContainer/Audio")
-_controlsContainer = NodePath("PanelContainer/MarginContainer/VBoxContainer/TabContainer/Controles/ControlsList")
-_backButton = NodePath("PanelContainer/MarginContainer/VBoxContainer/BackButton")
+_tabs = NodePath("PanelContainer/Panel/MarginContainer/VBoxContainer/TabContainer")
+_audioContainer = NodePath("PanelContainer/Panel/MarginContainer/VBoxContainer/TabContainer/Audio")
+_controlsContainer = NodePath("PanelContainer/Panel/MarginContainer/VBoxContainer/TabContainer/Controles/ControlsList")
+_backButton = NodePath("PanelContainer/Panel/MarginContainer/VBoxContainer/BackButton")
 
 [node name="Overlay" type="ColorRect" parent="." unique_id=19587114]
 layout_mode = 1
@@ -41,45 +41,58 @@ offset_bottom = 270.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="PanelContainer" unique_id=437922026]
+[node name="Panel" type="Panel" parent="PanelContainer" unique_id=69063529]
 layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer/Panel" unique_id=437922026]
+layout_mode = 0
+offset_right = 620.0
+offset_bottom = 540.0
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 16
 
-[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer" unique_id=482154824]
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/Panel/MarginContainer" unique_id=482154824]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="TitleLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=518376897]
+[node name="TitleLabel" type="Label" parent="PanelContainer/Panel/MarginContainer/VBoxContainer" unique_id=518376897]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("3_bold")
 theme_override_font_sizes/font_size = 28
 text = "Paramètres"
 horizontal_alignment = 1
 
-[node name="TabContainer" type="TabContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=948130700]
+[node name="TabContainer" type="TabContainer" parent="PanelContainer/Panel/MarginContainer/VBoxContainer" unique_id=948130700]
 custom_minimum_size = Vector2(0, 360)
 layout_mode = 2
 size_flags_vertical = 3
+theme = ExtResource("2_theme")
+tab_alignment = 1
 current_tab = 0
+switch_on_drag_hover = false
 
-[node name="Audio" type="VBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer/TabContainer" unique_id=1989263959]
+[node name="Audio" type="VBoxContainer" parent="PanelContainer/Panel/MarginContainer/VBoxContainer/TabContainer" unique_id=1989263959]
 layout_mode = 2
 theme_override_constants/separation = 14
 metadata/_tab_index = 0
 
-[node name="Controles" type="ScrollContainer" parent="PanelContainer/MarginContainer/VBoxContainer/TabContainer" unique_id=1686277626]
+[node name="Controles" type="ScrollContainer" parent="PanelContainer/Panel/MarginContainer/VBoxContainer/TabContainer" unique_id=1686277626]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 1
 
-[node name="ControlsList" type="VBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer/TabContainer/Controles" unique_id=146689416]
+[node name="ControlsList" type="VBoxContainer" parent="PanelContainer/Panel/MarginContainer/VBoxContainer/TabContainer/Controles" unique_id=146689416]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 10
 
-[node name="BackButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=649905797]
+[node name="Graphics" type="VBoxContainer" parent="PanelContainer/Panel/MarginContainer/VBoxContainer/TabContainer" unique_id=832208020]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 2
+
+[node name="BackButton" type="Button" parent="PanelContainer/Panel/MarginContainer/VBoxContainer" unique_id=649905797]
 layout_mode = 2
 text = "Retour"
