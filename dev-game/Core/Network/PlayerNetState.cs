@@ -13,6 +13,12 @@ public enum PacketType : byte
 	StateUpdate     = 0x01,
 	/// <summary>Correction de position envoyée par le serveur au client en cas de désync. 17 octets : type(1) peerId(4) pos(12).</summary>
 	PositionCorrect = 0x04,
+	/// <summary>
+	/// Ping applicatif envoyé par les clients pendant les phases sans trafic
+	/// snapshot (Winning, Lobby, transitions) pour garder la connexion ENet
+	/// et la fenêtre NAT/firewall vivantes. 1 octet, ignoré à la réception.
+	/// </summary>
+	KeepAlive       = 0x05,
 }
 
 /// <summary>
