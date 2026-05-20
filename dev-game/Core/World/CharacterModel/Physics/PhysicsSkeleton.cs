@@ -41,7 +41,19 @@ public partial class PhysicsSkeleton : Skeleton3D
     [Export(PropertyHint.Range, "0.0f,10000.0f,1,0f")] public float AngularSpringStiffness = 4000.0f;
     [Export(PropertyHint.Range, "0.0f,200.0f,1.0f")] public float AngularSpringDamping = 80.0f;
     [Export(PropertyHint.Range, "0.0f,5.0f,0,1f")] public float RagdollGraceTime = 1.0f;
+
+    /// <summary>
+    /// Grace appliquée à la sortie du ragdoll (transition IsRagdoll true→false).
+    /// Donne le temps aux springs de ramener les os physiques vers la pose
+    /// animée avant que le seuil de force ne puisse re-déclencher un ragdoll.
+    /// Sans cette grace étendue, un personnage qui Recover depuis un ragdoll
+    /// fortement éparpillé reboucle en Ragdoll dès la fin de RagdollGraceTime,
+    /// et reste bloqué visuellement même si la FSM passe par Recovering.
+    /// </summary>
+    [Export(PropertyHint.Range, "0.0f,10.0f,0.1f")] public float RagdollExitGraceTime = 3.0f;
+
     private float _graceTime = 0.0f;
+    private bool _wasRagdollLastFrame;
     protected static float forceThreshold = 500.0f;
     ///<summary>Définit si le personnage est en ragdoll ou pas</summary>
     [Export] public bool IsRagdoll = false;
@@ -49,7 +61,6 @@ public partial class PhysicsSkeleton : Skeleton3D
     public bool RagdollTriggered { get; set; } = false;
 
     private float _gestureBlend = 0f;
-    private Vector3 _displacementThreshold = new Vector3(forceThreshold, forceThreshold, forceThreshold);
 
 
     private PhysicalBoneSimulator3D? _boneSim;
@@ -175,42 +186,42 @@ public partial class PhysicsSkeleton : Skeleton3D
         // Au spawn, les bones physiques et animés peuvent être momentanément
         // désync (téléport du parent vs. bones déjà en simulation). Amorcer la
         // grace empêche un pic de force sur la première frame de déclencher
-		// RagdollTriggered et d'éjecter le personnage.
-		_graceTime = RagdollGraceTime;
-	}
+        // RagdollTriggered et d'éjecter le personnage.
+        _graceTime = RagdollGraceTime;
+    }
 
-	// ── Snapshot helpers (called by authoritative Character.SnapshotState) ────
+    // ── Snapshot helpers (called by authoritative Character.SnapshotState) ────
 
-	public Vector3 GetSpinePhysicsWorldPosition()
-	{
-		if (_spinePhysBone == null) return GlobalPosition;
-		return (_spinePhysBone.GlobalTransform * _spinePhysBone.BodyOffset.AffineInverse()).Origin;
-	}
+    public Vector3 GetSpinePhysicsWorldPosition()
+    {
+        if (_spinePhysBone == null) return GlobalPosition;
+        return (_spinePhysBone.GlobalTransform * _spinePhysBone.BodyOffset.AffineInverse()).Origin;
+    }
 
-	public Vector3 GetSpinePhysicsLinearVelocity()
-		=> _spinePhysBone?.LinearVelocity ?? Vector3.Zero;
+    public Vector3 GetSpinePhysicsLinearVelocity()
+        => _spinePhysBone?.LinearVelocity ?? Vector3.Zero;
 
-	public (float pitch, float yaw) GetHeadPhysicsWorldAngles()
-	{
-		if (_headPhysBone == null) return (HeadAngle, 0f);
-		Vector3 euler = (_headPhysBone.GlobalTransform * _headPhysBone.BodyOffset.AffineInverse())
-						.Basis.GetEuler();
-		return (euler.X, euler.Y);
-	}
+    public (float pitch, float yaw) GetHeadPhysicsWorldAngles()
+    {
+        if (_headPhysBone == null) return (HeadAngle, 0f);
+        Vector3 euler = (_headPhysBone.GlobalTransform * _headPhysBone.BodyOffset.AffineInverse())
+                        .Basis.GetEuler();
+        return (euler.X, euler.Y);
+    }
 
-	// Kick all bones with the authoritative spine velocity when ragdoll starts remotely
-	public void ApplyRagdollKick(Vector3 spineVelocity)
-	{
-		if (_physicsBones == null) return;
-		foreach (var bone in _physicsBones)
-			bone.LinearVelocity = spineVelocity;
-	}
+    // Kick all bones with the authoritative spine velocity when ragdoll starts remotely
+    public void ApplyRagdollKick(Vector3 spineVelocity)
+    {
+        if (_physicsBones == null) return;
+        foreach (var bone in _physicsBones)
+            bone.LinearVelocity = spineVelocity;
+    }
 
-	/// <summary>
-	/// Applique une force de flottaison sur chaque os physique selon sa
-	/// profondeur sous <paramref name="InWaterSurfaceY"/>. Annule la gravité
-	/// (appliquée deux fois: moteur + boucle ragdoll) en proportion de
-	/// l'immersion pour que la poussée ne soit pas masquée.
+    /// <summary>
+    /// Applique une force de flottaison sur chaque os physique selon sa
+    /// profondeur sous <paramref name="InWaterSurfaceY"/>. Annule la gravité
+    /// (appliquée deux fois: moteur + boucle ragdoll) en proportion de
+    /// l'immersion pour que la poussée ne soit pas masquée.
     /// </summary>
     public void ApplyBuoyancy(float InWaterSurfaceY, float InStrength, float InMaxDepth, float InDrag, float InDelta)
     {
@@ -223,17 +234,17 @@ public partial class PhysicsSkeleton : Skeleton3D
             // Position physique réelle du rigid body: GlobalTransform corrigé par
             // BodyOffset (le node PhysicalBone3D et son corps sont décalés selon
             // la pose de repos). Sans cette correction la profondeur est toujours
-			// fausse — c'est la même formule que pour les ressorts (cf. plus bas).
-			Vector3 bonePhysPos = (bone.GlobalTransform * bone.BodyOffset.AffineInverse()).Origin;
-			float depth = InWaterSurfaceY - bonePhysPos.Y;
-			if (depth <= 0f) continue;
-			float submersion = Mathf.Clamp(depth * invMaxDepth, 0f, 1f);
-			Vector3 v = bone.LinearVelocity;
-			// Annule la gravité du frame (×2: moteur + PhysicsSkeleton._PhysicsProcess)
-			// proportionnellement à la fraction immergée, sinon la poussée est noyée.
-			Vector3 g = bone.GetGravity();
-			v -= g * InDelta * 2f * submersion;
-			// Poussée d'Archimède simplifiée: proportionnelle à la profondeur.
+            // fausse — c'est la même formule que pour les ressorts (cf. plus bas).
+            Vector3 bonePhysPos = (bone.GlobalTransform * bone.BodyOffset.AffineInverse()).Origin;
+            float depth = InWaterSurfaceY - bonePhysPos.Y;
+            if (depth <= 0f) continue;
+            float submersion = Mathf.Clamp(depth * invMaxDepth, 0f, 1f);
+            Vector3 v = bone.LinearVelocity;
+            // Annule la gravité du frame (×2: moteur + PhysicsSkeleton._PhysicsProcess)
+            // proportionnellement à la fraction immergée, sinon la poussée est noyée.
+            Vector3 g = bone.GetGravity();
+            v -= g * InDelta * 2f * submersion;
+            // Poussée d'Archimède simplifiée: proportionnelle à la profondeur.
             v.Y += submersion * InStrength * InDelta;
             // Amortissement: plus fort sur Y pour stopper le bobbing,
             // plus doux sur XZ pour ne pas geler les mouvements latéraux.
@@ -254,6 +265,14 @@ public partial class PhysicsSkeleton : Skeleton3D
         {
             _graceTime = RagdollGraceTime;
         }
+        else if (_wasRagdollLastFrame)
+        {
+
+            _graceTime = RagdollExitGraceTime;
+            RagdollTriggered = false;
+        }
+        _wasRagdollLastFrame = IsRagdoll;
+
         if (_graceTime > 0f)
         {
             _graceTime -= (float)delta;
@@ -279,8 +298,8 @@ public partial class PhysicsSkeleton : Skeleton3D
             Vector3 PositionDifference = TransformTarget.Origin - TransformCurrent.Origin;
 
             Vector3 Force = HookesLaw(PositionDifference, bone.LinearVelocity, LinStiff, LinDamp);
-            //On check la force selon un threshold, pour linstant juste print:
-            if (!IsRagdoll && Force > _displacementThreshold && _graceTime <= 0f)
+            // Comparaison sur la magnitude réelle.
+            if (!IsRagdoll && Force.LengthSquared() > forceThreshold * forceThreshold && _graceTime <= 0f)
             {
                 RagdollTriggered = true;
             }
@@ -347,7 +366,7 @@ public partial class PhysicsSkeleton : Skeleton3D
         return GetPoseFromIdx(InIsPhysicsSkeleton ? this : TargetSkeleton, InIsPhysicsSkeleton ? physicBone : _headBoneIdx);
     }
 
-	// Called every frame. 'delta' is the elapsed time since the previous frame.
+    // Called every frame. 'delta' is the elapsed time since the previous frame.
     public override void _Process(double delta)
     {
         //Process roule apres physicsprocess(), et a cause de
