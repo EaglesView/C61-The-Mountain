@@ -25,6 +25,16 @@ public partial class NetworkManager : Node
     private const float TickInterval = 1f / 20f;
 
     /// <summary>
+    /// Période entre deux <see cref="PacketType.KeepAlive"/> envoyés quand le
+    /// client est connecté mais sans Player local actif (Winning, Lobby,
+    /// transitions). Sans ce trafic minimal, ENet/NAT droppent la connexion
+    /// par idle timeout — typiquement ~30s, alors que Winning peut durer 60s+.
+    /// 5s laisse une marge confortable sur tous les middleboxes courants.
+    /// </summary>
+    private const float KeepAliveInterval = 5f;
+    private float _keepAliveAccum = 0f;
+
+    /// <summary>
     /// Seuil de Y sous lequel le serveur considère qu'un joueur est tombé hors map
     /// et déclenche un respawn autoritaire vers la position enregistrée via
     /// <see cref="RegisterPeerSpawn"/>. Doit rester inférieur au plus bas point
@@ -186,18 +196,50 @@ public partial class NetworkManager : Node
 
     public override void _Process(double delta)
     {
-        if (_provider?.Role != NetworkRole.Client || _localPlayer == null) return;
-        if (!GodotObject.IsInstanceValid(_localPlayer)) { _localPlayer = null; return; }
-        if (Multiplayer.MultiplayerPeer?.GetConnectionStatus() != MultiplayerPeer.ConnectionStatus.Connected) return;
+        if (_provider?.Role != NetworkRole.Client) return;
+        if (Multiplayer.MultiplayerPeer?.GetConnectionStatus() != MultiplayerPeer.ConnectionStatus.Connected)
+        {
+            // Pas connecté : on ne peut rien envoyer, et on reset les
+            // accumulateurs pour repartir propre à la prochaine connexion.
+            _tickAccum = 0f;
+            _keepAliveAccum = 0f;
+            return;
+        }
 
-        _tickAccum += (float)delta;
-        if (_tickAccum < TickInterval) return;
-        _tickAccum -= TickInterval;
+        // Détecte un _localPlayer qui aurait été libéré sans qu'on en soit
+        // notifié (le node a été QueueFree, mais SetLocalPlayer(null) n'a pas
+        // été appelé). Bascule alors vers le keep-alive en aval.
+        if (_localPlayer != null && !GodotObject.IsInstanceValid(_localPlayer))
+            _localPlayer = null;
 
-        if (!_localPlayer.IsInsideTree()) { /*GD.Print("[NetworkManager] ERROR: _localPlayer not in tree!");*/ return; }
-        var state = _localPlayer.SnapshotState();
-        var packet = PlayerNetState.Serialize(PacketType.StateUpdate, state);
-        _provider.SendUnreliable(1, packet);
+        // ── Phase Game active : envoi de snapshots à 20Hz ────────────────────
+        if (_localPlayer != null && _localPlayer.IsInsideTree())
+        {
+            _tickAccum += (float)delta;
+            if (_tickAccum < TickInterval) return;
+            _tickAccum -= TickInterval;
+
+            var state = _localPlayer.SnapshotState();
+            var packet = PlayerNetState.Serialize(PacketType.StateUpdate, state);
+            _provider.SendUnreliable(1, packet);
+            // Les snapshots comptent comme du trafic : on reset le keep-alive
+            // pour ne pas envoyer un ping redondant juste après.
+            _keepAliveAccum = 0f;
+            return;
+        }
+
+        // ── Hors phase Game : keep-alive pour ne pas timeout ─────────────────
+        // Pas de Player local (Winning, Lobby, transition Game→Game). Sans
+        // ce ping périodique, la connexion meurt silencieusement et le round
+        // suivant échoue : ClientReady part dans le vide, aucun spawn,
+        // loading collé jusqu'à la fin du round (cf. bug RotatingBarrel
+        // round 2). Le serveur ignore le paquet à la réception.
+        _keepAliveAccum += (float)delta;
+        if (_keepAliveAccum >= KeepAliveInterval)
+        {
+            _keepAliveAccum = 0f;
+            _provider.SendUnreliable(1, new byte[] { (byte)PacketType.KeepAlive });
+        }
     }
 
     private void OnPacketReceived(int fromPeerId, byte[] data)
@@ -205,6 +247,12 @@ public partial class NetworkManager : Node
         if (data.Length < 1) return;
 
         var type = (PacketType)data[0];
+
+        // Ping applicatif : sert uniquement à garder la connexion ENet/NAT
+        // vivante pendant les phases sans trafic snapshot. Aucun effet de
+        // bord à appliquer — le simple fait d'avoir reçu le paquet a déjà
+        // rafraîchi le timer côté ENet.
+        if (type == PacketType.KeepAlive) return;
 
         if (type == PacketType.PositionCorrect)
         {
