@@ -1,0 +1,11 @@
+Model Information:
+* title:	Sunday Hat
+* source:	https://sketchfab.com/3d-models/sunday-hat-dd839a1506a8474394f85bd518b4ed95
+* author:	beyondmatter (https://sketchfab.com/beyondmatter)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Sunday Hat" (https://sketchfab.com/3d-models/sunday-hat-dd839a1506a8474394f85bd518b4ed95) by beyondmatter (https://sketchfab.com/beyondmatter) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
