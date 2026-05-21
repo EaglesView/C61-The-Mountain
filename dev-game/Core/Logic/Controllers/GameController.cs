@@ -70,6 +70,21 @@ public sealed partial class GameController : Node3D, IPhase
 	private bool _done;
 	public bool IsDone => _done;
 
+	// ── Spawn coordination (corrige race "ClientReady arrivé dans la fenêtre
+	//    morte entre rounds"). Server-side : on ne refuse plus une demande de
+	//    spawn quand le map_container/spawner n'est pas encore prêt — on la met
+	//    en attente et on draine quand LoadLevel finit. Client-side : on renvoie
+	//    HostMapPick+ClientReady jusqu'à recevoir un ack du serveur (ou jusqu'à
+	//    l'expiration du watchdog).
+	private readonly Dictionary<int, string> _pendingSpawns = new();
+	private readonly HashSet<int> _spawnedPeers = new();
+	private string _pendingHostMapPick;
+	private bool _clientSpawnAcked;
+	private float _clientReadyAccum;
+	private int _clientReadyRetries;
+	private const float ClientReadyRetryInterval = 1.0f;
+	private const int ClientReadyMaxRetries = 10;
+
 	// ── Host tracking + partie avortée ───────────────────────────────────────
 
 	/// <summary>
@@ -152,6 +167,11 @@ public sealed partial class GameController : Node3D, IPhase
 		_loadingWatchdogFired = false;
 		GameElapsedSeconds = 0f;
 		_statsByPeer.Clear();
+		_pendingSpawns.Clear();
+		_spawnedPeers.Clear();
+		_clientSpawnAcked = false;
+		_clientReadyAccum = 0f;
+		_clientReadyRetries = 0;
 		// Le serveur génère l'identifiant de partie et le diffusera au moment de
         // la résolution. Les clients reçoivent _gameId via NetApplyWinnerData.
         var netInit = NetworkManager.Instance;
@@ -196,7 +216,17 @@ public sealed partial class GameController : Node3D, IPhase
 			//GD.Print("[GameController] Dedicated server — waiting for HostMapPick.");
 			_onPeerDisconnectedHandler = OnPeerDisconnected;
 			Multiplayer.PeerDisconnected += _onPeerDisconnectedHandler;
-			// Le niveau est loadé a la réception du HostMapPick
+			// Le niveau est loadé a la réception du HostMapPick — sauf si on
+			// avait reçu un HostMapPick avant que map_container soit prêt
+			// (race de la fenêtre morte Lobby/Game côté serveur). Auquel cas
+			// on consomme la valeur mise en attente ici. Les ClientReady
+			// queue-és seront drainés par LoadLevel à la fin.
+			if (_pendingHostMapPick is not null)
+			{
+				var mapId = _pendingHostMapPick;
+				_pendingHostMapPick = null;
+				LoadLevel(mapId);
+			}
 		}
 		else if (net is not null && net.IsClient)
 		{
@@ -256,31 +286,36 @@ public sealed partial class GameController : Node3D, IPhase
 
 		// FSM interne (Init → Waiting → Playing → Resolving). Démarrée ici parce
 		// que le prédicat Playing→Resolving dépend de _mode.IsDone.
+		// Le gate Init → Waiting attend que le niveau ET le joueur local soient
+		// prêts (côté client) : sans ça, la FSM avance sur la base d'un timer
+		// pur et un peer dont le spawn a été silencieusement perdu passe en
+		// Playing à 10s tout en étant collé sur l'overlay loading. C'est aussi
+		// ce qui désarme par accident le watchdog (cf. TickLoadingWatchdog).
 		_waitingCondition = new TimeElapsedCondition<State>(_waitingDuration);
 		_fsm = new StateMachine<State>(State.Init, OnSubEnter, OnSubExit);
 		_fsm.When(State.Init,
-			new PredicateCondition<State>(() =>/* TODO: Inclure level loaded */ true),
+			new PredicateCondition<State>(() => _mode is not null && (IsDedicatedServer() || _localPlayer is not null)),
 			State.Waiting
 		);
 		_fsm.When(State.Init,
 			new PredicateCondition<State>(() => /* TODO: flag d'erreur de chargement */ false),
-            State.Failure
-        );
-        _fsm.When(State.Waiting,
-            _waitingCondition,
-            State.Playing
-        );
-        _fsm.When(State.Playing,
-            new PredicateCondition<State>(() => _mode.IsDone),
-            State.Resolving
-        );
-        _fsm.When(State.Resolving,
-            new TimeElapsedCondition<State>(_gameOverDuration),
-            State.Finalize
-        );
+			State.Failure
+		);
+		_fsm.When(State.Waiting,
+			_waitingCondition,
+			State.Playing
+		);
+		_fsm.When(State.Playing,
+			new PredicateCondition<State>(() => _mode.IsDone),
+			State.Resolving
+		);
+		_fsm.When(State.Resolving,
+			new TimeElapsedCondition<State>(_gameOverDuration),
+			State.Finalize
+		);
 		// Aborted -> Finalize : après le palier d'affichage de l'overlay
-        // «&#160;PARTIE INTERROMPUE&#160;», on enchaîne sur Finalize qui pose
-        // _done=true et laisse la FSM principale rebascule vers Winning. Sans
+		// «&#160;PARTIE INTERROMPUE&#160;», on enchaîne sur Finalize qui pose
+		// _done=true et laisse la FSM principale rebascule vers Winning. Sans
 		// cette règle, l'état Aborted serait terminal et la phase Game
 		// soft-lockerait (cf. BUG_REVIEW post-2026-05-15).
 		_fsm.When(State.Aborted,
@@ -288,7 +323,36 @@ public sealed partial class GameController : Node3D, IPhase
 			State.Finalize
 		);
 		OnSubEnter(State.Init);
+		// À ce point, _spawner et _playerSpawner sont assignés : on peut
+		// honorer les ClientReady qui sont arrivés pendant la fenêtre morte.
+		DrainPendingSpawns();
 		return true;
+	}
+
+	/// <summary>
+	/// Côté serveur uniquement&#160;: spawn tous les peers qui avaient envoyé
+	/// <see cref="ClientReady"/> avant que <see cref="LoadLevel"/> ait fini de
+	/// configurer le <c>MultiplayerSpawner</c> et le <see cref="PlayerSpawner"/>.
+	/// Idempotent — un peer déjà spawné (cf. <see cref="_spawnedPeers"/>) est
+	/// simplement ré-acquitté, au cas où l'ack précédent ait été perdu.
+	/// </summary>
+	private void DrainPendingSpawns()
+	{
+		if (_spawner is null || _playerSpawner is null) return;
+		if (_pendingSpawns.Count == 0) return;
+		var pending = new List<KeyValuePair<int, string>>(_pendingSpawns);
+		_pendingSpawns.Clear();
+		foreach (var kv in pending)
+		{
+			if (_spawnedPeers.Contains(kv.Key))
+			{
+				RpcId(kv.Key, MethodName.ServerSpawnAck);
+				continue;
+			}
+			ServerSpawnPeer(kv.Key, kv.Value);
+			_spawnedPeers.Add(kv.Key);
+			RpcId(kv.Key, MethodName.ServerSpawnAck);
+		}
 	}
 
 	public void Tick(float InDelta)
@@ -297,6 +361,7 @@ public sealed partial class GameController : Node3D, IPhase
 		// tourner même si la FSM n'est pas encore créée (LoadLevel pas terminé).
 		UpdateLocalPlayerLink();
 		UpdateLoadingOverlay();
+		TickClientReadyRetry(InDelta);
 		// Watchdog du chargement : si le FSM n'est jamais créé OU que le joueur
 		// local n'apparaît jamais, on force la sortie après _loadingWatchdogDuration
 		// secondes plutôt que de laisser l'overlay coller. La règle ne s'applique
@@ -384,6 +449,12 @@ public sealed partial class GameController : Node3D, IPhase
 		_aborted = false;
 		_winnerBroadcasted = false;
 		_statsByPeer.Clear();
+		_pendingSpawns.Clear();
+		_spawnedPeers.Clear();
+		_pendingHostMapPick = null;
+		_clientSpawnAcked = false;
+		_clientReadyAccum = 0f;
+		_clientReadyRetries = 0;
 		_gameId = "";
 		GameElapsedSeconds = 0f;
 	}
@@ -422,7 +493,42 @@ public sealed partial class GameController : Node3D, IPhase
             //GD.Print($"[GameController] Host registered: peer {peerId}");
         }
         GD.Print($"[LoadDiag] ClientReady RPC received from peer {peerId} (isHost={InIsHost}, hat={InHatId})");
+
+		// Idempotence : le client renvoie ClientReady en boucle jusqu'à recevoir
+		// ServerSpawnAck. Si on a déjà spawn ce peer, on ré-acquitte simplement
+		// (l'ack précédent a probablement été perdu) sans dupliquer le Player.
+        if (_spawnedPeers.Contains(peerId))
+        {
+            RpcId(peerId, MethodName.ServerSpawnAck);
+            return;
+        }
+
+        // Fenêtre morte : le RPC est arrivé avant que LoadLevel ait fini de
+        // mettre en place _spawner / _playerSpawner (transition Winning →
+        // Lobby → Game côté serveur, qui prend plusieurs ticks). On met la
+        // demande en attente — DrainPendingSpawns la consommera dès que le
+        // niveau sera prêt, plutôt que de la laisser tomber silencieusement.
+        if (_spawner is null || _playerSpawner is null)
+        {
+            _pendingSpawns[peerId] = InHatId ?? HatRegistry.DefaultHatId;
+            return;
+        }
+
         ServerSpawnPeer(peerId, InHatId);
+        _spawnedPeers.Add(peerId);
+        RpcId(peerId, MethodName.ServerSpawnAck);
+    }
+
+    /// <summary>
+    /// Confirmation serveur → client&#160;: le peer demandeur a bien été spawné
+    /// (ou la demande a été enregistrée et le sera dès que le niveau sera
+    /// prêt). Coupe la boucle de retransmission de <see cref="ClientReady"/>
+	/// côté client. Idempotent — un ack reçu après spawn local n'a pas d'effet.
+    /// </summary>
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ServerSpawnAck()
+    {
+        _clientSpawnAcked = true;
     }
 
     /// <summary>
@@ -438,6 +544,15 @@ public sealed partial class GameController : Node3D, IPhase
 		if (_mode is not null) return;
 		int senderId = Multiplayer.GetRemoteSenderId();
 		//GD.Print($"[GameController] HostMapPick from peer {senderId}: mapId='{InMapId}'");
+		// Fenêtre morte : map_container peut ne pas encore être instancié si la
+		// FSM principale est encore en Lobby (1 tick) ou en transition. Garder
+		// la valeur — Enter() la consomme aussitôt le container prêt. Sans ça,
+		// le premier HostMapPick était perdu et le serveur restait sans niveau.
+		if (_mapContainerInstance is null)
+		{
+			_pendingHostMapPick = InMapId;
+			return;
+		}
 		LoadLevel(InMapId);
 	}
 
@@ -464,6 +579,8 @@ public sealed partial class GameController : Node3D, IPhase
 
 	private void OnPeerDisconnected(long peerId)
 	{
+		_pendingSpawns.Remove((int)peerId);
+		_spawnedPeers.Remove((int)peerId);
 		var players = _mapContainerInstance?.GetNodeOrNull("Players");
 		var player = players?.GetNodeOrNull(((int)peerId).ToString());
 		if (player is not null)
@@ -929,9 +1046,12 @@ public sealed partial class GameController : Node3D, IPhase
 		if (_loadingWatchdogFired) return;
 		if (IsDedicatedServer()) return;
 		if (_localPlayer is not null) return; // joueur local prêt — watchdog inutile
-											  // Une fois la partie en cours (ou au-delà), le watchdog n'a plus de raison d'être.
-		if (_fsm is not null && (_fsm.Is(State.Playing) || _fsm.Is(State.Resolving)
-			|| _fsm.Is(State.Finalize) || _fsm.Is(State.Aborted))) return;
+		// Note : on n'arme/désarme PAS selon l'état FSM. Le gate Init → Waiting
+		// dépend désormais de _localPlayer (cf. LoadLevel), donc atteindre
+		// Playing implique nécessairement _localPlayer != null. Brancher le
+		// watchdog uniquement sur _localPlayer évite le bug «&#160;watchdog
+		// désarmé prématurément par le timer Waiting → Playing&#160;» qui laissait
+		// le joueur collé sur l'écran de loading indéfiniment.
 
 		_loadingWatchdogElapsed += InDelta;
 		if (_loadingWatchdogElapsed < _loadingWatchdogDuration) return;
@@ -944,6 +1064,35 @@ public sealed partial class GameController : Node3D, IPhase
 		// foiré, puis la règle Aborted → Finalize sortira proprement.
 		if (_fsm is not null) _fsm.TransitionTo(State.Aborted);
 		else OnSubEnter(State.Aborted);
+	}
+
+	/// <summary>
+	/// Côté client uniquement&#160;: tant que le serveur n'a pas acquitté le
+	/// <see cref="ClientReady"/> via <see cref="ServerSpawnAck"/>, on retransmet
+	/// périodiquement <see cref="HostMapPick"/> + <see cref="ClientReady"/>.
+	/// Couvre les pertes silencieuses dans la fenêtre morte côté serveur
+	/// (transition Lobby/Game, <c>_spawner</c>/<c>_playerSpawner</c> non encore
+	/// assignés). Le compteur de retries borne la boucle&#160;: passé
+	/// <see cref="ClientReadyMaxRetries"/>, on laisse le watchdog router vers
+	/// Aborted plutôt que de faire planer une boucle infinie.
+	/// </summary>
+	private void TickClientReadyRetry(float InDelta)
+	{
+		if (_clientSpawnAcked) return;
+		if (_localPlayer is not null) return; // spawn replicated localement, OK
+		var net = NetworkManager.Instance;
+		if (net is null || !net.IsClient) return;
+		if (_clientReadyRetries >= ClientReadyMaxRetries) return;
+
+		_clientReadyAccum += InDelta;
+		if (_clientReadyAccum < ClientReadyRetryInterval) return;
+		_clientReadyAccum = 0f;
+		_clientReadyRetries++;
+		// Réémet les deux RPCs ensemble&#160;: HostMapPick est idempotent côté
+		// serveur (early-return si _mode déjà chargé) et ClientReady est
+		// idempotent via _spawnedPeers.
+		RpcId(1, MethodName.HostMapPick, LobbyState.SelectedMapId);
+		RpcId(1, MethodName.ClientReady, LobbyState.IsHost, LobbyState.SelectedHatId);
 	}
 
 	/// <summary>
@@ -1073,29 +1222,32 @@ public sealed partial class GameController : Node3D, IPhase
     /// </summary>
     private void GoToMainMenu()
     {
-        NetworkManager.Instance?.Disconnect();
-        LobbyState.Clear();
-        Input.MouseMode = Input.MouseModeEnum.Visible;
-        GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
-    }
+		// Cf. LobbyController.GoToMainMenu : même raison, on retire l'entrée
+		// Firestore avant le Clear pour ne pas laisser un fantôme dans la salle.
+		LobbyCleanup.LeaveRoomFireAndForget();
+		NetworkManager.Instance?.Disconnect();
+		LobbyState.Clear();
+		Input.MouseMode = Input.MouseModeEnum.Visible;
+		GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
+	}
 
-    // ── Lien joueur local + overlay de mort ───────────────────────────────────
+	// ── Lien joueur local + overlay de mort ───────────────────────────────────
 
-    /// <summary>
-    /// Cherche le joueur local dans le groupe <c>local_player</c> (ajouté par
+	/// <summary>
+	/// Cherche le joueur local dans le groupe <c>local_player</c> (ajouté par
 	/// <c>Player._Ready</c> côté authority) et s'abonne à son événement <c>Died</c>
 	/// la première fois qu'on le trouve. Idempotent une fois la liaison faite.
-    /// </summary>
-    private void UpdateLocalPlayerLink()
-    {
-        if (_localPlayer is not null) return;
-        var found = GetTree().GetFirstNodeInGroup("local_player") as Player;
-        if (found is null) return;
-        _localPlayer = found;
-        _localPlayer.Died += OnLocalPlayerDied;
-    }
+	/// </summary>
+	private void UpdateLocalPlayerLink()
+	{
+		if (_localPlayer is not null) return;
+		var found = GetTree().GetFirstNodeInGroup("local_player") as Player;
+		if (found is null) return;
+		_localPlayer = found;
+		_localPlayer.Died += OnLocalPlayerDied;
+	}
 
-    /// <summary>
+	/// <summary>
 	/// Handler du <see cref="Character.Died"/> du joueur local. Bascule l'UI en mode
 	/// «&#160;Wasted&#160;»&#160;: HUD caché, overlay de mort affiché par-dessus.
 	/// </summary>
@@ -1108,66 +1260,66 @@ public sealed partial class GameController : Node3D, IPhase
 
 	/// <summary>
 	/// Affiche l'overlay <c>wasted.tscn</c> et cache complètement le HUD in-game.
-    /// Si <paramref name="InTextOverride"/> est fourni, le label central est
-    /// réécrit (sinon le texte par défaut «&#160;WASTED&#160;» de la scène est
+	/// Si <paramref name="InTextOverride"/> est fourni, le label central est
+	/// réécrit (sinon le texte par défaut «&#160;WASTED&#160;» de la scène est
 	/// conservé). Si l'overlay est déjà actif et qu'un nouveau texte est passé,
-    /// le label est simplement mis à jour&#160;: utile pour passer de «&#160;WASTED&#160;»
-    /// à «&#160;GAME OVER&#160;» quand le mode se termine alors que le joueur local
-    /// était déjà mort.
-    /// </summary>
-    private void ShowWastedOverlay(string InTextOverride = null)
-    {
-        if (_wastedInstance is null)
-        {
-            if (_wastedScene is null) return;
-            _wastedInstance = _wastedScene.Instantiate<Control>();
-            AddChild(_wastedInstance);
-            if (_uiInstance is not null) _uiInstance.Visible = false;
-        }
-        if (InTextOverride is not null)
-        {
-            var label = _wastedInstance.GetNodeOrNull<Label>("MarginContainer/Label");
-            if (label is not null) label.Text = InTextOverride;
-        }
-    }
+	/// le label est simplement mis à jour&#160;: utile pour passer de «&#160;WASTED&#160;»
+	/// à «&#160;GAME OVER&#160;» quand le mode se termine alors que le joueur local
+	/// était déjà mort.
+	/// </summary>
+	private void ShowWastedOverlay(string InTextOverride = null)
+	{
+		if (_wastedInstance is null)
+		{
+			if (_wastedScene is null) return;
+			_wastedInstance = _wastedScene.Instantiate<Control>();
+			AddChild(_wastedInstance);
+			if (_uiInstance is not null) _uiInstance.Visible = false;
+		}
+		if (InTextOverride is not null)
+		{
+			var label = _wastedInstance.GetNodeOrNull<Label>("MarginContainer/Label");
+			if (label is not null) label.Text = InTextOverride;
+		}
+	}
 
-    /// <summary>
+	/// <summary>
 	/// Affiche l'overlay <c>wasted.tscn</c> avec le texte «&#160;GAME OVER&#160;».
 	/// Appelé à l'entrée en phase <c>Resolving</c> pour marquer la fin de la
-    /// partie pendant que le monde reste visible en arrière-plan.
-    /// </summary>
-    private void ShowGameOverOverlay() => ShowWastedOverlay("GAME OVER");
+	/// partie pendant que le monde reste visible en arrière-plan.
+	/// </summary>
+	private void ShowGameOverOverlay() => ShowWastedOverlay("GAME OVER");
 
-    /// <summary>
-    /// Fait apparaître ou disparaître un panneau du HUD en fondu sur
-    /// <see cref="_hudFadeDuration"/> secondes. Idempotent&#160;: ne fait rien si
+	/// <summary>
+	/// Fait apparaître ou disparaître un panneau du HUD en fondu sur
+	/// <see cref="_hudFadeDuration"/> secondes. Idempotent&#160;: ne fait rien si
 	/// l'état demandé est déjà l'état courant. <c>Visible</c> est forcé à
-    /// <c>true</c> avant un fade-in pour que la transparence soit visible, et
-    /// rebasculé à <c>false</c> en fin de fade-out pour ne pas intercepter
-    /// les inputs.
-    /// </summary>
-    private void FadePanel(Control InPanel, ref Tween InOutTween, ref bool InOutShown, bool InTarget)
-    {
-        if (InPanel is null) return;
-        if (InOutShown == InTarget) return;
-        InOutShown = InTarget;
+	/// <c>true</c> avant un fade-in pour que la transparence soit visible, et
+	/// rebasculé à <c>false</c> en fin de fade-out pour ne pas intercepter
+	/// les inputs.
+	/// </summary>
+	private void FadePanel(Control InPanel, ref Tween InOutTween, ref bool InOutShown, bool InTarget)
+	{
+		if (InPanel is null) return;
+		if (InOutShown == InTarget) return;
+		InOutShown = InTarget;
 
-        InOutTween?.Kill();
-        InOutTween = CreateTween();
+		InOutTween?.Kill();
+		InOutTween = CreateTween();
 
-        if (InTarget)
-        {
-            InPanel.Visible = true;
-            InOutTween.TweenProperty(InPanel, "modulate:a", 1f, _hudFadeDuration);
-        }
-        else
-        {
-            Control captured = InPanel;
-            InOutTween.TweenProperty(InPanel, "modulate:a", 0f, _hudFadeDuration);
-            InOutTween.TweenCallback(Callable.From(() =>
-            {
-                if (IsInstanceValid(captured)) captured.Visible = false;
-            }));
-        }
-    }
+		if (InTarget)
+		{
+			InPanel.Visible = true;
+			InOutTween.TweenProperty(InPanel, "modulate:a", 1f, _hudFadeDuration);
+		}
+		else
+		{
+			Control captured = InPanel;
+			InOutTween.TweenProperty(InPanel, "modulate:a", 0f, _hudFadeDuration);
+			InOutTween.TweenCallback(Callable.From(() =>
+			{
+				if (IsInstanceValid(captured)) captured.Visible = false;
+			}));
+		}
+	}
 }

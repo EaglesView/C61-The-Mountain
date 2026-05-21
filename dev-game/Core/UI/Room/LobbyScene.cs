@@ -110,7 +110,24 @@ public partial class LobbyScene : Control
         try
         {
             var fresh = await RoomServiceProvider.Repository.GetAsync(snapshot.Code);
-            if (fresh is null || _leaving || !IsInsideTree()) return;
+            if (_leaving || !IsInsideTree()) return;
+            // fresh == null ⇒ la salle a été supprimée côté Firestore. Depuis
+            // que GetAsync ne renvoie plus null sur erreur HTTP transitoire
+            // (cf. RoomRepository), c'est désormais un signal fiable : l'hôte
+            // a quitté et a nuke la salle (LobbyCleanup.LeaveRoomFireAndForget).
+            // On ramène le non-hôte au main menu via ErrorDialog pour qu'il ne
+            // reste pas coincé sur un lobby fantôme.
+            if (fresh is null)
+            {
+                _leaving = true;
+                LobbyState.Clear();
+                ErrorDialog.Show(GetTree(),
+                    "L'hôte a quitté la partie. La salle a été fermée.",
+                    InOkText: "Retour au Menu Principal",
+                    InOnOk: GoToMainMenu,
+                    InOnClose: GoToMainMenu);
+                return;
+            }
 
             LobbyState.Set(fresh, LobbyState.IsHost);
             RefreshPlayerList(fresh);
@@ -317,26 +334,29 @@ public partial class LobbyScene : Control
         _playersList.AddChild(row);
     }
 
-    private async void OnLeavePressed()
+    private void OnLeavePressed()
     {
         _leaving = true;
         _leaveButton.Disabled = true;
 
-        var snapshot = LobbyState.Current;
-        var me = Core.Auth.AuthServiceProvider.Instance.CurrentUser;
-        if (snapshot is not null && me is not null)
-        {
-            try
-            {
-                await RoomServiceProvider.Repository.RemovePlayerAsync(snapshot.Code, me.Id);
-            }
-            catch (System.Exception ex)
-            {
-                GD.PrintErr($"[Lobby] Leave cleanup failed: {ex.Message}");
-            }
-        }
-
+        // Hôte ⇒ supprime la salle ; non-hôte ⇒ retire juste son entrée.
+        // Cf. LobbyCleanup pour la logique partagée avec les chemins
+        // d'erreur du Lobby/Game et le bouton QUIT du Winning.
+        LobbyCleanup.LeaveRoomFireAndForget();
         LobbyState.Clear();
+        GoToMainMenu();
+    }
+
+    /// <summary>
+    /// Retour au main menu&#160;: change de scène sans rien laisser derrière.
+    /// Utilisé à la fois par <see cref="OnLeavePressed"/> et par le chemin
+    /// «&#160;hôte a quitté → salle supprimée&#160;» de <see cref="OnPollTick"/>
+    /// (callback de l'ErrorDialog). N'appelle pas <see cref="LobbyCleanup"/>&#160;:
+    /// les deux appelants ont déjà fait leur ménage avant.
+    /// </summary>
+    private void GoToMainMenu()
+    {
+        if (!IsInsideTree()) return;
         GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
     }
 }

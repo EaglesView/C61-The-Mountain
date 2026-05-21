@@ -60,6 +60,11 @@ public sealed partial class MainController : Node3D
 		{
 			_quitScheduled = true;
 			_current.Exit();
+			// Retire le joueur de la salle Firestore avant de couper ENet + vider
+			// LobbyState. Sans cette ligne, le joueur restait listé dans la salle
+			// pour les autres clients (qui polent toutes les 4s), même après être
+			// rentré au main menu — d'où l'impression «&#160;il est encore dans le lobby&#160;».
+			LobbyCleanup.LeaveRoomFireAndForget();
 			NetworkManager.Instance?.Disconnect();
 			LobbyState.Clear();
 			Input.MouseMode = Input.MouseModeEnum.Visible;

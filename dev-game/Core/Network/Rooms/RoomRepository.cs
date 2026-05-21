@@ -54,7 +54,12 @@ public sealed class RoomRepository
 		var response = await Http.GetAsync(
 			$"{BaseUrl}/{Uri.EscapeDataString(code)}.json?auth={token}");
 
-		if (!response.IsSuccessStatusCode) return null;
+		// On laisse remonter les erreurs HTTP (réseau, auth, 5xx) sous forme
+		// d'exception&#160;: <c>null</c> est désormais réservé exclusivement au cas
+		// «&#160;la salle n'existe pas&#160;» (Firebase RTDB renvoie 200 + corps
+		// "null"). Cette distinction permet aux appelants de différencier un
+		// hôte qui a quitté (salle supprimée) d'un hiccup transitoire.
+		response.EnsureSuccessStatusCode();
 
 		var json = await response.Content.ReadAsStringAsync();
 		if (json == "null" || string.IsNullOrWhiteSpace(json)) return null;
@@ -134,6 +139,20 @@ public sealed class RoomRepository
 		var token = _getToken();
 		var request = new HttpRequestMessage(HttpMethod.Delete,
 			$"{BaseUrl}/{Uri.EscapeDataString(code)}/players/{Uri.EscapeDataString(userId)}.json?auth={token}");
+		var response = await Http.SendAsync(request);
+		response.EnsureSuccessStatusCode();
+	}
+
+	/// <summary>
+	/// Supprime entièrement la salle <paramref name="code"/> (root + tous les
+	/// enfants). Utilisé quand l'hôte quitte&#160;: plutôt que de laisser un
+	/// fantôme avec des non-hôtes qui polent dans le vide, on nuke la salle.
+	/// </summary>
+	public async Task DeleteRoomAsync(string code)
+	{
+		var token = _getToken();
+		var request = new HttpRequestMessage(HttpMethod.Delete,
+			$"{BaseUrl}/{Uri.EscapeDataString(code)}.json?auth={token}");
 		var response = await Http.SendAsync(request);
 		response.EnsureSuccessStatusCode();
 	}

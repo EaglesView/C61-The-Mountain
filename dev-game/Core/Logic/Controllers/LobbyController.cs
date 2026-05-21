@@ -282,11 +282,15 @@ public sealed partial class LobbyController : Node3D, IPhase
     /// </summary>
     private void GoToMainMenu()
     {
-        NetworkManager.Instance?.Disconnect();
-        LobbyState.Clear();
-        Input.MouseMode = Input.MouseModeEnum.Visible;
-        GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
-    }
+		// Retire l'entrée joueur de Firestore avant de vider LobbyState (sinon
+		// le snapshot référencé par le cleanup est déjà null). Sans cet appel,
+		// un quitteur via ErrorDialog reste listé pour les autres clients.
+		LobbyCleanup.LeaveRoomFireAndForget();
+		NetworkManager.Instance?.Disconnect();
+		LobbyState.Clear();
+		Input.MouseMode = Input.MouseModeEnum.Visible;
+		GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
+	}
 
-    public override void _Ready() { }
+	public override void _Ready() { }
 }
