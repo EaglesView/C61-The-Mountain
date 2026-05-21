@@ -85,23 +85,23 @@ public partial class Character : CharacterBody3D
 	/// authoritative via le RPC <c>SubmitStats</c> en fin de phase Game).
 	/// </summary>
 	protected PlayerGameStats _stats = new();
-    private float _ragdollEnterSec;
+	private float _ragdollEnterSec;
 
-    /// <summary>Accès lecture aux stats accumulées (authority).</summary>
-    public PlayerGameStats Stats => _stats;
+	/// <summary>Accès lecture aux stats accumulées (authority).</summary>
+	public PlayerGameStats Stats => _stats;
 
-    // ── Death ────────────────────────────────────────────────────────────────
+	// ── Death ────────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Dernière raison de mort enregistrée. Réinitialisée par <see cref="Die"/> à chaque
-    /// déclenchement. Utilisée par les consommateurs de stats pour catégoriser la mort.
-    /// </summary>
-    public DeathReason LastDeathReason { get; private set; } = DeathReason.Unknown;
+	/// <summary>
+	/// Dernière raison de mort enregistrée. Réinitialisée par <see cref="Die"/> à chaque
+	/// déclenchement. Utilisée par les consommateurs de stats pour catégoriser la mort.
+	/// </summary>
+	public DeathReason LastDeathReason { get; private set; } = DeathReason.Unknown;
 
-    /// <summary>
-    /// Émis lorsque ce personnage entre en état <see cref="CharacterState.Dead"/>.
-    /// Fire-once par mort&#160;: l'événement n'est pas réémis si <see cref="Die"/> est rappelé
-    /// alors qu'on est déjà mort (idempotent). Signature&#160;: <c>(peerId, reason)</c>.
+	/// <summary>
+	/// Émis lorsque ce personnage entre en état <see cref="CharacterState.Dead"/>.
+	/// Fire-once par mort&#160;: l'événement n'est pas réémis si <see cref="Die"/> est rappelé
+	/// alors qu'on est déjà mort (idempotent). Signature&#160;: <c>(peerId, reason)</c>.
     /// Hook prévu pour le futur service de stats.
     /// </summary>
     public event System.Action<int, DeathReason> Died;
@@ -140,139 +140,139 @@ public partial class Character : CharacterBody3D
         {
             // Position and Velocity are repurposed: spine physics world position
             // and velocity so remote players can anchor their local simulation.
-            // BodyYaw and HeadPitch carry the head physical bone's world rotation
-            // so the remote correction steers head orientation correctly.
-            var (headPitch, headYaw) = PhysicsSkelton.GetHeadPhysicsWorldAngles();
-            return new PlayerNetState(PeerId,
-                PhysicsSkelton.GetSpinePhysicsWorldPosition(),
-                PhysicsSkelton.GetSpinePhysicsLinearVelocity(),
-                headYaw, headPitch,
-                PhysicsSkelton.ArmPointDir,
-                (byte)currentMovementState, (byte)currentEmoteState, flags);
-        }
+			// BodyYaw and HeadPitch carry the head physical bone's world rotation
+			// so the remote correction steers head orientation correctly.
+			var (headPitch, headYaw) = PhysicsSkelton.GetHeadPhysicsWorldAngles();
+			return new PlayerNetState(PeerId,
+				PhysicsSkelton.GetSpinePhysicsWorldPosition(),
+				PhysicsSkelton.GetSpinePhysicsLinearVelocity(),
+				headYaw, headPitch,
+				PhysicsSkelton.ArmPointDir,
+				(byte)currentMovementState, (byte)currentEmoteState, flags);
+		}
 
-        if (_characterState == CharacterState.Recovering)
-            flags |= 0x04;
+		if (_characterState == CharacterState.Recovering)
+			flags |= 0x04;
 
-        return new PlayerNetState(PeerId, GlobalPosition, Velocity,
-            Rotation.Y, headAngle, PhysicsSkelton.ArmPointDir,
-            (byte)currentMovementState, (byte)currentEmoteState, flags);
-    }
+		return new PlayerNetState(PeerId, GlobalPosition, Velocity,
+			Rotation.Y, headAngle, PhysicsSkelton.ArmPointDir,
+			(byte)currentMovementState, (byte)currentEmoteState, flags);
+	}
 
-    public virtual void ApplyNetworkState(PlayerNetState state)
-    {
-        GlobalPosition = state.Position;
-        velocity = state.Velocity;
-        Rotation = new Vector3(Rotation.X, state.BodyYaw, Rotation.Z);
-        RotateHead(state.HeadPitch);
-        PhysicsSkelton.HeadAngle = -headAngle;
-        PhysicsSkelton.ArmPointDir = state.ArmPointDir;
-        PhysicsSkelton.Aiming = state.Aiming;
-        PhysicsSkelton.ArmsUp = state.ArmsUp;
-        currentMovementState = state.MoveState;
-        currentEmoteState = state.EmoteState;
-    }
-    public void ComputeEmotePhysics()
-    {
-        switch (currentEmoteState)
-        {
-            case EmoteState.None:
-                break;
-            case EmoteState.Pointing:
-                PointAt(pointVec);
-                break;
-            case EmoteState.ArmsUp:
-                break;
-            case EmoteState.ShowSign:
-                break;
-        }
-    }
+	public virtual void ApplyNetworkState(PlayerNetState state)
+	{
+		GlobalPosition = state.Position;
+		velocity = state.Velocity;
+		Rotation = new Vector3(Rotation.X, state.BodyYaw, Rotation.Z);
+		RotateHead(state.HeadPitch);
+		PhysicsSkelton.HeadAngle = -headAngle;
+		PhysicsSkelton.ArmPointDir = state.ArmPointDir;
+		PhysicsSkelton.Aiming = state.Aiming;
+		PhysicsSkelton.ArmsUp = state.ArmsUp;
+		currentMovementState = state.MoveState;
+		currentEmoteState = state.EmoteState;
+	}
+	public void ComputeEmotePhysics()
+	{
+		switch (currentEmoteState)
+		{
+			case EmoteState.None:
+				break;
+			case EmoteState.Pointing:
+				PointAt(pointVec);
+				break;
+			case EmoteState.ArmsUp:
+				break;
+			case EmoteState.ShowSign:
+				break;
+		}
+	}
 
-    // ── FSM ──────────────────────────────────────────────────────────────────
+	// ── FSM ──────────────────────────────────────────────────────────────────
 
-    public void TransitionTo(CharacterState next)
-    {
-        if (_characterState == next) return;
-        if (next == CharacterState.Paused)
-            _stateBeforePause = _characterState;
-        ExitState(_characterState);
-        _characterState = next;
-        EnterState(_characterState);
-    }
+	public void TransitionTo(CharacterState next)
+	{
+		if (_characterState == next) return;
+		if (next == CharacterState.Paused)
+			_stateBeforePause = _characterState;
+		ExitState(_characterState);
+		_characterState = next;
+		EnterState(_characterState);
+	}
 
-    protected virtual void EnterState(CharacterState state)
-    {
-        switch (state)
-        {
-            case CharacterState.Ragdoll:
-                if (_capsule != null) _capsule.Disabled = true;
-                PhysicsSkelton.IsRagdoll = true;
-                PhysicsSkelton.RagdollTriggered = false;
-                if (IsMultiplayerAuthority())
-                {
-                    _stats.PeerId = PeerId;
-                    _stats.RagdollCount++;
-                    _ragdollEnterSec = Time.GetTicksMsec() / 1000f;
-                }
-                break;
-            case CharacterState.Recovering:
-                if (_spineCollBox != null)
-                    GlobalPosition = _spineCollBox.GlobalPosition;
-                Rotation = new Vector3(0f, Rotation.Y, 0f);
-                _graceTime = PhysicsSkelton.RagdollGraceTime;
-                velocity = Vector3.Zero;
-                Velocity = Vector3.Zero;
-                PhysicsSkelton.RagdollTriggered = false;
-                break;
-            case CharacterState.Dead:
+	protected virtual void EnterState(CharacterState state)
+	{
+		switch (state)
+		{
+			case CharacterState.Ragdoll:
+				if (_capsule != null) _capsule.Disabled = true;
+				PhysicsSkelton.IsRagdoll = true;
+				PhysicsSkelton.RagdollTriggered = false;
+				if (IsMultiplayerAuthority())
+				{
+					_stats.PeerId = PeerId;
+					_stats.RagdollCount++;
+					_ragdollEnterSec = Time.GetTicksMsec() / 1000f;
+				}
+				break;
+			case CharacterState.Recovering:
+				if (_spineCollBox != null)
+					GlobalPosition = _spineCollBox.GlobalPosition;
+				Rotation = new Vector3(0f, Rotation.Y, 0f);
+				_graceTime = PhysicsSkelton.RagdollGraceTime;
+				velocity = Vector3.Zero;
+				Velocity = Vector3.Zero;
+				PhysicsSkelton.RagdollTriggered = false;
+				break;
+			case CharacterState.Dead:
 
-                if (_capsule != null) _capsule.Disabled = true;
-                PhysicsSkelton.IsRagdoll = true;
-                PhysicsSkelton.RagdollTriggered = false;
-                velocity = Vector3.Zero;
-                Velocity = Vector3.Zero;
-                moveVec = Vector3.Zero;
-                aimVec = Vector3.Zero;
-                break;
-        }
-    }
+				if (_capsule != null) _capsule.Disabled = true;
+				PhysicsSkelton.IsRagdoll = true;
+				PhysicsSkelton.RagdollTriggered = false;
+				velocity = Vector3.Zero;
+				Velocity = Vector3.Zero;
+				moveVec = Vector3.Zero;
+				aimVec = Vector3.Zero;
+				break;
+		}
+	}
 
-    protected virtual void ExitState(CharacterState state)
-    {
-        switch (state)
-        {
-            case CharacterState.Ragdoll:
-                PhysicsSkelton.IsRagdoll = false;
-                if (_capsule != null) _capsule.Disabled = false;
-                if (IsMultiplayerAuthority())
-                {
-                    float now = Time.GetTicksMsec() / 1000f;
-                    _stats.TotalRagdollSeconds += now - _ragdollEnterSec;
-                }
-                break;
-            case CharacterState.Dead:
-                PhysicsSkelton.IsRagdoll = false;
-                if (_capsule != null) _capsule.Disabled = false;
-                break;
-        }
-    }
+	protected virtual void ExitState(CharacterState state)
+	{
+		switch (state)
+		{
+			case CharacterState.Ragdoll:
+				PhysicsSkelton.IsRagdoll = false;
+				if (_capsule != null) _capsule.Disabled = false;
+				if (IsMultiplayerAuthority())
+				{
+					float now = Time.GetTicksMsec() / 1000f;
+					_stats.TotalRagdollSeconds += now - _ragdollEnterSec;
+				}
+				break;
+			case CharacterState.Dead:
+				PhysicsSkelton.IsRagdoll = false;
+				if (_capsule != null) _capsule.Disabled = false;
+				break;
+		}
+	}
 
-    /// ···········································
-    /// : _    ___ ___ ___ _____   _____ _    ___ :
-    /// :| |  |_ _| __| __/ __\ \ / / __| |  | __|:
-    /// :| |__ | || _|| _| (__ \ V | (__| |__| _| :
-    /// :|____|___|_| |___\___| |_| \___|____|___|:
-    /// ···········································
+	/// ···········································
+	/// : _    ___ ___ ___ _____   _____ _    ___ :
+	/// :| |  |_ _| __| __/ __\ \ / / __| |  | __|:
+	/// :| |__ | || _|| _| (__ \ V | (__| |__| _| :
+	/// :|____|___|_| |___\___| |_| \___|____|___|:
+	/// ···········································
 
-    public override void _Ready()
-    {
-        _spineCollBox = GetNodeOrNull<CollisionShape3D>(
-            "PhysicsRig/Armature/Skeleton3D/PhysicalBoneSimulator3D/Physical Bone Spine_001/CollisionShape3D");
-    }
+	public override void _Ready()
+	{
+		_spineCollBox = GetNodeOrNull<CollisionShape3D>(
+			"PhysicsRig/Armature/Skeleton3D/PhysicalBoneSimulator3D/Physical Bone Spine_001/CollisionShape3D");
+	}
 
-    public override void _PhysicsProcess(double delta)
-    {
-        // Respawn local — uniquement quand on n'est pas en réseau. En multi le
+	public override void _PhysicsProcess(double delta)
+	{
+		// Respawn local — uniquement quand on n'est pas en réseau. En multi le
         // serveur fait autorité (cf. NetworkManager.OnPacketReceived /
         // FallThreshold) et envoie la correction de position ; téléporter ici
         // en plus produirait un fight client/serveur sur la position.

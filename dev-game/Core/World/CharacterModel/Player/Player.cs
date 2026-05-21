@@ -6,187 +6,187 @@ using Core.Network;
 
 public partial class Player : Character
 {
-    [ExportGroup("Player Settings")]
-    [Export(PropertyHint.Range, "0.0f,10.0f,0.1f")] public float WalkSpeed = 2.5f;
-    [Export(PropertyHint.Range, "0.0f,10.0f,0.1f")] public float RunMultiplier = 2.0f;
-    [Export(PropertyHint.Range, "0.0f,10.0f,0.1f")] public float JumpVelocity = 4.5f;
+	[ExportGroup("Player Settings")]
+	[Export(PropertyHint.Range, "0.0f,10.0f,0.1f")] public float WalkSpeed = 2.5f;
+	[Export(PropertyHint.Range, "0.0f,10.0f,0.1f")] public float RunMultiplier = 2.0f;
+	[Export(PropertyHint.Range, "0.0f,10.0f,0.1f")] public float JumpVelocity = 4.5f;
 
-    [ExportGroup("Player Physics Settings")]
-    [Export(PropertyHint.Range, "0.1f,1000.0f,0.1f")] public float SpeedRagdollThreshold = 10.0f;
-    [Export(PropertyHint.Range, "0.0f,360.0f,1.0f,suffix:deg")] public float FloorAngleRagdollThreshold = 60.0f;
-    [Export(PropertyHint.Range, "0.0f,50.0f,0.1f")] public float RecoveryVelocityThreshold = 3.0f;
+	[ExportGroup("Player Physics Settings")]
+	[Export(PropertyHint.Range, "0.1f,1000.0f,0.1f")] public float SpeedRagdollThreshold = 10.0f;
+	[Export(PropertyHint.Range, "0.0f,360.0f,1.0f,suffix:deg")] public float FloorAngleRagdollThreshold = 60.0f;
+	[Export(PropertyHint.Range, "0.0f,50.0f,0.1f")] public float RecoveryVelocityThreshold = 3.0f;
 
-    [ExportGroup("Controller Settings")]
-    [Export(PropertyHint.Range, "0.0f,0.1f,0.001f")] private float _mouseSensitivity = 0.002f;
-    [Export(PropertyHint.Range, "0.0f,5.0f,0.05f")] private float _controllerSensitivity = 2.5f;
+	[ExportGroup("Controller Settings")]
+	[Export(PropertyHint.Range, "0.0f,0.1f,0.001f")] private float _mouseSensitivity = 0.002f;
+	[Export(PropertyHint.Range, "0.0f,5.0f,0.05f")] private float _controllerSensitivity = 2.5f;
 
-    [ExportGroup("Character Nodes")]
-    [Export] private CameraMan? _cameraMan;
-    [Export] public RayCast3D Raycaster;
+	[ExportGroup("Character Nodes")]
+	[Export] private CameraMan? _cameraMan;
+	[Export] public RayCast3D Raycaster;
 
-    private Vector3 _offsetFP = new Vector3(0, 0.05f, 0.25f);
-    private Vector3 _offsetTP = new Vector3(0, 0.1f, -1.25f);
-    private Vector3 _currentCamOffset;
-    private Interactable? _highlightedInteractable;
-    private bool _showDebug = false;
-    private bool _playerFocused = false;
-    private bool _playerPaused = false;
-    private CameraType _lastCamType;
-    private Label3D? _nameLabel;
+	private Vector3 _offsetFP = new Vector3(0, 0.05f, 0.25f);
+	private Vector3 _offsetTP = new Vector3(0, 0.1f, -1.25f);
+	private Vector3 _currentCamOffset;
+	private Interactable? _highlightedInteractable;
+	private bool _showDebug = false;
+	private bool _playerFocused = false;
+	private bool _playerPaused = false;
+	private CameraType _lastCamType;
+	private Label3D? _nameLabel;
 
-    /// <summary>
-    /// Identifiant du chapeau cosmétique à instancier sur la tête du
-    /// personnage. Assigné par <c>GameController.SpawnPlayerNode</c> à partir
-    /// du <c>RoomSnapshot</c> (ou <c>LobbyState.SelectedHatId</c> en offline).
-    /// Voir <see cref="HatRegistry"/> pour le catalogue.
-    /// </summary>
-    public string HatId { get; set; } = HatRegistry.DefaultHatId;
-    private Node3D? _hatInstance;
-    private CameraType _lastCamTypeForHat = CameraType.ThirdPerson;
+	/// <summary>
+	/// Identifiant du chapeau cosmétique à instancier sur la tête du
+	/// personnage. Assigné par <c>GameController.SpawnPlayerNode</c> à partir
+	/// du <c>RoomSnapshot</c> (ou <c>LobbyState.SelectedHatId</c> en offline).
+	/// Voir <see cref="HatRegistry"/> pour le catalogue.
+	/// </summary>
+	public string HatId { get; set; } = HatRegistry.DefaultHatId;
+	private Node3D? _hatInstance;
+	private CameraType _lastCamTypeForHat = CameraType.ThirdPerson;
 
-    /// <summary>
-    /// Verrou d'entrée pour le joueur local. Activé par le GameController quand la
+	/// <summary>
+	/// Verrou d'entrée pour le joueur local. Activé par le GameController quand la
     /// partie est avortée (host parti) ou par toute autre logique qui veut figer
-    /// l'input sans ouvrir le menu pause. Quand <c>true</c>&#160;: <see cref="_Input"/>
-    /// retourne immédiatement, <see cref="_PhysicsProcess"/> ne lit plus les
-    /// commandes et la souris est rendue visible.
-    /// </summary>
-    public bool InputFrozen
-    {
-        get => _inputFrozen;
-        set
-        {
-            _inputFrozen = value;
-            if (value) Input.MouseMode = Input.MouseModeEnum.Visible;
-        }
-    }
-    private bool _inputFrozen;
+	/// l'input sans ouvrir le menu pause. Quand <c>true</c>&#160;: <see cref="_Input"/>
+	/// retourne immédiatement, <see cref="_PhysicsProcess"/> ne lit plus les
+	/// commandes et la souris est rendue visible.
+	/// </summary>
+	public bool InputFrozen
+	{
+		get => _inputFrozen;
+		set
+		{
+			_inputFrozen = value;
+			if (value) Input.MouseMode = Input.MouseModeEnum.Visible;
+		}
+	}
+	private bool _inputFrozen;
 
-    // ── Remote interpolation (non-authority players) ──────────────────────────
-    private const int BufferSize = 4;
-    private const float RenderDelay = 0.1f;
-    private readonly PlayerNetState[] _snapshots = new PlayerNetState[BufferSize];
-    private readonly ulong[] _timestamps = new ulong[BufferSize];
-    private int _head = 0;
-    private int _count = 0;
-    private MovementState _lastAnimatedState = MovementState.Idle;
-    private bool _remoteRagdoll = false;
+	// ── Remote interpolation (non-authority players) ──────────────────────────
+	private const int BufferSize = 4;
+	private const float RenderDelay = 0.1f;
+	private readonly PlayerNetState[] _snapshots = new PlayerNetState[BufferSize];
+	private readonly ulong[] _timestamps = new ulong[BufferSize];
+	private int _head = 0;
+	private int _count = 0;
+	private MovementState _lastAnimatedState = MovementState.Idle;
+	private bool _remoteRagdoll = false;
 
-    public void PushSnapshot(PlayerNetState state, ulong timestampMsec)
-    {
-        _snapshots[_head] = state;
-        _timestamps[_head] = timestampMsec;
-        _head = (_head + 1) % BufferSize;
-        if (_count < BufferSize) _count++;
-    }
+	public void PushSnapshot(PlayerNetState state, ulong timestampMsec)
+	{
+		_snapshots[_head] = state;
+		_timestamps[_head] = timestampMsec;
+		_head = (_head + 1) % BufferSize;
+		if (_count < BufferSize) _count++;
+	}
 
-    // ── FSM callbacks ─────────────────────────────────────────────────────────
+	// ── FSM callbacks ─────────────────────────────────────────────────────────
 
-    protected override void EnterState(CharacterState state)
-    {
-        base.EnterState(state);
-        if (state == CharacterState.Paused)
-        {
-            _playerFocused = ToggleCharacterFocus(_playerFocused);
-            GameMenu.Instance?.OpenMenu();
-        }
-        if (state == CharacterState.Ragdoll && _cameraMan != null)
-        {
-            _lastCamType = _cameraMan.CamType;
-            if (_cameraMan.CamType == CameraType.FirstPerson)
-                _cameraMan.SetCameraType(CameraType.ThirdPerson);
-        }
-    }
+	protected override void EnterState(CharacterState state)
+	{
+		base.EnterState(state);
+		if (state == CharacterState.Paused)
+		{
+			_playerFocused = ToggleCharacterFocus(_playerFocused);
+			GameMenu.Instance?.OpenMenu();
+		}
+		if (state == CharacterState.Ragdoll && _cameraMan != null)
+		{
+			_lastCamType = _cameraMan.CamType;
+			if (_cameraMan.CamType == CameraType.FirstPerson)
+				_cameraMan.SetCameraType(CameraType.ThirdPerson);
+		}
+	}
 
-    protected override void ExitState(CharacterState state)
-    {
-        base.ExitState(state);
-        if (state == CharacterState.Paused)
-        {
-            _playerFocused = ToggleCharacterFocus(_playerFocused);
-            GameMenu.Instance?.CloseMenu();
-        }
-        if (state == CharacterState.Ragdoll)
-        {
-            speed = WalkSpeed;
-            AnimPlayer.SpeedScale = 1.0f;
-        }
-        if (state == CharacterState.Recovering && _lastCamType == CameraType.FirstPerson)
-        {
-            _cameraMan?.SetCameraType(CameraType.FirstPerson);
-        }
-    }
+	protected override void ExitState(CharacterState state)
+	{
+		base.ExitState(state);
+		if (state == CharacterState.Paused)
+		{
+			_playerFocused = ToggleCharacterFocus(_playerFocused);
+			GameMenu.Instance?.CloseMenu();
+		}
+		if (state == CharacterState.Ragdoll)
+		{
+			speed = WalkSpeed;
+			AnimPlayer.SpeedScale = 1.0f;
+		}
+		if (state == CharacterState.Recovering && _lastCamType == CameraType.FirstPerson)
+		{
+			_cameraMan?.SetCameraType(CameraType.FirstPerson);
+		}
+	}
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
+	// ── Lifecycle ─────────────────────────────────────────────────────────────
 
-    public override void _Ready()
-    {
-        base._Ready();
+	public override void _Ready()
+	{
+		base._Ready();
 
-        GD.Print($"[LoadDiag] Player._Ready name={Name} peerId={PeerId} " +
-            $"authority={IsMultiplayerAuthority()} " +
-            $"localPeerId={Core.Network.NetworkManager.Instance?.LocalPeerId ?? -1} " +
-            $"spawnPos={SpawnPosition} parent={GetParent()?.Name}");
+		GD.Print($"[LoadDiag] Player._Ready name={Name} peerId={PeerId} " +
+			$"authority={IsMultiplayerAuthority()} " +
+			$"localPeerId={Core.Network.NetworkManager.Instance?.LocalPeerId ?? -1} " +
+			$"spawnPos={SpawnPosition} parent={GetParent()?.Name}");
 
-        if (!IsMultiplayerAuthority())
-        {
-            // Remote player: disable camera, set up animation, show name billboard
-            _cameraMan?.QueueFree();
-            _cameraMan = null;
-            if (PhysicsSkelton != null && AnimPlayer == null)
-                AnimPlayer = PhysicsSkelton.AnimPlayer;
-            speed = WalkSpeed;
-            if (SpawnPosition != Vector3.Zero)
-                GlobalPosition = SpawnPosition;
+		if (!IsMultiplayerAuthority())
+		{
+			// Remote player: disable camera, set up animation, show name billboard
+			_cameraMan?.QueueFree();
+			_cameraMan = null;
+			if (PhysicsSkelton != null && AnimPlayer == null)
+				AnimPlayer = PhysicsSkelton.AnimPlayer;
+			speed = WalkSpeed;
+			if (SpawnPosition != Vector3.Zero)
+				GlobalPosition = SpawnPosition;
 
-            _nameLabel = new Label3D();
-            _nameLabel.Text = $"P{PeerId}";
-            _nameLabel.Billboard = BaseMaterial3D.BillboardModeEnum.FixedY;
-            _nameLabel.PixelSize = 0.005f;
-            _nameLabel.FontSize = 48;
-            _nameLabel.OutlineSize = 8;
-            _nameLabel.Position = new Vector3(0f, 2.2f, 0f);
-            _nameLabel.NoDepthTest = true;
-            AddChild(_nameLabel);
-            _SpawnHat();
-            return;
-        }
+			_nameLabel = new Label3D();
+			_nameLabel.Text = $"P{PeerId}";
+			_nameLabel.Billboard = BaseMaterial3D.BillboardModeEnum.FixedY;
+			_nameLabel.PixelSize = 0.005f;
+			_nameLabel.FontSize = 48;
+			_nameLabel.OutlineSize = 8;
+			_nameLabel.Position = new Vector3(0f, 2.2f, 0f);
+			_nameLabel.NoDepthTest = true;
+			AddChild(_nameLabel);
+			_SpawnHat();
+			return;
+		}
 
-        // Local player
-        if (SpawnPosition != Vector3.Zero)
-            GlobalPosition = SpawnPosition;
+		// Local player
+		if (SpawnPosition != Vector3.Zero)
+			GlobalPosition = SpawnPosition;
 
-        NetworkManager.Instance.SetLocalPlayer(this);
-        AddToGroup("local_player");
+		NetworkManager.Instance.SetLocalPlayer(this);
+		AddToGroup("local_player");
 
-        if (_cameraMan == null) { _SpawnHat(); return; }
-        _currentCamOffset = _offsetFP;
-        if (Raycaster == null) Raycaster = _cameraMan.GetNode<RayCast3D>("PlayerCamera/RayCastTo");
-        if (DisplayServer.GetName() != "headless")
-            _playerFocused = ToggleCharacterFocus(_playerFocused);
-        if (PhysicsSkelton == null) { _SpawnHat(); return; }
-        if (AnimPlayer == null) AnimPlayer = PhysicsSkelton.AnimPlayer;
-        speed = WalkSpeed;
-        _SpawnHat();
-    }
+		if (_cameraMan == null) { _SpawnHat(); return; }
+		_currentCamOffset = _offsetFP;
+		if (Raycaster == null) Raycaster = _cameraMan.GetNode<RayCast3D>("PlayerCamera/RayCastTo");
+		if (DisplayServer.GetName() != "headless")
+			_playerFocused = ToggleCharacterFocus(_playerFocused);
+		if (PhysicsSkelton == null) { _SpawnHat(); return; }
+		if (AnimPlayer == null) AnimPlayer = PhysicsSkelton.AnimPlayer;
+		speed = WalkSpeed;
+		_SpawnHat();
+	}
 
-    /// <summary>
-    /// Instancie la scène du chapeau (si <see cref="HatId"/> en désigne un)
-    /// sous un <c>BoneAttachment3D</c> créé à la volée et parenté au squelette
-    /// <b>physique</b> (<see cref="Character.PhysicsSkelton"/>), suiveur du bone
-    /// <c>Head.001</c>. On vise volontairement le rig physique et non l'animé:
+	/// <summary>
+	/// Instancie la scène du chapeau (si <see cref="HatId"/> en désigne un)
+	/// sous un <c>BoneAttachment3D</c> créé à la volée et parenté au squelette
+	/// <b>physique</b> (<see cref="Character.PhysicsSkelton"/>), suiveur du bone
+	/// <c>Head.001</c>. On vise volontairement le rig physique et non l'animé:
     /// le rig animé est invisible (<c>AnimatedRig.visible = false</c>) et sert
     /// uniquement de cible cinématique aux ressorts de
     /// <see cref="PhysicsSkeleton._PhysicsProcess"/>; le mesh rendu est porté
-    /// par le rig physique, dont les poses d'os sont réécrites chaque tick par
-    /// le <c>PhysicalBoneSimulator3D</c>. Conséquence: en jeu normal le
-    /// chapeau colle au mesh (les ressorts rapprochent les os physiques de la
-    /// cible animée), et en ragdoll il suit la tête physique au lieu de rester
-    /// figé sur la pose d'animation. Les deux squelettes proviennent du même
+	/// par le rig physique, dont les poses d'os sont réécrites chaque tick par
+	/// le <c>PhysicalBoneSimulator3D</c>. Conséquence: en jeu normal le
+	/// chapeau colle au mesh (les ressorts rapprochent les os physiques de la
+	/// cible animée), et en ragdoll il suit la tête physique au lieu de rester
+	/// figé sur la pose d'animation. Les deux squelettes proviennent du même
     /// <c>.glb</c>, le rest pose de <c>Head.001</c> est donc identique: aucun
-    /// décalage local n'est à retoucher. Le placement (offset / rotation /
-    /// scale) reste défini dans la scène du chapeau, sa racine <c>Node3D</c>
-    /// servant d'ancre.
+	/// décalage local n'est à retoucher. Le placement (offset / rotation /
+	/// scale) reste défini dans la scène du chapeau, sa racine <c>Node3D</c>
+	/// servant d'ancre.
     /// </summary>
     private void _SpawnHat()
     {
@@ -253,33 +253,33 @@ public partial class Player : Character
 
     /// <summary>
     /// RPC client → serveur: «je suis mort, broadcast aux autres». Le serveur vérifie
-    /// que l'émetteur possède bien ce Player (sender == <see cref="Character.PeerId"/>) pour
-    /// éviter qu'un peer ne tue le personnage d'un autre.
-    /// </summary>
-    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void ServerKillMe(byte InReason)
-    {
-        if (!Multiplayer.IsServer()) return;
-        int senderId = Multiplayer.GetRemoteSenderId();
-        if (senderId != PeerId) return;
-        Die((DeathReason)InReason);
-        // On ré-émet aux AUTRES peers seulement: l'émetteur a déjà appliqué
+	/// que l'émetteur possède bien ce Player (sender == <see cref="Character.PeerId"/>) pour
+	/// éviter qu'un peer ne tue le personnage d'un autre.
+	/// </summary>
+	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void ServerKillMe(byte InReason)
+	{
+		if (!Multiplayer.IsServer()) return;
+		int senderId = Multiplayer.GetRemoteSenderId();
+		if (senderId != PeerId) return;
+		Die((DeathReason)InReason);
+		// On ré-émet aux AUTRES peers seulement: l'émetteur a déjà appliqué
         // sa mort localement (prédiction client), et lui renvoyer la RPC pose
         // une race lors de la transition Game→Winning: si son Player a déjà
-        // été QueueFree (mapContainer libéré), l'écho échoue à trouver le
-        // nœud cible et pollue les logs avec un «Node not found» inoffensif
-        // mais bruyant. On itère donc explicitement les peers actifs en sautant
-        // le sender.
-        foreach (int peerId in Multiplayer.GetPeers())
-        {
-            if (peerId == senderId) continue;
-            RpcId(peerId, MethodName.NetApplyDeath, InReason);
-        }
-    }
+		// été QueueFree (mapContainer libéré), l'écho échoue à trouver le
+		// nœud cible et pollue les logs avec un «Node not found» inoffensif
+		// mais bruyant. On itère donc explicitement les peers actifs en sautant
+		// le sender.
+		foreach (int peerId in Multiplayer.GetPeers())
+		{
+			if (peerId == senderId) continue;
+			RpcId(peerId, MethodName.NetApplyDeath, InReason);
+		}
+	}
 
-    /// <summary>
-    /// RPC serveur → clients: applique la mort sur les répliques distantes. Filtre
-    /// pour ne faire confiance qu'au peer ID 1 (serveur).
+	/// <summary>
+	/// RPC serveur → clients: applique la mort sur les répliques distantes. Filtre
+	/// pour ne faire confiance qu'au peer ID 1 (serveur).
     /// </summary>
     [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void NetApplyDeath(byte InReason)
