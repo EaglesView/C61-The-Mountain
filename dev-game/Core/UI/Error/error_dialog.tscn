@@ -1,0 +1,119 @@
+[gd_scene format=3 uid="uid://cyc83q15i37ss"]
+
+[ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="1_myuaj"]
+[ext_resource type="Script" uid="uid://7b4hpsmko6oe" path="res://Core/UI/Error/ErrorDialog.cs" id="2_opctt"]
+[ext_resource type="Texture2D" uid="uid://d00ws7wljnit4" path="res://Assets/ui/UIpack_vector.svg" id="2_r5ly6"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_opctt"]
+texture = ExtResource("2_r5ly6")
+texture_margin_left = 12.5436
+texture_margin_top = 10.0349
+texture_margin_right = 8.78053
+texture_margin_bottom = 14.2161
+region_rect = Rect2(211, 180, 190, 49)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_jsvy8"]
+texture = ExtResource("2_r5ly6")
+texture_margin_left = 12.5436
+texture_margin_top = 10.0349
+texture_margin_right = 8.78053
+texture_margin_bottom = 14.2161
+region_rect = Rect2(421, 184, 190, 45)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_kpoxg"]
+texture = ExtResource("2_r5ly6")
+texture_margin_left = 12.5436
+texture_margin_top = 10.0349
+texture_margin_right = 8.78053
+texture_margin_bottom = 14.2161
+region_rect = Rect2(1, 180, 190, 49)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_st1jc"]
+texture = ExtResource("2_r5ly6")
+texture_margin_left = 12.5436
+texture_margin_top = 10.0349
+texture_margin_right = 8.78053
+texture_margin_bottom = 14.2161
+region_rect = Rect2(211, 180, 190, 49)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_7uego"]
+
+[node name="ErrorDialog" type="Control" unique_id=1440744658]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_myuaj")
+script = ExtResource("2_opctt")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=454136895]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="MarginContainer" unique_id=166607891]
+custom_minimum_size = Vector2(800, 450)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/Panel" unique_id=1580031848]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/Panel/VBoxContainer" unique_id=825455205]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/Panel/VBoxContainer/HBoxContainer" unique_id=739101734]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+
+[node name="Button" type="Button" parent="MarginContainer/Panel/VBoxContainer/HBoxContainer/MarginContainer" unique_id=2090173268]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxTexture_opctt")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_jsvy8")
+theme_override_styles/hover = SubResource("StyleBoxTexture_kpoxg")
+theme_override_styles/disabled = SubResource("StyleBoxTexture_st1jc")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_7uego")
+text = "X"
+
+[node name="DialogTitle" type="Label" parent="MarginContainer/Panel/VBoxContainer/HBoxContainer" unique_id=255717561]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 32
+text = "ERREUR - ERROR"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/Panel/VBoxContainer" unique_id=626851915]
+layout_mode = 2
+
+[node name="ErrorMessageRichLabel" type="RichTextLabel" parent="MarginContainer/Panel/VBoxContainer" unique_id=603052127]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="MarginContainer/Panel/VBoxContainer" unique_id=183602227]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+alignment = 1
+
+[node name="Button" type="Button" parent="MarginContainer/Panel/VBoxContainer/HBoxContainer2" unique_id=1283217849]
+custom_minimum_size = Vector2(256, 0)
+layout_mode = 2
+size_flags_vertical = 4
+text = "OK"

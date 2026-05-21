@@ -112,6 +112,30 @@ custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
 text = ">"
 
+[node name="HatBox" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=881234580]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HatLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/HatBox" unique_id=881234581]
+layout_mode = 2
+text = "Chapeau :"
+
+[node name="HatPrev" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/HatBox" unique_id=881234582]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+text = "<"
+
+[node name="HatValue" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/HatBox" unique_id=881234583]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.85, 0.5, 1)
+text = "Aucun"
+
+[node name="HatNext" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/HatBox" unique_id=881234584]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+text = ">"
+
 [node name="HSep2" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer" unique_id=708562224]
 layout_mode = 2
 

@@ -1,5 +1,7 @@
 using Godot;
 using System;
+using Core.Network;
+using Core.Network.Rooms;
 using Core.Shared.StateMachine;
 using System.Collections.Generic;
 namespace Core.World;
@@ -14,6 +16,7 @@ public sealed partial class MainController : Node3D
 	private StateMachine<State> _fsm = null;
 	private IPhase _current = null;
 	private readonly Dictionary<State, IPhase> _phases = new();
+	private bool _quitScheduled;
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
@@ -47,6 +50,23 @@ public sealed partial class MainController : Node3D
 	public override void _Process(double delta)
 	{
 		_current.Tick((float)delta);
+
+		// Quit volontaire depuis Winning&#160;: court-circuite la FSM principale
+		// pour ne pas instancier la lobby UI alors que la scène est sur le
+		// point d'être remplacée par le main menu. Fait le ménage (Exit
+		// propre de Winning, disconnect réseau, clear LobbyState, mouse mode)
+		// avant d'enchaîner sur ChangeSceneToFile.
+		if (!_quitScheduled && _winningController is not null && _winningController.QuittingToMenu)
+		{
+			_quitScheduled = true;
+			_current.Exit();
+			NetworkManager.Instance?.Disconnect();
+			LobbyState.Clear();
+			Input.MouseMode = Input.MouseModeEnum.Visible;
+			GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
+			return;
+		}
+
 		_fsm.Tick((float)delta);
 	}
 

@@ -34,6 +34,34 @@ public partial class Player : Character
 	private CameraType _lastCamType;
 	private Label3D? _nameLabel;
 
+	/// <summary>
+	/// Identifiant du chapeau cosmétique à instancier sur la tête du
+	/// personnage. Assigné par <c>GameController.SpawnPlayerNode</c> à partir
+	/// du <c>RoomSnapshot</c> (ou <c>LobbyState.SelectedHatId</c> en offline).
+	/// Voir <see cref="HatRegistry"/> pour le catalogue.
+	/// </summary>
+	public string HatId { get; set; } = HatRegistry.DefaultHatId;
+	private Node3D? _hatInstance;
+	private CameraType _lastCamTypeForHat = CameraType.ThirdPerson;
+
+	/// <summary>
+	/// Verrou d'entrée pour le joueur local. Activé par le GameController quand la
+    /// partie est avortée (host parti) ou par toute autre logique qui veut figer
+	/// l'input sans ouvrir le menu pause. Quand <c>true</c>&#160;: <see cref="_Input"/>
+	/// retourne immédiatement, <see cref="_PhysicsProcess"/> ne lit plus les
+	/// commandes et la souris est rendue visible.
+	/// </summary>
+	public bool InputFrozen
+	{
+		get => _inputFrozen;
+		set
+		{
+			_inputFrozen = value;
+			if (value) Input.MouseMode = Input.MouseModeEnum.Visible;
+		}
+	}
+	private bool _inputFrozen;
+
 	// ── Remote interpolation (non-authority players) ──────────────────────────
 	private const int BufferSize = 4;
 	private const float RenderDelay = 0.1f;
@@ -95,6 +123,11 @@ public partial class Player : Character
 	{
 		base._Ready();
 
+		GD.Print($"[LoadDiag] Player._Ready name={Name} peerId={PeerId} " +
+			$"authority={IsMultiplayerAuthority()} " +
+			$"localPeerId={Core.Network.NetworkManager.Instance?.LocalPeerId ?? -1} " +
+			$"spawnPos={SpawnPosition} parent={GetParent()?.Name}");
+
 		if (!IsMultiplayerAuthority())
 		{
 			// Remote player: disable camera, set up animation, show name billboard
@@ -115,6 +148,7 @@ public partial class Player : Character
 			_nameLabel.Position = new Vector3(0f, 2.2f, 0f);
 			_nameLabel.NoDepthTest = true;
 			AddChild(_nameLabel);
+			_SpawnHat();
 			return;
 		}
 
@@ -125,52 +159,100 @@ public partial class Player : Character
 		NetworkManager.Instance.SetLocalPlayer(this);
 		AddToGroup("local_player");
 
-		if (_cameraMan == null) return;
+		if (_cameraMan == null) { _SpawnHat(); return; }
 		_currentCamOffset = _offsetFP;
 		if (Raycaster == null) Raycaster = _cameraMan.GetNode<RayCast3D>("PlayerCamera/RayCastTo");
 		if (DisplayServer.GetName() != "headless")
 			_playerFocused = ToggleCharacterFocus(_playerFocused);
-		if (PhysicsSkelton == null) return;
+		if (PhysicsSkelton == null) { _SpawnHat(); return; }
 		if (AnimPlayer == null) AnimPlayer = PhysicsSkelton.AnimPlayer;
 		speed = WalkSpeed;
+		_SpawnHat();
 	}
 
 	/// <summary>
-	/// Demande la mort du joueur avec routing réseau. Application&#160;:
-	/// <list type="bullet">
-	/// <item>Offline&#160;: applique <see cref="Character.Die"/> localement.</item>
-	/// <item>Client (authority de ce Player)&#160;: applique localement (prédictif) puis notifie
-	///   le serveur via <see cref="ServerKillMe"/>.</item>
-	/// <item>Serveur&#160;: applique localement puis broadcast <see cref="NetApplyDeath"/> à tous
-	///   les clients (utile pour les morts déclenchées par le mode de jeu&#160;: noyade, écrasement…).</item>
-	/// </list>
-	/// Toute autre tentative (client non-authority qui essaie de tuer un autre joueur)
-	/// est ignorée silencieusement.
-	/// </summary>
-	/// <param name="InReason">Cause de la mort, transmise au futur système de stats.</param>
-	public void RequestDeath(DeathReason InReason)
-	{
-		var net = NetworkManager.Instance;
-		if (net is null || !net.IsRunning)
-		{
-			Die(InReason);
-			return;
-		}
-		if (Multiplayer.IsServer())
-		{
-			Die(InReason);
-			Rpc(MethodName.NetApplyDeath, (byte)InReason);
-			return;
-		}
-		if (IsMultiplayerAuthority())
-		{
-			Die(InReason);
-			RpcId(1, MethodName.ServerKillMe, (byte)InReason);
-		}
-	}
+	/// Instancie la scène du chapeau (si <see cref="HatId"/> en désigne un)
+	/// sous un <c>BoneAttachment3D</c> créé à la volée et parenté au squelette
+	/// <b>physique</b> (<see cref="Character.PhysicsSkelton"/>), suiveur du bone
+	/// <c>Head.001</c>. On vise volontairement le rig physique et non l'animé:
+    /// le rig animé est invisible (<c>AnimatedRig.visible = false</c>) et sert
+    /// uniquement de cible cinématique aux ressorts de
+    /// <see cref="PhysicsSkeleton._PhysicsProcess"/>; le mesh rendu est porté
+	/// par le rig physique, dont les poses d'os sont réécrites chaque tick par
+	/// le <c>PhysicalBoneSimulator3D</c>. Conséquence: en jeu normal le
+	/// chapeau colle au mesh (les ressorts rapprochent les os physiques de la
+	/// cible animée), et en ragdoll il suit la tête physique au lieu de rester
+	/// figé sur la pose d'animation. Les deux squelettes proviennent du même
+    /// <c>.glb</c>, le rest pose de <c>Head.001</c> est donc identique: aucun
+	/// décalage local n'est à retoucher. Le placement (offset / rotation /
+	/// scale) reste défini dans la scène du chapeau, sa racine <c>Node3D</c>
+	/// servant d'ancre.
+    /// </summary>
+    private void _SpawnHat()
+    {
+        if (_hatInstance != null) return;
+        var hatDef = HatRegistry.Get(HatId) ?? HatRegistry.Get(HatRegistry.DefaultHatId);
+        if (hatDef == null || string.IsNullOrEmpty(hatDef.ScenePath)) return;
 
-	/// <summary>
-	/// RPC client → serveur&#160;: «&#160;je suis mort, broadcast aux autres&#160;». Le serveur vérifie
+        if (PhysicsSkelton == null)
+        {
+            GD.PrintErr($"[Player] PhysicsSkelton introuvable — chapeau ignoré (peer={PeerId}).");
+            return;
+        }
+
+        var hatScene = ResourceLoader.Load<PackedScene>(hatDef.ScenePath);
+        if (hatScene == null)
+        {
+            GD.PrintErr($"[Player] Scène chapeau introuvable&#160;: {hatDef.ScenePath}");
+            return;
+        }
+
+        var attachment = new BoneAttachment3D();
+        attachment.Name = "HatAttachment";
+        attachment.BoneName = "Head.001";
+        PhysicsSkelton.AddChild(attachment);
+
+        var hatNode = hatScene.Instantiate<Node3D>();
+        attachment.AddChild(hatNode);
+        _hatInstance = hatNode;
+    }
+
+    /// <summary>
+    /// Demande la mort du joueur avec routing réseau. Application:
+    /// <list type="bullet">
+    /// <item>Offline: applique <see cref="Character.Die"/> localement.</item>
+    /// <item>Client (authority de ce Player): applique localement (prédictif) puis notifie
+    ///   le serveur via <see cref="ServerKillMe"/>.</item>
+    /// <item>Serveur: applique localement puis broadcast <see cref="NetApplyDeath"/> à tous
+    ///   les clients (utile pour les morts déclenchées par le mode de jeu: noyade, écrasement…).</item>
+    /// </list>
+    /// Toute autre tentative (client non-authority qui essaie de tuer un autre joueur)
+    /// est ignorée silencieusement.
+    /// </summary>
+    /// <param name="InReason">Cause de la mort, transmise au futur système de stats.</param>
+    public void RequestDeath(DeathReason InReason)
+    {
+        var net = NetworkManager.Instance;
+        if (net is null || !net.IsRunning)
+        {
+            Die(InReason);
+            return;
+        }
+        if (Multiplayer.IsServer())
+        {
+            Die(InReason);
+            Rpc(MethodName.NetApplyDeath, (byte)InReason);
+            return;
+        }
+        if (IsMultiplayerAuthority())
+        {
+            Die(InReason);
+            RpcId(1, MethodName.ServerKillMe, (byte)InReason);
+        }
+    }
+
+    /// <summary>
+    /// RPC client → serveur: «je suis mort, broadcast aux autres». Le serveur vérifie
 	/// que l'émetteur possède bien ce Player (sender == <see cref="Character.PeerId"/>) pour
 	/// éviter qu'un peer ne tue le personnage d'un autre.
 	/// </summary>
@@ -181,266 +263,296 @@ public partial class Player : Character
 		int senderId = Multiplayer.GetRemoteSenderId();
 		if (senderId != PeerId) return;
 		Die((DeathReason)InReason);
-		Rpc(MethodName.NetApplyDeath, InReason);
+		// On ré-émet aux AUTRES peers seulement: l'émetteur a déjà appliqué
+        // sa mort localement (prédiction client), et lui renvoyer la RPC pose
+        // une race lors de la transition Game→Winning: si son Player a déjà
+		// été QueueFree (mapContainer libéré), l'écho échoue à trouver le
+		// nœud cible et pollue les logs avec un «Node not found» inoffensif
+		// mais bruyant. On itère donc explicitement les peers actifs en sautant
+		// le sender.
+		foreach (int peerId in Multiplayer.GetPeers())
+		{
+			if (peerId == senderId) continue;
+			RpcId(peerId, MethodName.NetApplyDeath, InReason);
+		}
 	}
 
 	/// <summary>
-	/// RPC serveur → clients&#160;: applique la mort sur les répliques distantes. Filtre
+	/// RPC serveur → clients: applique la mort sur les répliques distantes. Filtre
 	/// pour ne faire confiance qu'au peer ID 1 (serveur).
-	/// </summary>
-	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-	private void NetApplyDeath(byte InReason)
-	{
-		if (Multiplayer.GetRemoteSenderId() != 1) return;
-		Die((DeathReason)InReason);
-	}
+    /// </summary>
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void NetApplyDeath(byte InReason)
+    {
+        GD.Print($"[Player.NetApplyDeath] peer={PeerId} fromSender={Multiplayer.GetRemoteSenderId()} reason={(DeathReason)InReason}");
+        if (Multiplayer.GetRemoteSenderId() != 1) return;
+        Die((DeathReason)InReason);
+    }
 
-	public override void _Input(InputEvent @event)
-	{
-		if (!IsMultiplayerAuthority()) return;
-		if (_characterState == CharacterState.Dead) return;
+    public override void _Input(InputEvent @event)
+    {
+        if (!IsMultiplayerAuthority()) return;
+        if (_inputFrozen) return;
+        if (_characterState == CharacterState.Dead) return;
 
-		if (@event is InputEventMouseMotion mouseMotion)
-		{
-			if (_cameraMan?.CamType == CameraType.ThirdPerson)
-			{
-				_cameraMan.RotateCameraTP(
-					mouseMotion.Relative.X,
-					-mouseMotion.Relative.Y,
-					_mouseSensitivity
-				);
-			}
-			else
-			{
-				RotateY(-mouseMotion.Relative.X * _mouseSensitivity);
-			}
-			float newAngle = headAngle + mouseMotion.Relative.Y * _mouseSensitivity;
-			RotateHead(Mathf.Clamp(newAngle, Mathf.DegToRad(-80), Mathf.DegToRad(80)));
-		}
+        if (@event is InputEventMouseMotion mouseMotion)
+        {
+            if (_cameraMan?.CamType == CameraType.ThirdPerson)
+            {
+                _cameraMan.RotateCameraTP(
+                    mouseMotion.Relative.X,
+                    -mouseMotion.Relative.Y,
+                    _mouseSensitivity
+                );
+            }
+            else
+            {
+                RotateY(-mouseMotion.Relative.X * _mouseSensitivity);
+            }
+            float newAngle = headAngle + mouseMotion.Relative.Y * _mouseSensitivity;
+            RotateHead(Mathf.Clamp(newAngle, Mathf.DegToRad(-80), Mathf.DegToRad(80)));
+        }
 
-		if (_characterState == CharacterState.Ragdoll)
-		{
-			if (@event.IsActionPressed("jump") &&
-				PhysicsSkelton.GetSpinePhysicsLinearVelocity().Length() < RecoveryVelocityThreshold)
-				TransitionTo(CharacterState.Recovering);
-			return;
-		}
-		if (_characterState == CharacterState.Paused)
-		{
-			if (@event.IsActionPressed("pause_menu"))
-				TransitionTo(_stateBeforePause);
-			return;
-		}
-		if (@event.IsActionPressed("pause_menu"))
-		{
-			TransitionTo(CharacterState.Paused);
-			return;
-		}
-	}
+        if (_characterState == CharacterState.Ragdoll)
+        {
+            if (@event.IsActionPressed("jump") &&
+                PhysicsSkelton.GetSpinePhysicsLinearVelocity().Length() < RecoveryVelocityThreshold)
+                TransitionTo(CharacterState.Recovering);
+            return;
+        }
+        if (_characterState == CharacterState.Paused)
+        {
+            if (@event.IsActionPressed("pause_menu"))
+                TransitionTo(_stateBeforePause);
+            return;
+        }
+        if (@event.IsActionPressed("pause_menu"))
+        {
+            TransitionTo(CharacterState.Paused);
+            return;
+        }
+    }
 
-	public override void _PhysicsProcess(double delta)
-	{
-		if (!IsMultiplayerAuthority())
-		{
-			RemotePhysicsProcess();
-			return;
-		}
+    public override void _PhysicsProcess(double delta)
+    {
+        if (!IsMultiplayerAuthority())
+        {
+            RemotePhysicsProcess();
+            return;
+        }
 
-		velocity = Velocity;
-		if (_cameraMan == null) return;
+        velocity = Velocity;
+        if (_cameraMan == null) return;
 
-		if (_characterState == CharacterState.Dead)
-		{
-			// Mort permanente&#160;: le corps est livré au ragdoll, on délègue à Character
-			// (qui short-circuit le switch et laisse PhysicsSkeleton piloter la simulation).
-			base._PhysicsProcess(delta);
-			return;
-		}
+        if (_inputFrozen)
+        {
+            moveVec = Vector3.Zero;
+            aimVec = Vector3.Zero;
+            base._PhysicsProcess(delta);
+            return;
+        }
 
-		if (_characterState == CharacterState.Ragdoll)
-		{
-			base._PhysicsProcess(delta);
-			return;
-		}
-		if (_characterState != CharacterState.Ragdoll &&
-			_characterState != CharacterState.Recovering &&
-			Velocity.Length() > SpeedRagdollThreshold)
-		{
-			TransitionTo(CharacterState.Ragdoll);
-		}
+        if (_characterState == CharacterState.Dead)
+        {
+            // Mort permanente: le corps est livré au ragdoll, on délègue à Character
+            // (qui short-circuit le switch et laisse PhysicsSkeleton piloter la simulation).
+            base._PhysicsProcess(delta);
+            return;
+        }
 
-		if (_characterState == CharacterState.Paused)
-		{
-			moveVec = Vector3.Zero;
-			aimVec = Vector3.Zero;
-			base._PhysicsProcess(delta);
-			return;
-		}
+        if (_characterState == CharacterState.Ragdoll)
+        {
+            base._PhysicsProcess(delta);
+            return;
+        }
+        if (_characterState != CharacterState.Ragdoll &&
+            _characterState != CharacterState.Recovering &&
+            Velocity.Length() > SpeedRagdollThreshold)
+        {
+            //GD.Print($"[speed-ragdoll] V={Velocity.Length():F2}  Y={GlobalPosition.Y:F2}");
+            TransitionTo(CharacterState.Ragdoll);
+        }
 
-		if (IsOnFloor() && GetFloorAngle() > Mathf.DegToRad(FloorAngleRagdollThreshold))
-		{
-			TransitionTo(CharacterState.Ragdoll);
-			return;
-		}
+        if (_characterState == CharacterState.Paused)
+        {
+            moveVec = Vector3.Zero;
+            aimVec = Vector3.Zero;
+            base._PhysicsProcess(delta);
+            return;
+        }
 
-		if (Input.IsActionJustPressed("jump") && IsOnFloor()
-			&& (_characterState == CharacterState.Idle || _characterState == CharacterState.Moving))
-		{
-			velocity.Y = JumpVelocity;
-			TransitionTo(CharacterState.Airborne);
-		}
-		if (Input.IsActionJustPressed("run"))
-		{
-			speed *= RunMultiplier;
-			AnimPlayer.SpeedScale *= RunMultiplier;
-		}
-		if (Input.IsActionJustReleased("run"))
-		{
-			speed = WalkSpeed;
-			AnimPlayer.SpeedScale = 1.0f;
-		}
-		if (Input.IsActionJustPressed("interact"))
-		{
-			GetObjectTypeFromRaycast(Raycaster);
-			PhysicsSkelton.Aiming = false;
-			currentEmoteState = EmoteState.None;
-			var interactable = GetInteractableFromRaycast(Raycaster);
-			interactable?.Interact(this);
-		}
+        if (IsOnFloor() && GetFloorAngle() > Mathf.DegToRad(FloorAngleRagdollThreshold))
+        {
+            TransitionTo(CharacterState.Ragdoll);
+            return;
+        }
 
-		if (Input.IsActionJustPressed("show_sign")) PhysicsSkelton.ArmsUp = true;
-		if (Input.IsActionJustReleased("show_sign")) PhysicsSkelton.ArmsUp = false;
+        if (Input.IsActionJustPressed("jump") && IsOnFloor()
+            && (_characterState == CharacterState.Idle || _characterState == CharacterState.Moving))
+        {
+            velocity.Y = JumpVelocity;
+            _stats.PeerId = PeerId;
+            _stats.JumpCount++;
+            TransitionTo(CharacterState.Airborne);
+        }
+        if (Input.IsActionJustPressed("run"))
+        {
+            speed *= RunMultiplier;
+            AnimPlayer.SpeedScale *= RunMultiplier;
+        }
+        if (Input.IsActionJustReleased("run"))
+        {
+            speed = WalkSpeed;
+            AnimPlayer.SpeedScale = 1.0f;
+        }
+        if (Input.IsActionJustPressed("interact"))
+        {
+            GetObjectTypeFromRaycast(Raycaster);
+            PhysicsSkelton.Aiming = false;
+            currentEmoteState = EmoteState.None;
+            var interactable = GetInteractableFromRaycast(Raycaster);
+            interactable?.Interact(this);
+        }
 
-		if (Input.IsActionJustPressed("change_view"))
-			_cameraMan?.SetNextCamera([CameraType.FirstPerson, CameraType.ThirdPerson]);
+        if (Input.IsActionJustPressed("show_sign")) PhysicsSkelton.ArmsUp = true;
+        if (Input.IsActionJustReleased("show_sign")) PhysicsSkelton.ArmsUp = false;
 
-		Vector2 aimDir = Input.GetVector("aim_left", "aim_right", "aim_up", "aim_down");
-		Vector2 inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");
-		Vector3 direction;
+        if (Input.IsActionJustPressed("change_view"))
+            _cameraMan?.SetNextCamera([CameraType.FirstPerson, CameraType.ThirdPerson]);
 
-		if (_cameraMan?.CamType == CameraType.ThirdPerson)
-		{
-			Vector3 camForward = _cameraMan.GetCameraForwardFlat();
-			Vector3 camRight = _cameraMan.GetCameraRightFlat();
-			direction = (camForward * -inputDir.Y + camRight * -inputDir.X).Normalized();
-			if (direction != Vector3.Zero)
-				Rotation = new Vector3(Rotation.X, Mathf.LerpAngle(Rotation.Y, Mathf.Atan2(-direction.X, -direction.Z), 0.15f), Rotation.Z);
-		}
-		else
-		{
-			direction = -(Transform.Basis * new Vector3(-inputDir.X, 0, -inputDir.Y)).Normalized();
-		}
+        Vector2 aimDir = Input.GetVector("aim_left", "aim_right", "aim_up", "aim_down");
+        Vector2 inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");
+        Vector3 direction;
 
-		moveVec = direction;
-		aimVec = direction;
-		base._PhysicsProcess(delta);
-		if (currentEmoteState == EmoteState.Pointing)
-			pointVec = _cameraMan.GetRaycastPointingVector();
-	}
+        if (_cameraMan?.CamType == CameraType.ThirdPerson)
+        {
+            Vector3 camForward = _cameraMan.GetCameraForwardFlat();
+            Vector3 camRight = _cameraMan.GetCameraRightFlat();
+            direction = (camForward * -inputDir.Y + camRight * -inputDir.X).Normalized();
+            if (direction != Vector3.Zero)
+                Rotation = new Vector3(Rotation.X, Mathf.LerpAngle(Rotation.Y, Mathf.Atan2(-direction.X, -direction.Z), 0.15f), Rotation.Z);
+        }
+        else
+        {
+            direction = -(Transform.Basis * new Vector3(-inputDir.X, 0, -inputDir.Y)).Normalized();
+        }
 
-	public override void _Process(double delta)
-	{
-		if (!IsMultiplayerAuthority())
-		{
-			if (_nameLabel != null)
-			{
-				_nameLabel.GlobalPosition = currentMovementState == MovementState.Ragdolling
-					? PhysicsSkelton.GetSpinePhysicsWorldPosition() + Vector3.Up * 1.5f
-					: GlobalPosition + new Vector3(0f, 2.2f, 0f);
-			}
-			if (_lastAnimatedState == currentMovementState) return;
-			_lastAnimatedState = currentMovementState;
-			PlayAnimationFromMovement(currentMovementState, AnimPlayer);
-			return;
-		}
+        moveVec = direction;
+        aimVec = direction;
+        base._PhysicsProcess(delta);
+        if (currentEmoteState == EmoteState.Pointing)
+            pointVec = _cameraMan.GetRaycastPointingVector();
+    }
 
-		base._Process(delta);
-		int boneIdx = PhysicsSkelton.FindBone("Head.001");
-		Transform3D headWorld = PhysicsSkelton.GlobalTransform * PhysicsSkelton.GetBoneGlobalPose(boneIdx);
+    public override void _Process(double delta)
+    {
+        if (!IsMultiplayerAuthority())
+        {
+            if (_nameLabel != null)
+            {
+                _nameLabel.GlobalPosition = currentMovementState == MovementState.Ragdolling
+                    ? PhysicsSkelton.GetSpinePhysicsWorldPosition() + Vector3.Up * 1.5f
+                    : GlobalPosition + new Vector3(0f, 2.2f, 0f);
+            }
+            if (_lastAnimatedState == currentMovementState) return;
+            _lastAnimatedState = currentMovementState;
+            PlayAnimationFromMovement(currentMovementState, AnimPlayer);
+            return;
+        }
 
-		var interactable = GetInteractableFromRaycast(Raycaster);
-		if (interactable != _highlightedInteractable)
-		{
-			_highlightedInteractable?.OnUnhighlight();
-			_highlightedInteractable = interactable;
-			_highlightedInteractable?.OnHighlight();
-		}
-	}
+        base._Process(delta);
+        int boneIdx = PhysicsSkelton.FindBone("Head.001");
+        Transform3D headWorld = PhysicsSkelton.GlobalTransform * PhysicsSkelton.GetBoneGlobalPose(boneIdx);
 
-	// ── Remote interpolation ──────────────────────────────────────────────────
+        if (_hatInstance != null && _cameraMan != null && _cameraMan.CamType != _lastCamTypeForHat)
+        {
+            _lastCamTypeForHat = _cameraMan.CamType;
+            _hatInstance.Visible = _cameraMan.CamType != CameraType.FirstPerson;
+        }
 
-	private void RemotePhysicsProcess()
-	{
-		if (_count < 1) return;
+        var interactable = GetInteractableFromRaycast(Raycaster);
+        if (interactable != _highlightedInteractable)
+        {
+            _highlightedInteractable?.OnUnhighlight();
+            _highlightedInteractable = interactable;
+            _highlightedInteractable?.OnHighlight();
+        }
+    }
 
-		int latestIdx = (_head - 1 + BufferSize) % BufferSize;
-		bool ragdolling = _snapshots[latestIdx].MoveState == MovementState.Ragdolling;
-		bool recovering = _snapshots[latestIdx].Recovering;
-		bool shouldRagdoll = ragdolling && !recovering;
+    // ── Remote interpolation ──────────────────────────────────────────────────
 
-		if (shouldRagdoll != _remoteRagdoll)
-		{
-			_remoteRagdoll = shouldRagdoll;
-			PhysicsSkelton.IsRagdoll = shouldRagdoll;
-			PhysicsSkelton.RemoteCorrection = shouldRagdoll;
-			if (_capsule != null) _capsule.Disabled = shouldRagdoll;
+    private void RemotePhysicsProcess()
+    {
+        if (_count < 1) return;
 
-			if (shouldRagdoll)
-				PhysicsSkelton.ApplyRagdollKick(_snapshots[latestIdx].Velocity);
-		}
+        int latestIdx = (_head - 1 + BufferSize) % BufferSize;
+        bool ragdolling = _snapshots[latestIdx].MoveState == MovementState.Ragdolling;
+        bool recovering = _snapshots[latestIdx].Recovering;
+        bool shouldRagdoll = ragdolling && !recovering;
 
-		if (_remoteRagdoll)
-		{
-			PhysicsSkelton.RemoteSpineTarget = _snapshots[latestIdx].Position;
-			PhysicsSkelton.RemoteHeadPitch = _snapshots[latestIdx].HeadPitch;
-			PhysicsSkelton.RemoteHeadYaw = _snapshots[latestIdx].BodyYaw;
-			return;
-		}
+        if (shouldRagdoll != _remoteRagdoll)
+        {
+            _remoteRagdoll = shouldRagdoll;
+            PhysicsSkelton.IsRagdoll = shouldRagdoll;
+            PhysicsSkelton.RemoteCorrection = shouldRagdoll;
+            if (_capsule != null) _capsule.Disabled = shouldRagdoll;
 
-		ulong nowMsec = Time.GetTicksMsec();
-		ulong renderTime = nowMsec - (ulong)(RenderDelay * 1000f);
+            if (shouldRagdoll)
+                PhysicsSkelton.ApplyRagdollKick(_snapshots[latestIdx].Velocity);
+        }
 
-		int oldest = (_head - _count + BufferSize) % BufferSize;
-		int aIdx = -1, bIdx = -1;
+        if (_remoteRagdoll)
+        {
+            PhysicsSkelton.RemoteSpineTarget = _snapshots[latestIdx].Position;
+            PhysicsSkelton.RemoteHeadPitch = _snapshots[latestIdx].HeadPitch;
+            PhysicsSkelton.RemoteHeadYaw = _snapshots[latestIdx].BodyYaw;
+            return;
+        }
 
-		for (int i = 0; i < _count - 1; i++)
-		{
-			int ia = (oldest + i) % BufferSize;
-			int ib = (oldest + i + 1) % BufferSize;
-			if (_timestamps[ia] <= renderTime && _timestamps[ib] >= renderTime)
-			{
-				aIdx = ia;
-				bIdx = ib;
-				break;
-			}
-		}
+        ulong nowMsec = Time.GetTicksMsec();
+        ulong renderTime = nowMsec - (ulong)(RenderDelay * 1000f);
 
-		if (aIdx < 0)
-		{
-			int latest = (_head - 1 + BufferSize) % BufferSize;
-			ApplyNetworkState(_snapshots[latest]);
-			return;
-		}
+        int oldest = (_head - _count + BufferSize) % BufferSize;
+        int aIdx = -1, bIdx = -1;
 
-		ulong tA = _timestamps[aIdx];
-		ulong tB = _timestamps[bIdx];
-		float t = (tB == tA) ? 0f : (float)(renderTime - tA) / (float)(tB - tA);
-		t = Mathf.Clamp(t, 0f, 1f);
+        for (int i = 0; i < _count - 1; i++)
+        {
+            int ia = (oldest + i) % BufferSize;
+            int ib = (oldest + i + 1) % BufferSize;
+            if (_timestamps[ia] <= renderTime && _timestamps[ib] >= renderTime)
+            {
+                aIdx = ia;
+                bIdx = ib;
+                break;
+            }
+        }
 
-		PlayerNetState a = _snapshots[aIdx];
-		PlayerNetState b = _snapshots[bIdx];
+        if (aIdx < 0)
+        {
+            int latest = (_head - 1 + BufferSize) % BufferSize;
+            ApplyNetworkState(_snapshots[latest]);
+            return;
+        }
 
-		GlobalPosition = a.Position.Lerp(b.Position, t);
-		velocity = a.Velocity.Lerp(b.Velocity, t);
-		Rotation = new Vector3(Rotation.X, Mathf.LerpAngle(a.BodyYaw, b.BodyYaw, t), Rotation.Z);
-		RotateHead(Mathf.LerpAngle(a.HeadPitch, b.HeadPitch, t));
-		PhysicsSkelton.HeadAngle = -headAngle;
-		PhysicsSkelton.ArmPointDir = a.ArmPointDir.Lerp(b.ArmPointDir, t);
+        ulong tA = _timestamps[aIdx];
+        ulong tB = _timestamps[bIdx];
+        float t = (tB == tA) ? 0f : (float)(renderTime - tA) / (float)(tB - tA);
+        t = Mathf.Clamp(t, 0f, 1f);
 
-		PlayerNetState snap = t >= 0.5f ? b : a;
-		PhysicsSkelton.Aiming = snap.Aiming;
-		PhysicsSkelton.ArmsUp = snap.ArmsUp;
-		currentMovementState = snap.MoveState;
-		currentEmoteState = snap.EmoteState;
-	}
+        PlayerNetState a = _snapshots[aIdx];
+        PlayerNetState b = _snapshots[bIdx];
+
+        GlobalPosition = a.Position.Lerp(b.Position, t);
+        velocity = a.Velocity.Lerp(b.Velocity, t);
+        Rotation = new Vector3(Rotation.X, Mathf.LerpAngle(a.BodyYaw, b.BodyYaw, t), Rotation.Z);
+        RotateHead(Mathf.LerpAngle(a.HeadPitch, b.HeadPitch, t));
+        PhysicsSkelton.HeadAngle = -headAngle;
+        PhysicsSkelton.ArmPointDir = a.ArmPointDir.Lerp(b.ArmPointDir, t);
+
+        PlayerNetState snap = t >= 0.5f ? b : a;
+        PhysicsSkelton.Aiming = snap.Aiming;
+        PhysicsSkelton.ArmsUp = snap.ArmsUp;
+        currentMovementState = snap.MoveState;
+        currentEmoteState = snap.EmoteState;
+    }
 }

@@ -1,5 +1,6 @@
 using Godot;
 using System.Collections.Generic;
+using Core.Auth;
 using Core.Network.Rooms;
 
 /// <summary>
@@ -69,7 +70,7 @@ public sealed partial class WinningSlide3 : MarginContainer
 		}
 
 		var snapshot = LobbyState.Current;
-		if (snapshot is not null)
+		if (snapshot is not null && snapshot.Players.Count > 0)
 		{
 			foreach (var (_, player) in snapshot.Players)
 			{
@@ -80,6 +81,22 @@ public sealed partial class WinningSlide3 : MarginContainer
 
 				_lobbyList.AddChild(user);
 				user.SetUser(player.Username, player.IsHost);
+				_spawnedLobbyUsers.Add(user);
+			}
+		}
+		else
+		{
+			// Offline/solo&#160;: pas de RoomSnapshot, on retombe sur le nom d'usager Firebase
+			// authentifié (ou un placeholder si pas d'auth) pour ne pas laisser la
+			// colonne lobby vide.
+			string localUsername = AuthServiceProvider.Instance.CurrentUser?.Username ?? "You";
+			LobbyUser user = null;
+			if (_lobbyUserScene is not null) user = _lobbyUserScene.Instantiate<LobbyUser>();
+			else if (_lobbyUserTemplate is not null) user = (LobbyUser)_lobbyUserTemplate.Duplicate();
+			if (user is not null)
+			{
+				_lobbyList.AddChild(user);
+				user.SetUser(localUsername, true);
 				_spawnedLobbyUsers.Add(user);
 			}
 		}
@@ -135,6 +152,19 @@ public sealed partial class WinningSlide3 : MarginContainer
 
 		_mapItemTemplate = _mapGrid?.GetNodeOrNull<MapGridItem>("MapGridItem");
 		_lobbyUserTemplate = _lobbyList?.GetNodeOrNull<LobbyUser>("LobbyUser");
+
+		// Les templates qui vivent dans la scène servent uniquement de référence
+		// visuelle dans l'éditeur&#160;: on les cache à l'exécution pour ne pas
+		// laisser un item «&#160;vide&#160;» (mapId="") cliquable au-dessus des items
+		// instanciés depuis MapRegistry.
+		if (_mapItemTemplate is not null) _mapItemTemplate.Visible = false;
+		if (_lobbyUserTemplate is not null) _lobbyUserTemplate.Visible = false;
+
+		// Bouton intermédiaire «&#160;VOTE SELECTED&#160;» laissé en place dans la
+		// scène mais sans rôle&#160;: la sélection d'une map vaut déjà vote (cf.
+		// OnMapSelected). On le masque pour éviter le bouton-mort visible.
+		var voteSelectedBtn = GetNodeOrNull<Button>("Panel/HBoxContainer/LeftPanel/VBoxContainer/BottomControls/ButtonMargin2/Button");
+		if (voteSelectedBtn is not null) voteSelectedBtn.Visible = false;
 
 		_mapItemScene = ResourceLoader.Load<PackedScene>("res://Core/UI/Winning/map_grid_item.tscn");
 		_lobbyUserScene = ResourceLoader.Load<PackedScene>("res://Core/UI/Winning/lobby_user.tscn");

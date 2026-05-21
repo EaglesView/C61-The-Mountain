@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://bvmigfks33r4g"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_1ddx8"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_ft"]
+
+[sub_resource type="Sky" id="Sky_ft"]
+sky_material = SubResource("ProceduralSkyMaterial_ft")
+
+[sub_resource type="Environment" id="Environment_ft"]
+background_mode = 2
+sky = SubResource("Sky_ft")
+ambient_light_source = 3
+tonemap_white = 3.65
+tonemap_agx_white = 16.5
+tonemap_agx_contrast = 1.69
+ssr_enabled = true
+ssao_enabled = true
+ssao_radius = 3.92
+ssao_intensity = 4.47
+ssao_power = 1.448905
+ssao_detail = 0.91
+ssao_horizon = 0.3
+ssao_sharpness = 0.53
+ssil_enabled = true
+ssil_radius = 6.15
+sdfgi_enabled = true
+sdfgi_use_occlusion = true
+sdfgi_y_scale = 0
+glow_enabled = true
+glow_normalized = true
+glow_intensity = 0.35
+glow_strength = 0.34
+glow_bloom = 1.0
+glow_blend_mode = 0
+glow_map = SubResource("NoiseTexture2D_1ddx8")
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.004
+volumetric_fog_emission = Color(0.21322975, 0.5670321, 0.7566145, 1)
+volumetric_fog_length = 634.06
+
+[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_ft"]
+
+[sub_resource type="Compositor" id="Compositor_jsehy"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" unique_id=1478789142]
+environment = SubResource("Environment_ft")
+camera_attributes = SubResource("CameraAttributesPractical_ft")
+compositor = SubResource("Compositor_jsehy")
