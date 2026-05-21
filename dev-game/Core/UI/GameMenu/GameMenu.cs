@@ -23,40 +23,40 @@ public partial class GameMenu : Control
 	public override void _Ready()
 	{
 		Instance = this;
-		Visible  = false;
+		Visible = false;
 
-		_resumeButton.Pressed        += CloseMenu;
-		_settingsButton.Pressed      += OpenSettings;
-		_backToMenuButton.Pressed    += QuitToMenu;
+		_resumeButton.Pressed += CloseMenu;
+		_settingsButton.Pressed += OpenSettings;
+		_backToMenuButton.Pressed += QuitToMenu;
 		_backToDesktopButton.Pressed += QuitToDesktop;
-		_muteButton.Pressed          += ToggleMute;
+		_muteButton.Pressed += ToggleMute;
 		_killCharacterButton.Pressed += KillCharacter;
 	}
 
 	/// <summary>
 	/// Ouvre le menu de pause. Appelé par le <see cref="Player"/> sur l'action <c>pause_menu</c>.
-	/// </summary>
-	public void OpenMenu()
-	{
-		IsPaused        = true;
-		Visible         = true;
-		Input.MouseMode = Input.MouseModeEnum.Visible;
-	}
+    /// </summary>
+    public void OpenMenu()
+    {
+        IsPaused = true;
+        Visible = true;
+        Input.MouseMode = Input.MouseModeEnum.Visible;
+    }
 
-	/// <summary>
-	/// Ferme le menu de pause et redonne le contrôle au joueur.
-	/// </summary>
-	public void CloseMenu()
-	{
-		IsPaused        = false;
-		Visible         = false;
-		Input.MouseMode = DebugMenuOpen()
-			? Input.MouseModeEnum.Visible
-			: Input.MouseModeEnum.Captured;
-	}
+    /// <summary>
+    /// Ferme le menu de pause et redonne le contrôle au joueur.
+    /// </summary>
+    public void CloseMenu()
+    {
+        IsPaused = false;
+        Visible = false;
+        Input.MouseMode = DebugMenuOpen()
+            ? Input.MouseModeEnum.Visible
+            : Input.MouseModeEnum.Captured;
+    }
 
-	public override void _Input(InputEvent @event)
-	{
+    public override void _Input(InputEvent @event)
+    {
 		// Le menu gère uniquement la fermeture — l'ouverture est gérée par le Player
 		if (IsPaused && @event.IsActionPressed("pause_menu"))
 			CloseMenu();
@@ -70,7 +70,7 @@ public partial class GameMenu : Control
 
 	private void QuitToMenu()
 	{
-		IsPaused        = false;
+		IsPaused = false;
 		Input.MouseMode = Input.MouseModeEnum.Visible;
 		GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
 	}
@@ -92,7 +92,7 @@ public partial class GameMenu : Control
 
 	private static bool DebugMenuOpen()
 	{
-		var tree  = Engine.GetMainLoop() as SceneTree;
+		var tree = Engine.GetMainLoop() as SceneTree;
 		var debug = tree?.Root.FindChild("Debug", true, false) as Control;
 		return debug?.Visible ?? false;
 	}
