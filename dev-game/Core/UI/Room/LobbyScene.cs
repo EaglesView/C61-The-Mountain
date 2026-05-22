@@ -343,6 +343,7 @@ public partial class LobbyScene : Control
         // Cf. LobbyCleanup pour la logique partagée avec les chemins
         // d'erreur du Lobby/Game et le bouton QUIT du Winning.
         LobbyCleanup.LeaveRoomFireAndForget();
+        Core.Network.NetworkManager.Instance?.Disconnect();
         LobbyState.Clear();
         GoToMainMenu();
     }

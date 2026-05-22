@@ -71,6 +71,11 @@ public partial class GameMenu : Control
 	private void QuitToMenu()
 	{
 		IsPaused = false;
+
+		Core.Network.Rooms.LobbyCleanup.LeaveRoomFireAndForget();
+		Core.Network.NetworkManager.Instance?.Disconnect();
+		Core.Network.Rooms.LobbyState.Clear();
+
 		Input.MouseMode = Input.MouseModeEnum.Visible;
 		GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
 	}

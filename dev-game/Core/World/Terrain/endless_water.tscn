@@ -50,7 +50,7 @@ subdivide_width = 500
 subdivide_depth = 500
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_w1jjf"]
-size = Vector3(2000, 272.79993, 2000)
+size = Vector3(2000, 134.3928, 2000)
 
 [node name="Water" type="MeshInstance3D" unique_id=2121387950 node_paths=PackedStringArray("WaterArea")]
 transform = Transform3D(0.86942166, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
@@ -71,5 +71,5 @@ angular_damp_space_override = 1
 angular_damp = 26.0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="WaterArea" unique_id=1203533026]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -138.12395, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -63.502853, 0)
 shape = SubResource("BoxShape3D_w1jjf")

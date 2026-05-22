@@ -44,6 +44,11 @@ public sealed partial class MainController : Node3D
 		);
 		//Entrer dans l etat lobby manuellement
 		_current.Enter();
+
+		if (NetworkManager.Instance != null)
+		{
+			NetworkManager.Instance.ServerDisconnected += OnServerDisconnected;
+		}
 	}
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -54,7 +59,7 @@ public sealed partial class MainController : Node3D
 		// Quit volontaire depuis Winning&#160;: court-circuite la FSM principale
 		// pour ne pas instancier la lobby UI alors que la scène est sur le
 		// point d'être remplacée par le main menu. Fait le ménage (Exit
-		// propre de Winning, disconnect réseau, clear LobbyState, mouse mode)
+        // propre de Winning, disconnect réseau, clear LobbyState, mouse mode)
 		// avant d'enchaîner sur ChangeSceneToFile.
 		if (!_quitScheduled && _winningController is not null && _winningController.QuittingToMenu)
 		{
@@ -77,5 +82,21 @@ public sealed partial class MainController : Node3D
 
 	private void OnEnter(State s) { _current = _phases[s]; _current.Enter(); }
 	private void OnExit(State s) { _phases[s].Exit(); }
+
+	private void OnServerDisconnected()
+	{
+		if (_quitScheduled || (NetworkManager.Instance != null && NetworkManager.Instance.IsServer)) return;
+
+		GD.Print("[MainController] Forcing quit to main menu due to server disconnect.");
+		_quitScheduled = true;
+		_current?.Exit();
+
+		LobbyCleanup.LeaveRoomFireAndForget();
+		NetworkManager.Instance?.Disconnect();
+		LobbyState.Clear();
+		Input.MouseMode = Input.MouseModeEnum.Visible;
+
+		GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
+	}
 
 }

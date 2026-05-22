@@ -62,34 +62,34 @@ public sealed partial class WinningController : Node3D, IPhase
 	/// <summary>
 	/// Levé par <see cref="OnQuitPressed"/> pour signaler à <c>MainController</c>
 	/// qu'on veut court-circuiter la FSM principale et rebasculer vers le main menu.
-	/// Le <c>MainController</c> détecte ce flag avant la prochaine évaluation FSM,
-	/// fait le ménage (Disconnect, Clear, mouse mode) puis appelle <c>ChangeSceneToFile</c>.
-	/// Évite la race «&#160;_done=true + ChangeSceneToFile la même frame&#160;» qui
+    /// Le <c>MainController</c> détecte ce flag avant la prochaine évaluation FSM,
+    /// fait le ménage (Disconnect, Clear, mouse mode) puis appelle <c>ChangeSceneToFile</c>.
+    /// Évite la race «&#160;_done=true + ChangeSceneToFile la même frame&#160;» qui
 	/// laissait <see cref="LobbyController.Enter"/> s'exécuter sur une scène en
 	/// train d'être détruite.
-	/// </summary>
-	public bool QuittingToMenu => _quittingToMenu;
+    /// </summary>
+    public bool QuittingToMenu => _quittingToMenu;
 
-	// État de vote côté serveur (et miroir client après chaque broadcast).
-	// Clé&#160;: peerId. Valeur&#160;: identifiant de map sélectionné.
-	private readonly Dictionary<int, string> _votes = new();
-	private string _majorityMapId = "";
+    // État de vote côté serveur (et miroir client après chaque broadcast).
+    // Clé&#160;: peerId. Valeur&#160;: identifiant de map sélectionné.
+    private readonly Dictionary<int, string> _votes = new();
+    private string _majorityMapId = "";
 
-	// Temps cumulé côté serveur dédié (pas de FSM UI&#160;: on attend simplement
-	// la fin de la fenêtre de vote, ou un ServerConfirmVote).
-	private float _serverElapsed;
+    // Temps cumulé côté serveur dédié (pas de FSM UI&#160;: on attend simplement
+    // la fin de la fenêtre de vote, ou un ServerConfirmVote).
+    private float _serverElapsed;
 
-	public bool IsDone => _done;
+    public bool IsDone => _done;
 
-	public void Enter()
-	{
-		_done = false;
-		_continuePressed = false;
-		_voteConfirmed = false;
-		_quittingToMenu = false;
-		_votes.Clear();
-		_majorityMapId = "";
-		_serverElapsed = 0f;
+    public void Enter()
+    {
+        _done = false;
+        _continuePressed = false;
+        _voteConfirmed = false;
+        _quittingToMenu = false;
+        _votes.Clear();
+        _majorityMapId = "";
+        _serverElapsed = 0f;
 
 		// Serveur dédié&#160;: pas d'UI mais on reste en vie pour traiter les
 		// RPCs de vote et broadcaster les tallies pendant la fenêtre Winning.
@@ -174,6 +174,14 @@ public sealed partial class WinningController : Node3D, IPhase
         }
 		// Serveur dédié&#160;: aucun FSM UI. Attendre l'enveloppe totale puis
 		// finaliser, sauf si un ServerConfirmVote l'a déjà fait avant.
+
+        if (IsNetworkedServer() && Multiplayer.GetPeers().Length == 0)
+        {
+            ServerFinalizeIfNeeded();
+            _done = true;
+            return;
+        }
+
         _serverElapsed += InDelta;
         float totalWindow = _celebrationDuration + _slide2ButtonDelay + _slide2ForceAdvance + _voteTimeout;
         if (_serverElapsed >= totalWindow)
@@ -198,7 +206,7 @@ public sealed partial class WinningController : Node3D, IPhase
             _winningInstance = null;
         }
         _votes.Clear();
-		_majorityMapId = "";
+        _majorityMapId = "";
         _fsm = null;
     }
 
@@ -294,7 +302,7 @@ public sealed partial class WinningController : Node3D, IPhase
     /// </summary>
     private void RecomputeMajority()
     {
-		_majorityMapId = "";
+        _majorityMapId = "";
         int totalVoters = Mathf.Max(1, GetTotalVoters());
         int threshold = (totalVoters / 2) + 1;
 
@@ -406,7 +414,7 @@ public sealed partial class WinningController : Node3D, IPhase
 
 	/// <summary>
 	/// Reçu par le serveur quand l'hôte clique sur CONFIRM&#160;: verrouille la
-	/// map majoritaire courante et broadcast <see cref="ClientFinalizeVote"/>.
+    /// map majoritaire courante et broadcast <see cref="ClientFinalizeVote"/>.
     /// </summary>
     [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void ServerConfirmVote()
@@ -460,7 +468,7 @@ public sealed partial class WinningController : Node3D, IPhase
                 {
                     string fallback = !string.IsNullOrEmpty(_majorityMapId)
                         ? _majorityMapId
-						: (_winningInstance?.SelectedMapId ?? "");
+                        : (_winningInstance?.SelectedMapId ?? "");
                     if (!string.IsNullOrEmpty(fallback)) LobbyState.SetSelectedMap(fallback);
                 }
                 _done = true;
@@ -488,8 +496,8 @@ public sealed partial class WinningController : Node3D, IPhase
 			? $"{username} Won"
 			: $"{username} — {LobbyState.LastWinnerConditionLabel}";
 		// Le _Ready des slides a tourné synchroniquement à l'AddChild du Winning
-		// instance, donc SetWinnerLabel peut être appelé directement.
-		var slide1 = _winningInstance.GetNodeOrNull<WinningSlide1>("Winning_UI/SCR_01_WHOWINS");
+        // instance, donc SetWinnerLabel peut être appelé directement.
+        var slide1 = _winningInstance.GetNodeOrNull<WinningSlide1>("Winning_UI/SCR_01_WHOWINS");
         slide1?.SetWinnerLabel(label);
     }
 
@@ -524,7 +532,7 @@ public sealed partial class WinningController : Node3D, IPhase
 
 	/// <summary>
 	/// Résout un nom d'usager affichable pour <paramref name="InPeerId"/>. Pour
-	/// le joueur local (peer == <see cref="NetworkManager.LocalPeerId"/> ou peer
+    /// le joueur local (peer == <see cref="NetworkManager.LocalPeerId"/> ou peer
     /// == 1 en offline) on utilise le username Firebase courant. Sans mapping
     /// peer→userId broadcasté pour les autres joueurs, on retombe sur
 	/// «&#160;Player N&#160;» jusqu'à ce que ce mapping soit ajouté au protocole.
