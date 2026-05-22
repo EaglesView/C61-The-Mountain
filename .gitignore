@@ -27,3 +27,4 @@ dev-game/Export/
 *.*.orig
 *.old
 *.old.*
+server-frontend/

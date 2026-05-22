@@ -233,6 +233,21 @@ public partial class Character : CharacterBody3D
 				Velocity = Vector3.Zero;
 				moveVec = Vector3.Zero;
 				aimVec = Vector3.Zero;
+				if (IsInGroup("players_alive")) RemoveFromGroup("players_alive");
+				break;
+			case CharacterState.Spectating:
+				// Le corps doit RESTER ragdoll pendant le spectateur (l'utilisateur a
+				// dit «&#160;keep dead body visible&#160;»). On reproduit les invariants de
+				// Dead côté corps physique parce qu'ExitState(Dead) un-ragdoll le
+				// squelette et réactive la capsule — sans cette ré-application, le
+				// personnage se relèverait visuellement au moment d'entrer en spectateur.
+				if (_capsule != null) _capsule.Disabled = true;
+				PhysicsSkelton.IsRagdoll = true;
+				PhysicsSkelton.RagdollTriggered = false;
+				velocity = Vector3.Zero;
+				Velocity = Vector3.Zero;
+				moveVec = Vector3.Zero;
+				aimVec = Vector3.Zero;
 				break;
 		}
 	}
@@ -268,6 +283,11 @@ public partial class Character : CharacterBody3D
 	{
 		_spineCollBox = GetNodeOrNull<CollisionShape3D>(
 			"PhysicsRig/Armature/Skeleton3D/PhysicalBoneSimulator3D/Physical Bone Spine_001/CollisionShape3D");
+		// Groupe de référence pour la sélection de cibles spectateur. Maintenu
+		// par EnterState(Dead) qui retire l'entrée à la mort. Joindre ici (pas
+		// dans Player._Ready) garantit que toutes les répliques distantes sont
+		// énumérables — le joueur local doit pouvoir cibler les autres peers.
+		AddToGroup("players_alive");
 	}
 
 	public override void _PhysicsProcess(double delta)
@@ -295,6 +315,9 @@ public partial class Character : CharacterBody3D
                 return;
 
             case CharacterState.Dead:
+                return;
+
+            case CharacterState.Spectating:
                 return;
 
             case CharacterState.Recovering:
@@ -381,7 +404,7 @@ public partial class Character : CharacterBody3D
         return _characterState switch
         {
             CharacterState.Moving => MovementState.Walking,
-            CharacterState.Ragdoll or CharacterState.Recovering or CharacterState.Dead => MovementState.Ragdolling,
+            CharacterState.Ragdoll or CharacterState.Recovering or CharacterState.Dead or CharacterState.Spectating => MovementState.Ragdolling,
             _ => MovementState.Idle
         };
     }

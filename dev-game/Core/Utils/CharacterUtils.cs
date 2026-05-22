@@ -58,7 +58,9 @@ public static class CharacterUtils
         ///<summary>Menu de pause ouvert</summary>
         Paused,
         ///<summary>Joueur mort pour la durée du round. Le corps ragdoll, les inputs et la locomotion sont coupés, le HUD est remplacé par l'overlay Wasted.</summary>
-        Dead
+        Dead,
+        ///<summary>Joueur mort en mode spectateur : caméra libre (orbit-cam) ancrée sur un Marker3D du niveau ou sur un joueur vivant. La locomotion reste coupée mais la souris pilote la caméra et N/P cyclent la cible.</summary>
+        Spectating
     }
 
     ///<summary>
