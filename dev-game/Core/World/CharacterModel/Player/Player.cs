@@ -45,20 +45,18 @@ public partial class Player : Character
 	private CameraType _lastCamTypeForHat = CameraType.ThirdPerson;
 
 	/// <summary>
-	/// Verrou d'entrée pour le joueur local. Activé par le GameController quand la
-    /// partie est avortée (host parti) ou par toute autre logique qui veut figer
-	/// l'input sans ouvrir le menu pause. Quand <c>true</c>&#160;: <see cref="_Input"/>
-	/// retourne immédiatement, <see cref="_PhysicsProcess"/> ne lit plus les
-	/// commandes et la souris est rendue visible.
+	/// Verrou d'entrée pour le joueur local. Activé par le GameController pendant
+	/// le countdown d'avant-partie, quand la partie est avortée (host parti), ou
+	/// par toute autre logique qui veut figer l'input sans ouvrir le menu pause.
+	/// Quand <c>true</c>&#160;: <see cref="_Input"/> retourne immédiatement et
+	/// <see cref="_PhysicsProcess"/> ne lit plus les commandes (moveVec/aimVec
+	/// forcés à zéro). Ne touche pas au mode souris — c'est à l'appelant
+	/// d'arbitrer si le curseur doit être visible (overlay) ou capturé (countdown).
 	/// </summary>
 	public bool InputFrozen
 	{
 		get => _inputFrozen;
-		set
-		{
-			_inputFrozen = value;
-			if (value) Input.MouseMode = Input.MouseModeEnum.Visible;
-		}
+		set => _inputFrozen = value;
 	}
 	private bool _inputFrozen;
 
@@ -137,10 +135,7 @@ public partial class Player : Character
 			speed = WalkSpeed;
 			AnimPlayer.SpeedScale = 1.0f;
 		}
-		if (state == CharacterState.Recovering && _lastCamType == CameraType.FirstPerson)
-		{
-			_cameraMan?.SetCameraType(CameraType.FirstPerson);
-		}
+		// Revert to FirstPerson disabled
 		if (state == CharacterState.Spectating && IsMultiplayerAuthority())
 		{
 			if (_spectatorTrackedCharacter is not null)
@@ -197,7 +192,7 @@ public partial class Player : Character
 		AddToGroup("local_player");
 
 		if (_cameraMan == null) { _SpawnHat(); return; }
-		_currentCamOffset = _offsetFP;
+		_currentCamOffset = _offsetTP;
 		if (Raycaster == null) Raycaster = _cameraMan.GetNode<RayCast3D>("PlayerCamera/RayCastTo");
 		if (DisplayServer.GetName() != "headless")
 			_playerFocused = ToggleCharacterFocus(_playerFocused);
@@ -329,18 +324,21 @@ public partial class Player : Character
 	public override void _Input(InputEvent @event)
 	{
 		if (!IsMultiplayerAuthority()) return;
+
+		// Handle camera rotation even if frozen (ThirdPerson only)
+		if (@event is InputEventMouseMotion mm && _cameraMan?.CamType == CameraType.ThirdPerson)
+		{
+			_cameraMan.RotateCameraTP(mm.Relative.X, -mm.Relative.Y, _mouseSensitivity);
+			
+			// If frozen, we stop here to avoid rotating the head/body
+			if (_inputFrozen) return;
+		}
+
 		if (_inputFrozen) return;
 
 		if (_characterState == CharacterState.Spectating)
 		{
-			// Souris&#160;: pilote l'orbit-cam (yaw + pitch). RotateCameraTP gère
-            // déjà le clamp du pitch et le wrap du yaw — on lui passe les
-            // deltas tels quels avec la sensibilité souris du joueur.
-            if (@event is InputEventMouseMotion mm)
-                _cameraMan?.RotateCameraTP(mm.Relative.X, -mm.Relative.Y, _mouseSensitivity);
-
-            // N/P et molette&#160;: cycler la cible. On garde aussi la pause active
-			// (Spectating → Paused) pour que l'utilisateur puisse ouvrir le menu.
+			// N/P et molette : cycler la cible.
 			if (@event.IsActionPressed("spectate_next")) _CycleSpectatorTarget(+1);
 			else if (@event.IsActionPressed("spectate_prev")) _CycleSpectatorTarget(-1);
 			else if (@event.IsActionPressed("pause_menu")) TransitionTo(CharacterState.Paused);
@@ -351,18 +349,13 @@ public partial class Player : Character
 
 		if (@event is InputEventMouseMotion mouseMotion)
 		{
-			if (_cameraMan?.CamType == CameraType.ThirdPerson)
-			{
-				_cameraMan.RotateCameraTP(
-					mouseMotion.Relative.X,
-					-mouseMotion.Relative.Y,
-					_mouseSensitivity
-				);
-			}
-			else
+			// Note: RotateCameraTP is already called above if in ThirdPerson.
+			// We only need to handle RotateHead and FirstPerson rotation here.
+			if (_cameraMan?.CamType != CameraType.ThirdPerson)
 			{
 				RotateY(-mouseMotion.Relative.X * _mouseSensitivity);
 			}
+			
 			float newAngle = headAngle + mouseMotion.Relative.Y * _mouseSensitivity;
 			RotateHead(Mathf.Clamp(newAngle, Mathf.DegToRad(-80), Mathf.DegToRad(80)));
 		}
@@ -483,8 +476,7 @@ public partial class Player : Character
         if (Input.IsActionJustPressed("show_sign")) PhysicsSkelton.ArmsUp = true;
         if (Input.IsActionJustReleased("show_sign")) PhysicsSkelton.ArmsUp = false;
 
-        if (Input.IsActionJustPressed("change_view"))
-            _cameraMan?.SetNextCamera([CameraType.FirstPerson, CameraType.ThirdPerson]);
+        // Camera switching disabled
 
         Vector2 aimDir = Input.GetVector("aim_left", "aim_right", "aim_up", "aim_down");
         Vector2 inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");

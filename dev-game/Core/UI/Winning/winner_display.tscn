@@ -1,9 +1,11 @@
 [gd_scene format=3 uid="uid://ejfh4s5x3dhi"]
 
 [ext_resource type="Script" uid="uid://cdb0xidh57fqk" path="res://Core/UI/Winning/WinnerDisplay.cs" id="1_2fa2x"]
+[ext_resource type="PackedScene" uid="uid://cdy5str4kjom" path="res://Core/World/CharacterModel/Physics/penguin_01.tscn" id="2_oh7jh"]
 
 [node name="WinnerDisplay" type="Node3D" unique_id=1978848881]
 script = ExtResource("1_2fa2x")
+_penguinSceneAsset = ExtResource("2_oh7jh")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=191290022]
 transform = Transform3D(0.87797177, -0.123785675, 0.46243128, 0.03814726, 0.98100895, 0.19017448, -0.47719014, -0.14932737, 0.8660203, 0.34313983, 0.60160804, 0.85104686)

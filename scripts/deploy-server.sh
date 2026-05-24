@@ -11,8 +11,11 @@ set -a; source "$REPO_ROOT/dev-game/.env"; set +a
 REMOTE="godotadmin@${SERVER_IP}"
 
 # Prompt for sudo password once; feed it to remote `sudo -S` for every command.
-read -rsp "Sudo password for $REMOTE: " SUDO_PW
-echo
+# Skip the prompt when SUDO_PW is already provided in the env (e.g. invoked by server-frontend).
+if [ -z "${SUDO_PW:-}" ]; then
+    read -rsp "Sudo password for $REMOTE: " SUDO_PW
+    echo
+fi
 export SUDO_PW
 
 remote_sudo() {

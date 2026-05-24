@@ -81,6 +81,9 @@ public partial class NetworkManager : Node
     /// <summary>Déclenché si la connexion au serveur échoue.</summary>
     public event Action<string>? ConnectionFailed;
 
+    /// <summary>Déclenché lorsque la connexion au serveur est perdue.</summary>
+    public event Action? ServerDisconnected;
+
     /// <summary>
     /// Enregistre le personnage local pour que le tick client puisse sérialiser son état.
     /// </summary>
@@ -156,6 +159,11 @@ public partial class NetworkManager : Node
         {
             GD.PrintErr($"[NetworkManager] {msg}");
             ConnectionFailed?.Invoke(msg);
+        };
+        _provider.ServerDisconnected += () =>
+        {
+            GD.PrintErr("[NetworkManager] Lost connection to server.");
+            ServerDisconnected?.Invoke();
         };
 
         string[] args = OS.GetCmdlineArgs();
