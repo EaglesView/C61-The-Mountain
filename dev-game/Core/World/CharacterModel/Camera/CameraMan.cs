@@ -35,7 +35,7 @@ public partial class CameraMan : Node3D
     [Export] private Marker3D _tpCamMarker;
     [Export] private Vector3 _fpCamOffset = new Vector3(0f, 0f, -0.15f);
     [ExportGroup("Camera Properties")]
-    [Export] private CameraType _camType = CameraType.FirstPerson;
+    [Export] private CameraType _camType = CameraType.ThirdPerson;
 
     [ExportSubgroup("First Person Cam Properties")]
     /// <summary>PRIVÉ - Lissage du suivi de la tête en vue FP (plus grand = plus lent).</summary>

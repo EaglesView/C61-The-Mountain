@@ -23,13 +23,13 @@ public enum NetworkRole
 public interface INetworkProvider
 {
     /// <summary>Rôle actuel de ce pair dans la session.</summary>
-    NetworkRole Role    { get; }
+    NetworkRole Role { get; }
 
     /// <summary>Identifiant unique de ce pair attribué par le transport.</summary>
-    int LocalPeerId     { get; }
+    int LocalPeerId { get; }
 
     /// <summary><c>true</c> si le transport est actif et connecté.</summary>
-    bool IsRunning      { get; }
+    bool IsRunning { get; }
 
     /// <summary>
     /// Démarre un serveur sur le port et le nombre de pairs maximum donnés.
@@ -77,17 +77,20 @@ public interface INetworkProvider
     void BroadcastReliable(byte[] data, int excludePeerId = -1);
 
     /// <summary>Déclenché lorsqu'un pair se connecte. Paramètre : l'identifiant du pair.</summary>
-    event Action<int>         PeerConnected;
+    event Action<int> PeerConnected;
 
     /// <summary>Déclenché lorsqu'un pair se déconnecte. Paramètre : l'identifiant du pair.</summary>
-    event Action<int>         PeerDisconnected;
+    event Action<int> PeerDisconnected;
 
     /// <summary>Déclenché à la réception d'un paquet brut. Paramètres : (identifiant de l'émetteur, octets reçus).</summary>
     event Action<int, byte[]> PacketReceived;
 
     /// <summary>Déclenché une fois que le serveur est démarré et prêt à accepter des connexions.</summary>
-    event Action              ServerStarted;
+    event Action ServerStarted;
 
     /// <summary>Déclenché si la connexion ou le démarrage du serveur échoue. Paramètre : message d'erreur.</summary>
-    event Action<string>      ConnectionFailed;
+    event Action<string> ConnectionFailed;
+
+    /// <summary>Déclenché lorsque la connexion au serveur est perdue.</summary>
+    event Action ServerDisconnected;
 }

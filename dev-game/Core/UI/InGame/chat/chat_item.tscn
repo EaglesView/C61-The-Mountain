@@ -1,0 +1,26 @@
+[gd_scene format=3 uid="uid://bvqx4iq65m68x"]
+
+[node name="ChatItem" type="HBoxContainer" unique_id=1202433319]
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=156253733]
+layout_mode = 2
+
+[node name="PlayerNameChat" type="Label" parent="VBoxContainer" unique_id=1721074414]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 18
+text = "RELIIX"
+
+[node name="Label" type="Label" parent="VBoxContainer" unique_id=1177129991]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.39308554, 0.3930855, 0.39308548, 1)
+text = "12:00"
+
+[node name="Label" type="Label" parent="." unique_id=884645328]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_colors/font_color = Color(0.35906908, 0.35906908, 0.35906908, 1)
+theme_override_font_sizes/font_size = 13
+text = "Message de chat"
+autowrap_mode = 2
