@@ -42,6 +42,16 @@ public partial class PhysicsSkeleton : Skeleton3D
     [Export(PropertyHint.Range, "0.0f,200.0f,1.0f")] public float AngularSpringDamping = 80.0f;
     [Export(PropertyHint.Range, "0.0f,5.0f,0,1f")] public float RagdollGraceTime = 1.0f;
 
+    ///<summary>
+    ///Gain de rattrapage de la vélocité du corps parent. À chaque frame, on
+    ///Lerp la vélocité linéaire/angulaire de chaque os physique vers celle
+	///qu'aurait un point rigidement lié à TargetSkeleton à sa position. Sans
+	///ça, les springs (PD pur, sans feedforward) sont seuls à dragger les os
+	///quand le perso tourne ou se déplace, donc les bras traînent puis font
+	///le tour quand le corps pivote vite. 0 = comportement d'origine.
+    ///</summary>
+    [Export(PropertyHint.Range, "0.0f,50.0f,0.5f")] public float ParentFollowGain = 15.0f;
+
     /// <summary>
     /// Grace appliquée à la sortie du ragdoll (transition IsRagdoll true→false).
     /// Donne le temps aux springs de ramener les os physiques vers la pose
@@ -54,6 +64,11 @@ public partial class PhysicsSkeleton : Skeleton3D
 
     private float _graceTime = 0.0f;
     private bool _wasRagdollLastFrame;
+    // Snapshot du transform de TargetSkeleton à la frame précédente, pour dériver
+    // la vélocité linéaire/angulaire du corps parent (cf. ParentFollowGain).
+    private Vector3 _lastFramePos;
+    private Basis _lastFrameBasis;
+    private bool _hasLastFrame;
     protected static float forceThreshold = 500.0f;
     ///<summary>Définit si le personnage est en ragdoll ou pas</summary>
     [Export] public bool IsRagdoll = false;
@@ -277,109 +292,150 @@ public partial class PhysicsSkeleton : Skeleton3D
         {
             _graceTime -= (float)delta;
         }
-        foreach (PhysicalBone3D bone in _physicsBones)
-        {
-            Vector3 gravity = bone.GetGravity();
-            bone.LinearVelocity += gravity * (float)delta;
-            //if (Aiming && bone.GetBoneId() == _arm1RIdx){
-            //ignorer le bras droit pour linstant si aiming
-            if (IsRagdoll) continue;
-            //continue;
-            //}
-            float LinStiff = bone.HasMeta("LinearStiffness") ? (float)bone.GetMeta("LinearStiffness") : LinearSpringStiffness;
-            float LinDamp = bone.HasMeta("LinearDamping") ? (float)bone.GetMeta("LinearDamping") : LinearSpringDamping;
-            float RotStiff = bone.HasMeta("AngularStiffness") ? (float)bone.GetMeta("AngularStiffness") : AngularSpringStiffness;
-            float RotDamp = bone.HasMeta("AngularDamping") ? (float)bone.GetMeta("AngularDamping") : AngularSpringDamping;
-            //LINEAR START
-            //On ramasse les transformations du rig animé et ceux du rig physique
-            Transform3D TransformTarget = TargetSkeleton.GlobalTransform * TargetSkeleton.GetBoneGlobalPose(bone.GetBoneId());
-            Transform3D TransformCurrent = bone.GlobalTransform * bone.BodyOffset.AffineInverse();//* GetBoneGlobalPose(bone.GetBoneId());
-                                                                                                  //On ramasse la différence, et on applique une force selon sa distance et vélocité actuelle
-            Vector3 PositionDifference = TransformTarget.Origin - TransformCurrent.Origin;
 
-            Vector3 Force = HookesLaw(PositionDifference, bone.LinearVelocity, LinStiff, LinDamp);
-            // Comparaison sur la magnitude réelle.
-            if (!IsRagdoll && Force.LengthSquared() > forceThreshold * forceThreshold && _graceTime <= 0f)
-            {
-                RagdollTriggered = true;
-            }
-            // LINEAR APPLY
-            bone.LinearVelocity += Force * (float)delta; //linear
-                                                         //ANGULAR START
-            Quaternion targetRot = TransformTarget.Basis.GetRotationQuaternion();
-            Quaternion currentRot = TransformCurrent.Basis.GetRotationQuaternion();
-            //Correction Bug Shortest Path, évite les rotations douteuses
-            if (targetRot.Dot(currentRot) < 0f)
-                currentRot = -currentRot;
+        // ── Vélocité du corps parent dérivée du delta de transform de TargetSkeleton.
+        // On utilise TargetSkeleton comme repère (déjà référencé partout dans les
+        // springs) plutôt que GetParent<Node3D>() — ça reste cohérent même si la
+		// hiérarchie change. La vélocité angulaire vient de l'axe-angle du delta
+		// de rotation, divisé par dt.
+		Transform3D frameXf = TargetSkeleton.GlobalTransform;
+		Vector3 frameLinVel = Vector3.Zero;
+		Vector3 frameAngVel = Vector3.Zero;
+		if (_hasLastFrame && delta > 0.0)
+		{
+			float invDt = 1f / (float)delta;
+			frameLinVel = (frameXf.Origin - _lastFramePos) * invDt;
+			Quaternion qNow = frameXf.Basis.GetRotationQuaternion();
+			Quaternion qLast = _lastFrameBasis.GetRotationQuaternion();
+			if (qNow.Dot(qLast) < 0f) qLast = -qLast;
+			Quaternion qDelta = (qNow * qLast.Inverse()).Normalized();
+			if (qDelta.W < 0f) qDelta = -qDelta;
+			float ang = qDelta.GetAngle();
+			if (ang > 1e-5f) frameAngVel = qDelta.GetAxis() * ang * invDt;
+		}
+		if (Engine.GetPhysicsFrames() % 30 == 0)
+			GD.Print($"frameAngVel={frameAngVel.Length():F3} frameLinVel={frameLinVel.Length():F3}");
+		_lastFramePos = frameXf.Origin;
+		_lastFrameBasis = frameXf.Basis;
+		_hasLastFrame = true;
 
-            Quaternion rotDiff = (targetRot * currentRot.Inverse()).Normalized();
-            if (rotDiff.W < 0f) rotDiff = -rotDiff;
-            //Le displacement angulaire est juste une fancy différence de rotation précise
-            //Correction pour les erreurs de floating point
-            float angle = rotDiff.GetAngle();
+		foreach (PhysicalBone3D bone in _physicsBones)
+		{
+			Vector3 gravity = bone.GetGravity();
+			bone.LinearVelocity += gravity * (float)delta;
+			//if (Aiming && bone.GetBoneId() == _arm1RIdx){
+			//ignorer le bras droit pour linstant si aiming
+			if (IsRagdoll) continue;
+			//continue;
+			//}
 
-            Vector3 angularDisplacement = (angle > 1e-4f) ? rotDiff.GetAxis() * angle : Vector3.Zero;
-            // ANGULAR APPLY — world space, pas besoin de conversion
-            Vector3 worldTorque = HookesLaw(angularDisplacement, bone.AngularVelocity, RotStiff, RotDamp);
-            bone.AngularVelocity += worldTorque * (float)delta;
-        }
-        if (IsRagdoll)
-        {
-            int rootBone = FindBone("Spine.001");
-            int ikBone = FindBone("Controller.IK");
-            Transform3D poseRoot = GetBoneGlobalPose(rootBone);
-            SetBoneGlobalPose(ikBone, poseRoot);
-        }
+			// Rattrapage de la vélocité du corps : pour un point rigidement lié à
+			// TargetSkeleton à la position de l'os, v = linVel + angVel × r. On
+            // Lerp la vélocité du rigid body vers cette cible ; les springs en
+			// dessous corrigent le résidu au lieu d'avoir à faire tout le boulot.
+			if (ParentFollowGain > 0f)
+			{
+				Vector3 boneWorldPos = (bone.GlobalTransform * bone.BodyOffset.AffineInverse()).Origin;
+				Vector3 expectedLinVel = frameLinVel + frameAngVel.Cross(boneWorldPos - frameXf.Origin);
+				float catchT = Mathf.Clamp(ParentFollowGain * (float)delta, 0f, 1f);
+				bone.LinearVelocity = bone.LinearVelocity.Lerp(expectedLinVel, catchT);
+				bone.AngularVelocity = bone.AngularVelocity.Lerp(frameAngVel, catchT);
+			}
 
-        // Remote correction: gently steer spine position and head rotation
-        // toward the authoritative values without overriding local physics.
-        if (IsRagdoll && RemoteCorrection)
-        {
-            if (_spinePhysBone != null)
-            {
-                Transform3D cur = _spinePhysBone.GlobalTransform * _spinePhysBone.BodyOffset.AffineInverse();
-                _spinePhysBone.LinearVelocity +=
-                    (RemoteSpineTarget - cur.Origin) * SpineCorrectK * (float)delta;
-            }
+			float LinStiff = bone.HasMeta("LinearStiffness") ? (float)bone.GetMeta("LinearStiffness") : LinearSpringStiffness;
+			float LinDamp = bone.HasMeta("LinearDamping") ? (float)bone.GetMeta("LinearDamping") : LinearSpringDamping;
+			float RotStiff = bone.HasMeta("AngularStiffness") ? (float)bone.GetMeta("AngularStiffness") : AngularSpringStiffness;
+			float RotDamp = bone.HasMeta("AngularDamping") ? (float)bone.GetMeta("AngularDamping") : AngularSpringDamping;
+			//LINEAR START
+			//On ramasse les transformations du rig animé et ceux du rig physique
+			Transform3D TransformTarget = TargetSkeleton.GlobalTransform * TargetSkeleton.GetBoneGlobalPose(bone.GetBoneId());
+			Transform3D TransformCurrent = bone.GlobalTransform * bone.BodyOffset.AffineInverse();//* GetBoneGlobalPose(bone.GetBoneId());
+																								  //On ramasse la différence, et on applique une force selon sa distance et vélocité actuelle
+			Vector3 PositionDifference = TransformTarget.Origin - TransformCurrent.Origin;
 
-            if (_headPhysBone != null)
-            {
-                Transform3D cur = _headPhysBone.GlobalTransform * _headPhysBone.BodyOffset.AffineInverse();
-                Quaternion target = Quaternion.FromEuler(new Vector3(RemoteHeadPitch, RemoteHeadYaw, 0f));
-                Quaternion current = cur.Basis.GetRotationQuaternion().Normalized();
-                if (target.Dot(current) < 0f) current = -current;
-                Quaternion diff = (target * current.Inverse()).Normalized();
-                if (diff.W < 0f) diff = -diff;
-                float angle = diff.GetAngle();
-                if (angle > 1e-4f)
-                    _headPhysBone.AngularVelocity += diff.GetAxis() * angle * HeadCorrectK * (float)delta;
-            }
-        }
+			Vector3 Force = HookesLaw(PositionDifference, bone.LinearVelocity, LinStiff, LinDamp);
+			// Comparaison sur la magnitude réelle.
+			if (!IsRagdoll && Force.LengthSquared() > forceThreshold * forceThreshold && _graceTime <= 0f)
+			{
+				RagdollTriggered = true;
+			}
+			// LINEAR APPLY
+			bone.LinearVelocity += Force * (float)delta; //linear
+														 //ANGULAR START
+			Quaternion targetRot = TransformTarget.Basis.GetRotationQuaternion();
+			Quaternion currentRot = TransformCurrent.Basis.GetRotationQuaternion();
+			//Correction Bug Shortest Path, évite les rotations douteuses
+			if (targetRot.Dot(currentRot) < 0f)
+				currentRot = -currentRot;
 
-    }
-    ///<summary>
-    ///     Permet de Prendre la pose de la tête du personnage
-    /// </summary>
-    public Transform3D GetPoseTargetSkel(bool InIsPhysicsSkeleton = false)
-    {
-        int physicBone = TargetSkeleton.FindBone("Head.001");
-        return GetPoseFromIdx(InIsPhysicsSkeleton ? this : TargetSkeleton, InIsPhysicsSkeleton ? physicBone : _headBoneIdx);
-    }
+			Quaternion rotDiff = (targetRot * currentRot.Inverse()).Normalized();
+			if (rotDiff.W < 0f) rotDiff = -rotDiff;
+			//Le displacement angulaire est juste une fancy différence de rotation précise
+			//Correction pour les erreurs de floating point
+			float angle = rotDiff.GetAngle();
+
+			Vector3 angularDisplacement = (angle > 1e-4f) ? rotDiff.GetAxis() * angle : Vector3.Zero;
+			// ANGULAR APPLY — world space, pas besoin de conversion
+			Vector3 worldTorque = HookesLaw(angularDisplacement, bone.AngularVelocity, RotStiff, RotDamp);
+			bone.AngularVelocity += worldTorque * (float)delta;
+		}
+		if (IsRagdoll)
+		{
+			int rootBone = FindBone("Spine.001");
+			int ikBone = FindBone("Controller.IK");
+			Transform3D poseRoot = GetBoneGlobalPose(rootBone);
+			SetBoneGlobalPose(ikBone, poseRoot);
+		}
+
+		// Remote correction: gently steer spine position and head rotation
+		// toward the authoritative values without overriding local physics.
+		if (IsRagdoll && RemoteCorrection)
+		{
+			if (_spinePhysBone != null)
+			{
+				Transform3D cur = _spinePhysBone.GlobalTransform * _spinePhysBone.BodyOffset.AffineInverse();
+				_spinePhysBone.LinearVelocity +=
+					(RemoteSpineTarget - cur.Origin) * SpineCorrectK * (float)delta;
+			}
+
+			if (_headPhysBone != null)
+			{
+				Transform3D cur = _headPhysBone.GlobalTransform * _headPhysBone.BodyOffset.AffineInverse();
+				Quaternion target = Quaternion.FromEuler(new Vector3(RemoteHeadPitch, RemoteHeadYaw, 0f));
+				Quaternion current = cur.Basis.GetRotationQuaternion().Normalized();
+				if (target.Dot(current) < 0f) current = -current;
+				Quaternion diff = (target * current.Inverse()).Normalized();
+				if (diff.W < 0f) diff = -diff;
+				float angle = diff.GetAngle();
+				if (angle > 1e-4f)
+					_headPhysBone.AngularVelocity += diff.GetAxis() * angle * HeadCorrectK * (float)delta;
+			}
+		}
+
+	}
+	///<summary>
+	///     Permet de Prendre la pose de la tête du personnage
+	/// </summary>
+	public Transform3D GetPoseTargetSkel(bool InIsPhysicsSkeleton = false)
+	{
+		int physicBone = TargetSkeleton.FindBone("Head.001");
+		return GetPoseFromIdx(InIsPhysicsSkeleton ? this : TargetSkeleton, InIsPhysicsSkeleton ? physicBone : _headBoneIdx);
+	}
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
-    public override void _Process(double delta)
-    {
-        //Process roule apres physicsprocess(), et a cause de
-        //         ProcessPriority = 1;
-        // je peux set les angles et les forces que le player envoie avant le reste
+	public override void _Process(double delta)
+	{
+		//Process roule apres physicsprocess(), et a cause de
+		//         ProcessPriority = 1;
+		// je peux set les angles et les forces que le player envoie avant le reste
 
 
 
-        if (Aiming) _ArmPoint(delta);
-        if (ArmsUp) _ArmsRaise(delta);
-        _SetHeadPose(this, HeadAngle);
-        _SetSpinePoseFromHead(TargetSkeleton, HeadAngle);
+		if (Aiming) _ArmPoint(delta);
+		if (ArmsUp) _ArmsRaise(delta);
+		_SetHeadPose(this, HeadAngle);
+		_SetSpinePoseFromHead(TargetSkeleton, HeadAngle);
 
 
-    }
+	}
 }

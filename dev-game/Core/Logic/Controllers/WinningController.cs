@@ -64,7 +64,7 @@ public sealed partial class WinningController : Node3D, IPhase
 	/// qu'on veut court-circuiter la FSM principale et rebasculer vers le main menu.
     /// Le <c>MainController</c> détecte ce flag avant la prochaine évaluation FSM,
     /// fait le ménage (Disconnect, Clear, mouse mode) puis appelle <c>ChangeSceneToFile</c>.
-    /// Évite la race «&#160;_done=true + ChangeSceneToFile la même frame&#160;» qui
+    /// Évite la course «&#160;_done=true + ChangeSceneToFile la même frame&#160;» qui
 	/// laissait <see cref="LobbyController.Enter"/> s'exécuter sur une scène en
 	/// train d'être détruite.
     /// </summary>
@@ -499,6 +499,9 @@ public sealed partial class WinningController : Node3D, IPhase
         // instance, donc SetWinnerLabel peut être appelé directement.
         var slide1 = _winningInstance.GetNodeOrNull<WinningSlide1>("Winning_UI/SCR_01_WHOWINS");
         slide1?.SetWinnerLabel(label);
+        // Le slot 3D résout son chapeau via LobbyState.LastHats — qui a été
+        // rempli par GameController au moment du finalize/broadcast.
+        slide1?.SetWinnerPeer(peerId);
     }
 
     /// <summary>
@@ -524,6 +527,7 @@ public sealed partial class WinningController : Node3D, IPhase
 					Title = sw.Label ?? "",
 					Username = ResolveUsername(sw.PeerId),
 					Detail = "",
+					PeerId = sw.PeerId,
 				});
 			}
 		}

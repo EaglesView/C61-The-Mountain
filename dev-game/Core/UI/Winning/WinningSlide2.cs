@@ -19,6 +19,12 @@ public sealed partial class WinningSlide2 : MarginContainer
 		public string Title { get; init; }
 		public string Username { get; init; }
 		public string Detail { get; init; }
+		/// <summary>
+		/// Peer ID du sous-gagnant&#160;: utilisé par le slot 3D pour résoudre
+		/// le chapeau depuis <c>LobbyState.LastHats</c>. 0 = pas de peer
+		/// connu (slot affichera le penguin par défaut sans chapeau).
+		/// </summary>
+		public int PeerId { get; init; }
 	}
 
 	private Button _continueButton;
@@ -26,6 +32,7 @@ public sealed partial class WinningSlide2 : MarginContainer
 	private Label[] _titleLabels;
 	private Label[] _usrLabels;
 	private Label[] _amtLabels;
+	private WinnerDisplay[] _winnerDisplays;
 
 	/// <summary>Rend le bouton «&#160;Continue&#160;» visible et cliquable.</summary>
 	public void ShowContinueButton()
@@ -55,11 +62,19 @@ public sealed partial class WinningSlide2 : MarginContainer
 		{
 			bool hasEntry = InEntries is not null && i < InEntries.Count;
 			if (_panels[i] is not null) _panels[i].Visible = hasEntry;
-			if (!hasEntry) continue;
+			if (!hasEntry)
+			{
+				// Pas de sous-gagnant à cet index&#160;: on libère le penguin du
+				// slot pour éviter qu'un précédent affichage (slide replayée) ne
+				// traîne dans le viewport masqué.
+				_winnerDisplays?[i]?.Clear();
+				continue;
+			}
 			var e = InEntries[i];
 			if (_titleLabels[i] is not null) _titleLabels[i].Text = e.Title ?? "";
 			if (_usrLabels[i] is not null) _usrLabels[i].Text = e.Username ?? "";
 			if (_amtLabels[i] is not null) _amtLabels[i].Text = e.Detail ?? "";
+			_winnerDisplays?[i]?.Show(e.PeerId);
 		}
 	}
 
@@ -95,6 +110,14 @@ public sealed partial class WinningSlide2 : MarginContainer
 		_titleLabels[2] = GetNodeOrNull<Label>("HBoxContainer/Panel3/VBoxContainer3/Title3");
 		_usrLabels[2] = GetNodeOrNull<Label>("HBoxContainer/Panel3/VBoxContainer3/usr_label");
 		_amtLabels[2] = GetNodeOrNull<Label>("HBoxContainer/Panel3/VBoxContainer3/amt_label");
+
+		_winnerDisplays = new WinnerDisplay[3];
+		_winnerDisplays[0] = GetNodeOrNull<WinnerDisplay>(
+			"HBoxContainer/Panel/VBoxContainer/SubViewportContainer/Winner1Viewport/WinnerDisplay");
+		_winnerDisplays[1] = GetNodeOrNull<WinnerDisplay>(
+			"HBoxContainer/Panel2/VBoxContainer2/SubViewportContainer/Winner2Viewport/WinnerDisplay");
+		_winnerDisplays[2] = GetNodeOrNull<WinnerDisplay>(
+			"HBoxContainer/Panel3/VBoxContainer3/SubViewportContainer/Winner3Viewport/WinnerDisplay");
 
 		// État initial&#160;: les panneaux restent visibles avec leur texte de scène
 		// (placeholders) jusqu'à ce que Populate() les remplace ou les masque.

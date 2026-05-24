@@ -3,7 +3,6 @@
 [ext_resource type="Script" uid="uid://ck012ohvrp6fh" path="res://Core/UI/Winning/WinningScene.cs" id="1_n0sox"]
 [ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="2_2r0a7"]
 [ext_resource type="FontFile" uid="uid://d3iekdubpmgvd" path="res://Assets/fonts/Gorditas/Gorditas-Bold.ttf" id="3_27vue"]
-[ext_resource type="PackedScene" uid="uid://cdy5str4kjom" path="res://Core/World/CharacterModel/Physics/penguin_01.tscn" id="3_uwdsr"]
 [ext_resource type="Script" uid="uid://cviav8qaw6sev" path="res://Core/UI/Winning/WinningSlide1.cs" id="3_wf2q1"]
 [ext_resource type="PackedScene" uid="uid://ejfh4s5x3dhi" path="res://Core/UI/Winning/winner_display.tscn" id="4_d6i7v"]
 [ext_resource type="Texture2D" uid="uid://d00ws7wljnit4" path="res://Assets/ui/UIpack_vector.svg" id="4_uwdsr"]
@@ -1848,8 +1847,6 @@ handle_input_locally = false
 size = Vector2i(1920, 997)
 render_target_update_mode = 4
 
-[node name="penguin01" parent="Winning_UI/SCR_01_WHOWINS/Panel/VBoxContainer/SubViewportContainer/SubViewport" unique_id=1980648417 instance=ExtResource("3_uwdsr")]
-
 [node name="WinnerDisplay" parent="Winning_UI/SCR_01_WHOWINS/Panel/VBoxContainer/SubViewportContainer/SubViewport" unique_id=1978848881 instance=ExtResource("4_d6i7v")]
 
 [node name="SCR_02_SUBWINNERS" type="MarginContainer" parent="Winning_UI" unique_id=1533250086]
@@ -1898,8 +1895,6 @@ transparent_bg = true
 handle_input_locally = false
 size = Vector2i(640, 748)
 render_target_update_mode = 4
-
-[node name="penguin01" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel/VBoxContainer/SubViewportContainer/Winner1Viewport" unique_id=388484979 instance=ExtResource("3_uwdsr")]
 
 [node name="WinnerDisplay" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel/VBoxContainer/SubViewportContainer/Winner1Viewport" unique_id=1535471850 instance=ExtResource("4_d6i7v")]
 
@@ -1952,8 +1947,6 @@ handle_input_locally = false
 size = Vector2i(640, 748)
 render_target_update_mode = 4
 
-[node name="penguin01" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel2/VBoxContainer2/SubViewportContainer/Winner2Viewport" unique_id=1537445720 instance=ExtResource("3_uwdsr")]
-
 [node name="WinnerDisplay" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel2/VBoxContainer2/SubViewportContainer/Winner2Viewport" unique_id=80730790 instance=ExtResource("4_d6i7v")]
 
 [node name="usr_label" type="Label" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel2/VBoxContainer2" unique_id=234758720]
@@ -2002,8 +1995,6 @@ transparent_bg = true
 handle_input_locally = false
 size = Vector2i(640, 748)
 render_target_update_mode = 4
-
-[node name="penguin01" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel3/VBoxContainer3/SubViewportContainer/Winner3Viewport" unique_id=799819468 instance=ExtResource("3_uwdsr")]
 
 [node name="WinnerDisplay" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel3/VBoxContainer3/SubViewportContainer/Winner3Viewport" unique_id=1314976448 instance=ExtResource("4_d6i7v")]
 

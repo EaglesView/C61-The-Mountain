@@ -1,15 +1,7 @@
 [gd_scene format=3 uid="uid://cwfx6wu5jcf6e"]
 
 [ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="1_vc6pr"]
-[ext_resource type="Texture2D" uid="uid://d00ws7wljnit4" path="res://Assets/ui/UIpack_vector.svg" id="2_27yfu"]
-
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_5trbf"]
-texture = ExtResource("2_27yfu")
-texture_margin_left = 12.3202
-texture_margin_top = 13.3469
-texture_margin_right = 13.3469
-texture_margin_bottom = 11.2935
-region_rect = Rect2(629, 317, 194, 49)
+[ext_resource type="PackedScene" uid="uid://xd8nimsr0780" path="res://Core/UI/InGame/chat/chat.tscn" id="2_27yfu"]
 
 [node name="UiIngame" type="Control" unique_id=1651726219]
 layout_mode = 3
@@ -76,77 +68,5 @@ grow_vertical = 0
 [node name="Button" type="Button" parent="ChatContainer" unique_id=1544711938]
 layout_mode = 2
 
-[node name="ChatPanel" type="Panel" parent="ChatContainer" unique_id=1131012077]
-custom_minimum_size = Vector2(386, 512)
+[node name="ChatPanel" parent="ChatContainer" unique_id=1396906449 instance=ExtResource("2_27yfu")]
 layout_mode = 2
-
-[node name="MarginContainer" type="VBoxContainer" parent="ChatContainer/ChatPanel" unique_id=752023021]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="ChatPanelHeader" type="HBoxContainer" parent="ChatContainer/ChatPanel/MarginContainer" unique_id=1644439836]
-layout_mode = 2
-size_flags_vertical = 8
-alignment = 2
-
-[node name="Button" type="Button" parent="ChatContainer/ChatPanel/MarginContainer/ChatPanelHeader" unique_id=643183877]
-custom_minimum_size = Vector2(128, 0)
-layout_mode = 2
-text = "Close Chat"
-icon_alignment = 1
-
-[node name="ChatPanel" type="MarginContainer" parent="ChatContainer/ChatPanel/MarginContainer" unique_id=2063892371]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="Panel" type="Panel" parent="ChatContainer/ChatPanel/MarginContainer/ChatPanel" unique_id=2136791590]
-custom_minimum_size = Vector2(350, 420)
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-theme_override_styles/panel = SubResource("StyleBoxTexture_5trbf")
-
-[node name="VBoxContainer" type="VBoxContainer" parent="ChatContainer/ChatPanel/MarginContainer/ChatPanel/Panel" unique_id=1379339164]
-custom_minimum_size = Vector2(330, 400)
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -32.0
-offset_top = -11.5
-offset_right = 32.0
-offset_bottom = 11.5
-grow_horizontal = 2
-grow_vertical = 2
-size_flags_vertical = 3
-
-[node name="ChatItem" type="HBoxContainer" parent="ChatContainer/ChatPanel/MarginContainer/ChatPanel/Panel/VBoxContainer" unique_id=445243271]
-layout_mode = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="ChatContainer/ChatPanel/MarginContainer/ChatPanel/Panel/VBoxContainer/ChatItem" unique_id=666169366]
-layout_mode = 2
-
-[node name="PlayerNameChat" type="Label" parent="ChatContainer/ChatPanel/MarginContainer/ChatPanel/Panel/VBoxContainer/ChatItem/VBoxContainer" unique_id=504654189]
-layout_mode = 2
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_font_sizes/font_size = 18
-text = "RELIIX"
-
-[node name="Label" type="Label" parent="ChatContainer/ChatPanel/MarginContainer/ChatPanel/Panel/VBoxContainer/ChatItem/VBoxContainer" unique_id=188251701]
-layout_mode = 2
-text = "12:00"
-
-[node name="Label" type="Label" parent="ChatContainer/ChatPanel/MarginContainer/ChatPanel/Panel/VBoxContainer/ChatItem" unique_id=2095645178]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.35906908, 0.35906908, 0.35906908, 1)
-theme_override_font_sizes/font_size = 13
-text = "Ceci est un esti de message raciste et homophobe"
-vertical_alignment = 1
-autowrap_mode = 2
