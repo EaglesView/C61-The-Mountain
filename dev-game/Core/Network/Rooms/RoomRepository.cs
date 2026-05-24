@@ -35,7 +35,7 @@ public sealed class RoomRepository
 			mapId      = Room.DefaultMapId,
 			players    = new Dictionary<string, PlayerEntryDto>
 			{
-				[room.HostUserId] = new PlayerEntryDto(room.HostUsername, true, HatRegistry.DefaultHatId)
+				[room.HostUserId] = new PlayerEntryDto(room.HostUsername, true, LobbyState.SelectedHatId)
 			}
 		};
 
@@ -91,10 +91,11 @@ public sealed class RoomRepository
 		};
 	}
 
-	public async Task AddPlayerAsync(string code, string userId, string username, bool isHost = false)
+	public async Task AddPlayerAsync(string code, string userId, string username, bool isHost = false, string hatId = "")
 	{
 		var token = _getToken();
-		var body  = JsonSerializer.Serialize(new { username, isHost, hatId = HatRegistry.DefaultHatId });
+		var resolvedHat = string.IsNullOrEmpty(hatId) ? HatRegistry.DefaultHatId : hatId;
+		var body  = JsonSerializer.Serialize(new { username, isHost, hatId = resolvedHat });
 		var request = new HttpRequestMessage(HttpMethod.Put,
 			$"{BaseUrl}/{Uri.EscapeDataString(code)}/players/{Uri.EscapeDataString(userId)}.json?auth={token}");
 		request.Content = new StringContent(body, Encoding.UTF8, "application/json");

@@ -200,6 +200,13 @@ public partial class ProfileScene : Control
             var profile = await ProfileServiceProvider.Instance.GetOrCreateProfileAsync(
                 user.Id, user.Username);
             _usernameField.Text = profile.Username;
+            LobbyState.SetProfileUsername(profile.Username);
+
+            var savedIndex = HatRegistry.IndexOf(profile.SelectedHatId);
+            if (savedIndex >= 0) _hatIndex = savedIndex;
+            LobbyState.SetSelectedHat(HatRegistry.All[_hatIndex].Id);
+            _RefreshHatDisplay();
+            _ApplyHatToPreview();
         }
         catch (System.Exception e)
         {
@@ -219,7 +226,8 @@ public partial class ProfileScene : Control
         try
         {
             await ProfileServiceProvider.Instance.UpdateUsernameAsync(_userId, _usernameField.Text);
-            ShowStatus("Username updated!", error: false);
+            await ProfileServiceProvider.Instance.UpdateHatIdAsync(_userId, HatRegistry.All[_hatIndex].Id);
+            ShowStatus("Profil mis à jour", error: false);
         }
         catch (System.Exception e)
         {

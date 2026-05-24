@@ -245,6 +245,8 @@ public partial class Player : Character
 		PhysicsSkelton.AddChild(attachment);
 
 		var hatNode = hatScene.Instantiate<Node3D>();
+		hatNode.Position = HatRegistry.GlobalOffset + hatDef.Offset;
+		hatNode.Scale = HatRegistry.GlobalScale * hatDef.Scale;
 		attachment.AddChild(hatNode);
 		_hatInstance = hatNode;
 	}

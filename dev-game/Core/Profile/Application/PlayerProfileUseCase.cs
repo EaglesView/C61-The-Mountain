@@ -36,4 +36,14 @@ public sealed class PlayerProfileUseCase
         await _repository.SaveAsync(profile);
         return profile;
     }
+
+    public async Task<PlayerProfile> UpdateHatIdAsync(string userId, string hatId)
+    {
+        var profile = await _repository.GetByUserIdAsync(userId)
+            ?? throw new InvalidOperationException("Profile not found.");
+
+        profile.UpdateHatId(hatId);
+        await _repository.SaveAsync(profile);
+        return profile;
+    }
 }
