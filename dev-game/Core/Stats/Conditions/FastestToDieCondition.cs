@@ -34,4 +34,9 @@ public sealed class FastestToDieCondition : ISubwinningCondition
         float relevance = (float)deaths / InStats.Count;
         return (firstPeer, relevance);
     }
+
+    public string FormatDetail(PlayerGameStats InStats)
+    {
+        return $"{InStats.TimeOfDeathSeconds:F1}s";
+    }
 }

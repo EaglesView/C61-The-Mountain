@@ -25,12 +25,15 @@ public static class LobbyState
     /// <summary>Libellé affichable de la condition principale.</summary>
     public static string LastWinnerConditionLabel { get; private set; } = "";
 
+    /// <summary>Détail de la condition principale.</summary>
+    public static string LastWinnerConditionDetail { get; private set; } = "";
+
     /// <summary>
-    /// Entrées de sous-gagnants&#160;: jusqu'à 3 (peer, conditionId, label). Le label
+    /// Entrées de sous-gagnants&#160;: jusqu'à 3 (peer, conditionId, label, detail). Le label
     /// est précomputé pour que l'UI puisse l'afficher tel quel.
     /// </summary>
-    public static IReadOnlyList<(int PeerId, string ConditionId, string Label)> LastSubWinners { get; private set; }
-        = Array.Empty<(int, string, string)>();
+    public static IReadOnlyList<(int PeerId, string ConditionId, string Label, string Detail)> LastSubWinners { get; private set; }
+        = Array.Empty<(int, string, string, string)>();
 
     /// <summary>
     /// Snapshot peerId → hatId capturé par <c>GameController</c> au moment de
@@ -52,13 +55,14 @@ public static class LobbyState
     /// Mémorise les gagnants de la dernière partie. Survit à <see cref="Clear"/> pour que
     /// la phase Winning puisse l'afficher après la destruction du LobbyState courant.
     /// </summary>
-    public static void SetWinnerData(int mainPeerId, string mainConditionId, string mainConditionLabel,
-        IReadOnlyList<(int PeerId, string ConditionId, string Label)> subWinners)
+    public static void SetWinnerData(int mainPeerId, string mainConditionId, string mainConditionLabel, string mainConditionDetail,
+        IReadOnlyList<(int PeerId, string ConditionId, string Label, string Detail)> subWinners)
     {
         LastWinnerPeerId = mainPeerId;
         LastWinnerConditionId = mainConditionId ?? "";
         LastWinnerConditionLabel = mainConditionLabel ?? "";
-        LastSubWinners = subWinners ?? Array.Empty<(int, string, string)>();
+        LastWinnerConditionDetail = mainConditionDetail ?? "";
+        LastSubWinners = subWinners ?? Array.Empty<(int, string, string, string)>();
     }
 
     /// <summary>

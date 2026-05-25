@@ -526,7 +526,7 @@ public sealed partial class WinningController : Node3D, IPhase
 				{
 					Title = sw.Label ?? "",
 					Username = ResolveUsername(sw.PeerId),
-					Detail = "",
+					Detail = sw.Detail ?? "",
 					PeerId = sw.PeerId,
 				});
 			}
