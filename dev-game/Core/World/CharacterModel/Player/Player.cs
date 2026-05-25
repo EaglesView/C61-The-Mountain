@@ -96,11 +96,6 @@ public partial class Player : Character
 	protected override void EnterState(CharacterState state)
 	{
 		base.EnterState(state);
-		if (state == CharacterState.Paused)
-		{
-			_playerFocused = ToggleCharacterFocus(_playerFocused);
-			GameMenu.Instance?.OpenMenu();
-		}
 		if (state == CharacterState.Ragdoll && _cameraMan != null)
 		{
 			_lastCamType = _cameraMan.CamType;
@@ -125,11 +120,6 @@ public partial class Player : Character
 	protected override void ExitState(CharacterState state)
 	{
 		base.ExitState(state);
-		if (state == CharacterState.Paused)
-		{
-			_playerFocused = ToggleCharacterFocus(_playerFocused);
-			GameMenu.Instance?.CloseMenu();
-		}
 		if (state == CharacterState.Ragdoll)
 		{
 			speed = WalkSpeed;
@@ -340,10 +330,9 @@ public partial class Player : Character
 
 		if (_characterState == CharacterState.Spectating)
 		{
-			// N/P et molette : cycler la cible.
+			// N/P et molette : cycler la cible. ESC est géré par GameMenu.
 			if (@event.IsActionPressed("spectate_next")) _CycleSpectatorTarget(+1);
 			else if (@event.IsActionPressed("spectate_prev")) _CycleSpectatorTarget(-1);
-			else if (@event.IsActionPressed("pause_menu")) TransitionTo(CharacterState.Paused);
 			return;
 		}
 
@@ -367,17 +356,6 @@ public partial class Player : Character
 			if (@event.IsActionPressed("jump") &&
 				PhysicsSkelton.GetSpinePhysicsLinearVelocity().Length() < RecoveryVelocityThreshold)
 				TransitionTo(CharacterState.Recovering);
-			return;
-		}
-		if (_characterState == CharacterState.Paused)
-		{
-			if (@event.IsActionPressed("pause_menu"))
-				TransitionTo(_stateBeforePause);
-			return;
-		}
-		if (@event.IsActionPressed("pause_menu"))
-		{
-			TransitionTo(CharacterState.Paused);
 			return;
 		}
 	}

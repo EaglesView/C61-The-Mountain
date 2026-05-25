@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using Core.Network.Providers;
+using Core.Network.Rooms;
 
 namespace Core.Network;
 
@@ -199,6 +200,11 @@ public partial class NetworkManager : Node
             _lastKnownState.Remove(id);
             _peerSpawn.Remove(id);
             _lastCorrectionMsec.Remove(id);
+            // Purge le mapping userId↔peerId&#160;: sans ça, un peerId recyclé par
+            // ENet sur reconnexion conserverait l'ancien userId, et la
+            // validation dans GameController.ClientReady accepterait un peer
+            // sous une identité périmée.
+            LobbyPresence.Remove(id);
         };
         _provider.PacketReceived += OnPacketReceived;
         _provider.ServerStarted += () => GD.Print("[NetworkManager] Server started on port 7777.");
