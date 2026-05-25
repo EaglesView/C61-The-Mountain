@@ -1842,6 +1842,7 @@ size_flags_vertical = 3
 stretch = true
 
 [node name="SubViewport" type="SubViewport" parent="Winning_UI/SCR_01_WHOWINS/Panel/VBoxContainer/SubViewportContainer" unique_id=975769117]
+own_world_3d = true
 transparent_bg = true
 handle_input_locally = false
 size = Vector2i(2, 2)
@@ -1893,6 +1894,7 @@ size_flags_vertical = 3
 stretch = true
 
 [node name="Winner1Viewport" type="SubViewport" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel1/VBoxContainer/SubViewportContainer" unique_id=1399006951]
+own_world_3d = true
 transparent_bg = true
 handle_input_locally = false
 size = Vector2i(2, 2)
@@ -1948,6 +1950,7 @@ size_flags_vertical = 3
 stretch = true
 
 [node name="Winner2Viewport" type="SubViewport" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel2/VBoxContainer2/SubViewportContainer" unique_id=1691189385]
+own_world_3d = true
 transparent_bg = true
 handle_input_locally = false
 size = Vector2i(2, 2)
@@ -2001,6 +2004,7 @@ size_flags_vertical = 3
 stretch = true
 
 [node name="Winner3Viewport" type="SubViewport" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel3/VBoxContainer3/SubViewportContainer" unique_id=1865729252]
+own_world_3d = true
 transparent_bg = true
 handle_input_locally = false
 size = Vector2i(2, 2)

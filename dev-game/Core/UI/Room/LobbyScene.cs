@@ -147,6 +147,9 @@ public partial class LobbyScene : Control
 		viewport.TransparentBg = true;
 		viewport.HandleInputLocally = false;
 		viewport.RenderTargetUpdateMode = SubViewport.UpdateMode.Always;
+		// Sans World3D propre, tous les SubViewports partagent le monde du
+		// parent ⇒ chaque caméra voit TOUS les penguins de TOUS les slots.
+		viewport.OwnWorld3D = true;
 		svContainer.AddChild(viewport);
 
 		var packed = ResourceLoader.Load<PackedScene>(PreviewScenePath);
