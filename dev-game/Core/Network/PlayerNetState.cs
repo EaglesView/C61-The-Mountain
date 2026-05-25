@@ -19,6 +19,13 @@ public enum PacketType : byte
 	/// et la fenêtre NAT/firewall vivantes. 1 octet, ignoré à la réception.
 	/// </summary>
 	KeepAlive       = 0x05,
+	/// <summary>
+	/// Pose de tête (yaw, pitch) pour le penguin d'un peer affiché dans une
+	/// <c>Preview</c> (Lobby&#160;/&#160;Winning). 13 octets, envoyé en non-fiable
+	/// à ~15&#160;Hz par les clients qui sont en mode <c>MouseLook</c>. Le serveur
+	/// rebroadcast aux autres pairs sans état conservé (purement transient).
+	/// </summary>
+	PreviewPose     = 0x06,
 }
 
 /// <summary>

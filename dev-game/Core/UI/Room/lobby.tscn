@@ -45,8 +45,8 @@ theme_override_font_sizes/font_size = 22
 text = "LOBBY"
 
 [node name="VSep1" type="VSeparator" parent="VBox/TopBar/Margin/HBox" unique_id=100000006]
-layout_mode = 2
 custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
 
 [node name="CodeLabel" type="Label" parent="VBox/TopBar/Margin/HBox" unique_id=100000007]
 layout_mode = 2
@@ -59,8 +59,8 @@ theme_override_font_sizes/font_size = 18
 text = "------"
 
 [node name="VSep2" type="VSeparator" parent="VBox/TopBar/Margin/HBox" unique_id=100000009]
-layout_mode = 2
 custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
 
 [node name="StatusLabel" type="Label" parent="VBox/TopBar/Margin/HBox" unique_id=100000010]
 layout_mode = 2
@@ -72,8 +72,8 @@ theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
 text = "en attente"
 
 [node name="VSep3" type="VSeparator" parent="VBox/TopBar/Margin/HBox" unique_id=100000012]
-layout_mode = 2
 custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
 
 [node name="MapBox" type="HBoxContainer" parent="VBox/TopBar/Margin/HBox" unique_id=100000013]
 layout_mode = 2
@@ -89,8 +89,8 @@ layout_mode = 2
 text = "<"
 
 [node name="MapValue" type="Label" parent="VBox/TopBar/Margin/HBox/MapBox" unique_id=100000016]
-layout_mode = 2
 custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
 theme_override_colors/font_color = Color(0.6, 0.85, 1, 1)
 text = "La Montagne (Dev)"
 horizontal_alignment = 1

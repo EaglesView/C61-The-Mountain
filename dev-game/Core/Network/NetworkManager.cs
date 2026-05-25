@@ -75,6 +75,25 @@ public partial class NetworkManager : Node
     /// </summary>
     public event Action<PlayerNetState>? StateReceived;
 
+    /// <summary>
+    /// Déclenché à la réception d'une <see cref="PreviewPoseState"/> (head pose
+    /// d'un peer pour son penguin de Preview en Lobby&#160;/&#160;Winning). Côté
+    /// serveur, le paquet a déjà été rebroadcast aux autres pairs avant d'être
+    /// émis ici. Les consommateurs filtrent par <c>PeerId</c> pour ne réagir
+    /// qu'au slot correspondant.
+    /// </summary>
+    public event Action<PreviewPoseState>? PreviewPoseReceived;
+
+    /// <summary>
+    /// Période minimum entre deux <see cref="SendPreviewPose"/>. Le signal
+    /// <c>HeadTargetChanged</c> de Preview peut fire à 60+&#160;Hz sur un
+    /// mouvement souris&#160;; ce throttle ramène le flux à ~15&#160;Hz, suffisant
+    /// pour un suivi de tête naturel (l'œil ne distingue pas mieux à cette
+    /// échelle) sans saturer la bande passante du lobby.
+    /// </summary>
+    private const float PreviewPoseInterval = 1f / 15f;
+    private float _previewPoseAccum = 0f;
+
     /// <summary>Déclenché une seule fois lorsque la connexion locale au serveur est confirmée (client seulement).</summary>
     public event Action<int>? LocalConnected;
 
@@ -96,6 +115,34 @@ public partial class NetworkManager : Node
     /// <c>MultiplayerSpawner.Spawn</c>.
     /// </summary>
     public void RegisterPeerSpawn(int peerId, Vector3 spawnPos) => _peerSpawn[peerId] = spawnPos;
+
+    /// <summary>
+    /// Envoie la pose de tête du joueur local pour son slot de Preview
+    /// (Lobby&#160;/&#160;Winning). Throttle interne à ~15&#160;Hz&#160;: les appels
+    /// surnuméraires sont silencieusement ignorés, donc l'appelant peut brancher
+    /// directement le signal <c>Preview.HeadTargetChanged</c> sans se soucier
+    /// de la fréquence des événements souris. No-op si le transport n'est pas
+    /// connecté&#160;: utile pour ne pas planter Profile (offline) ou Lobby tant
+    /// que le mesh ENet n'est pas monté.
+    /// </summary>
+    public void SendPreviewPose(float yaw, float pitch)
+    {
+        if (_provider is null || !_provider.IsRunning) return;
+        if (Multiplayer.MultiplayerPeer?.GetConnectionStatus() != MultiplayerPeer.ConnectionStatus.Connected)
+            return;
+
+        _previewPoseAccum += (float)GetProcessDeltaTime();
+        if (_previewPoseAccum < PreviewPoseInterval) return;
+        _previewPoseAccum = 0f;
+
+        var packet = PreviewPoseState.Serialize(new PreviewPoseState(LocalPeerId, yaw, pitch));
+        // Vers le serveur (peerId=1). Le serveur rebroadcast aux autres pairs
+        // dans OnPacketReceived&#160;; côté serveur, l'appel est direct.
+        if (_provider.Role == NetworkRole.Server)
+            _provider.BroadcastUnreliable(packet, excludePeerId: LocalPeerId);
+        else
+            _provider.SendUnreliable(1, packet);
+    }
 
     /// <summary>Démarre manuellement un serveur.</summary>
     public void StartServer(int port = 7777, int maxPeers = 16)
@@ -261,6 +308,21 @@ public partial class NetworkManager : Node
         // bord à appliquer — le simple fait d'avoir reçu le paquet a déjà
         // rafraîchi le timer côté ENet.
         if (type == PacketType.KeepAlive) return;
+
+        if (type == PacketType.PreviewPose)
+        {
+            if (data.Length < 13) return;
+            var pose = PreviewPoseState.Deserialize(data);
+            if (_provider?.Role == NetworkRole.Server)
+            {
+                // Pas d'état conservé&#160;: la pose est purement transiente, le
+                // dernier paquet fait foi côté consommateur. On rebroadcast tel
+                // quel aux autres pairs avant de notifier localement.
+                _provider.BroadcastUnreliable(data, excludePeerId: fromPeerId);
+            }
+            PreviewPoseReceived?.Invoke(pose);
+            return;
+        }
 
         if (type == PacketType.PositionCorrect)
         {

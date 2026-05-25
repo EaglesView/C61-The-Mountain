@@ -1,4 +1,5 @@
 using Godot;
+using Core.Network;
 using Core.Network.Rooms;
 using static Utils.CharacterUtils;
 
@@ -47,11 +48,15 @@ public partial class Preview : Node3D
 	private const string DefaultCharacterPath = "res://Core/World/CharacterModel/Character/Character.tscn";
 
 	private Character? _character;
+	private BoneAttachment3D? _hatAttachment;
 	private SubViewportContainer? _inputSource;
 	private float _targetYaw, _targetPitch;
 	private float _currentYaw, _currentPitch;
 	private bool _isDragging;
 	private Vector2 _lastDragPos;
+	private int _boundPeerId;
+	private System.Action<PreviewPoseState>? _netReceiveHandler;
+	private HeadTargetChangedEventHandler? _netSendHandler;
 
 	// 0.008 rad/px ≈ 0.46°/px — feel calibré sur l'ancien ProfileScene._cameraPivot.RotateY.
 	private const float DragYawPerPixel = 0.008f;
@@ -83,15 +88,23 @@ public partial class Preview : Node3D
 		character.IsPreview = true;
 		AddChild(character);
 		_character = character;
-		AttachHat(character, hatId);
+		_hatAttachment = AttachHat(character, hatId);
 	}
 
 	/// <summary>Échange le chapeau sans reconstruire le penguin.</summary>
 	public void SetHat(string hatId)
 	{
 		if (_character?.PhysicsSkelton is null) return;
-		_character.PhysicsSkelton.GetNodeOrNull("HatAttachment")?.QueueFree();
-		AttachHat(_character, hatId);
+		// On garde une référence directe&#160;: chercher par nom ne suffit pas,
+		// QueueFree() défère la suppression et le AddChild() suivant voit
+		// l'ancien node ⇒ Godot auto-rename le nouveau en "HatAttachment@2",
+		// puis le prochain lookup par nom échoue et les chapeaux s'accumulent.
+		if (_hatAttachment is not null && IsInstanceValid(_hatAttachment))
+		{
+			_hatAttachment.GetParent()?.RemoveChild(_hatAttachment);
+			_hatAttachment.QueueFree();
+		}
+		_hatAttachment = AttachHat(_character, hatId);
 	}
 
 	/// <summary>
@@ -128,38 +141,80 @@ public partial class Preview : Node3D
 	public void Clear() => ClearCharacter();
 
 	/// <summary>
-	/// Branche le suivi souris sur le SubViewportContainer parent. Sans effet
-	/// hors modes <see cref="InteractionMode.MouseLook"/> et
-	/// <see cref="InteractionMode.DragOrbit"/>. À appeler une seule fois après
-	/// que la SubViewport ait son container hôte.
+	/// Branche le suivi souris sur le SubViewportContainer parent. Idempotent
+	/// (deuxième appel ignoré). Mode-agnostic&#160;: <see cref="OnContainerInput"/>
+	/// early-return sur les modes non concernés, ce qui permet d'appeler cette
+	/// méthode à la mise en place sans connaître le mode final (qui peut être
+	/// décidé plus tard par <see cref="BindNetwork"/>).
 	/// </summary>
 	public void BindMouseInput(SubViewportContainer container)
 	{
-		if (Mode != InteractionMode.MouseLook && Mode != InteractionMode.DragOrbit) return;
+		if (_inputSource is not null) return;
 		_inputSource = container;
 		container.GuiInput += OnContainerInput;
+	}
+
+	/// <summary>
+	/// Wire le Preview au pipeline réseau de <see cref="NetworkManager"/>&#160;:
+	/// <list type="bullet">
+	///   <item>Si <paramref name="peerId"/> == <c>LocalPeerId</c>&#160;: passe en
+	///         <see cref="InteractionMode.MouseLook"/> et relaie
+	///         <see cref="HeadTargetChanged"/> vers
+	///         <see cref="NetworkManager.SendPreviewPose"/>.</item>
+	///   <item>Sinon&#160;: passe en <see cref="InteractionMode.NetworkedRemote"/>
+	///         et s'abonne à <see cref="NetworkManager.PreviewPoseReceived"/>
+	///         filtré par <paramref name="peerId"/>.</item>
+	/// </list>
+	/// L'unbind est automatique dans <see cref="_ExitTree"/>&#160;: pas de leak
+	/// du handler sur l'autoload <c>NetworkManager</c> quand le slot est libéré.
+	/// </summary>
+	public void BindNetwork(int peerId)
+	{
+		UnbindNetwork();
+		_boundPeerId = peerId;
+		var net = NetworkManager.Instance;
+		if (net is null) return;
+
+		if (peerId == net.LocalPeerId)
+		{
+			Mode = InteractionMode.MouseLook;
+			_netSendHandler = OnLocalHeadTargetChanged;
+			HeadTargetChanged += _netSendHandler;
+		}
+		else
+		{
+			Mode = InteractionMode.NetworkedRemote;
+			_netReceiveHandler = OnRemotePoseReceived;
+			net.PreviewPoseReceived += _netReceiveHandler;
+		}
+	}
+
+	private void UnbindNetwork()
+	{
+		if (_netSendHandler is not null)
+		{
+			HeadTargetChanged -= _netSendHandler;
+			_netSendHandler = null;
+		}
+		if (_netReceiveHandler is not null)
+		{
+			var net = NetworkManager.Instance;
+			if (net is not null) net.PreviewPoseReceived -= _netReceiveHandler;
+			_netReceiveHandler = null;
+		}
+	}
+
+	private void OnLocalHeadTargetChanged(float yaw, float pitch)
+		=> NetworkManager.Instance?.SendPreviewPose(yaw, pitch);
+
+	private void OnRemotePoseReceived(PreviewPoseState pose)
+	{
+		if (pose.PeerId == _boundPeerId) SetHeadTarget(pose.Yaw, pose.Pitch);
 	}
 
 	private void OnContainerInput(InputEvent @event)
 	{
 		if (_inputSource is null) return;
-
-		if (Mode == InteractionMode.MouseLook && @event is InputEventMouseMotion hover)
-		{
-			var size = _inputSource.Size;
-			if (size.X <= 0 || size.Y <= 0) return;
-			// Coordonnées locales du container → NDC [-1,1]. nx>0 = souris à
-			// droite ⇒ on veut que le penguin tourne vers la droite ⇒ yaw
-			// négatif (le penguin regarde la caméra à -Z, yaw positif
-			// l'éloignerait de notre droite à l'écran).
-			float nx = Mathf.Clamp(hover.Position.X / size.X * 2f - 1f, -1f, 1f);
-			float ny = Mathf.Clamp(hover.Position.Y / size.Y * 2f - 1f, -1f, 1f);
-			SetHeadTarget(
-				-nx * Mathf.DegToRad(MaxYawDegrees),
-				 ny * Mathf.DegToRad(MaxPitchDegrees));
-			EmitSignal(SignalName.HeadTargetChanged, _targetYaw, _targetPitch);
-			return;
-		}
 
 		if (Mode == InteractionMode.DragOrbit)
 		{
@@ -186,6 +241,28 @@ public partial class Preview : Node3D
 	public override void _Process(double delta)
 	{
 		if (_character is null || Mode == InteractionMode.Static) return;
+
+		if (Mode == InteractionMode.MouseLook)
+		{
+			// Poll global mouse instead of container-local GuiInput: la tête
+			// suit le curseur partout dans la fenêtre, pas seulement quand il
+			// hover le SubViewportContainer. nx>0 = souris à droite ⇒ yaw
+			// négatif (le penguin regarde -Z, yaw positif l'éloignerait à
+			// droite à l'écran).
+			var vp = GetViewport();
+			var size = vp.GetVisibleRect().Size;
+			if (size.X > 0 && size.Y > 0)
+			{
+				var mouse = vp.GetMousePosition();
+				float nx = Mathf.Clamp(mouse.X / size.X * 2f - 1f, -1f, 1f);
+				float ny = Mathf.Clamp(mouse.Y / size.Y * 2f - 1f, -1f, 1f);
+				SetHeadTarget(
+					-nx * Mathf.DegToRad(MaxYawDegrees),
+					 ny * Mathf.DegToRad(MaxPitchDegrees));
+				EmitSignal(SignalName.HeadTargetChanged, _targetYaw, _targetPitch);
+			}
+		}
+
 		// Suivi exponentiel vers la cible. HeadFollowSpeed est en "1/s logique"
 		// (10 ≈ 90&#160;% atteint en ~0.25s); le clamp empêche un dt énorme de
 		// faire dépasser la cible quand le focus revient sur la fenêtre.
@@ -197,7 +274,11 @@ public partial class Preview : Node3D
 			_character.PhysicsSkelton.HeadAngle = -_currentPitch; //reversed
 	}
 
-	public override void _ExitTree() => ClearCharacter();
+	public override void _ExitTree()
+	{
+		UnbindNetwork();
+		ClearCharacter();
+	}
 
 	private void ClearCharacter()
 	{
@@ -210,17 +291,17 @@ public partial class Preview : Node3D
 	// — qui est elle-même un Skeleton3D — pour rester cohérent avec le rig en
 	// jeu&#160;: si on changeait l'offset/scale d'un chapeau, Player et Preview
 	// le verraient pareillement.
-	private static void AttachHat(Character character, string hatId)
+	private static BoneAttachment3D? AttachHat(Character character, string hatId)
 	{
 		var hatDef = HatRegistry.Get(hatId) ?? HatRegistry.Get(HatRegistry.DefaultHatId);
-		if (hatDef is null || string.IsNullOrEmpty(hatDef.ScenePath)) return;
-		if (character.PhysicsSkelton is null) return;
+		if (hatDef is null || string.IsNullOrEmpty(hatDef.ScenePath)) return null;
+		if (character.PhysicsSkelton is null) return null;
 
 		var hatScene = ResourceLoader.Load<PackedScene>(hatDef.ScenePath);
 		if (hatScene is null)
 		{
 			GD.PrintErr($"[Preview] Scène chapeau introuvable&#160;: {hatDef.ScenePath}");
-			return;
+			return null;
 		}
 
 		var attachment = new BoneAttachment3D { Name = "HatAttachment", BoneName = "Head.001" };
@@ -229,5 +310,6 @@ public partial class Preview : Node3D
 		hatNode.Position = HatRegistry.GlobalOffset + hatDef.Offset;
 		hatNode.Scale = HatRegistry.GlobalScale * hatDef.Scale;
 		attachment.AddChild(hatNode);
+		return attachment;
 	}
 }
