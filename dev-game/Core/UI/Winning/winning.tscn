@@ -4,7 +4,7 @@
 [ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="2_2r0a7"]
 [ext_resource type="FontFile" uid="uid://d3iekdubpmgvd" path="res://Assets/fonts/Gorditas/Gorditas-Bold.ttf" id="3_27vue"]
 [ext_resource type="Script" uid="uid://cviav8qaw6sev" path="res://Core/UI/Winning/WinningSlide1.cs" id="3_wf2q1"]
-[ext_resource type="PackedScene" uid="uid://ejfh4s5x3dhi" path="res://Core/UI/Winning/winner_display.tscn" id="4_d6i7v"]
+[ext_resource type="PackedScene" uid="uid://ejfh4s5x3dhi" path="res://Core/UI/Preview/preview.tscn" id="4_d6i7v"]
 [ext_resource type="Texture2D" uid="uid://d00ws7wljnit4" path="res://Assets/ui/UIpack_vector.svg" id="4_uwdsr"]
 [ext_resource type="FontFile" uid="uid://1ub3n8rl4quv" path="res://Assets/fonts/Gorditas/Gorditas-Regular.ttf" id="5_ni34q"]
 [ext_resource type="Script" uid="uid://bjev0j7mjcunn" path="res://Core/UI/Winning/WinningSlide2.cs" id="6_w1ew1"]
@@ -1844,7 +1844,7 @@ stretch = true
 [node name="SubViewport" type="SubViewport" parent="Winning_UI/SCR_01_WHOWINS/Panel/VBoxContainer/SubViewportContainer" unique_id=975769117]
 transparent_bg = true
 handle_input_locally = false
-size = Vector2i(1920, 997)
+size = Vector2i(2, 2)
 render_target_update_mode = 4
 
 [node name="WinnerDisplay" parent="Winning_UI/SCR_01_WHOWINS/Panel/VBoxContainer/SubViewportContainer/SubViewport" unique_id=1978848881 instance=ExtResource("4_d6i7v")]
@@ -1860,17 +1860,19 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("6_w1ew1")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Winning_UI/SCR_02_SUBWINNERS" unique_id=805077412]
+[node name="SubwinController" type="Control" parent="Winning_UI/SCR_02_SUBWINNERS" unique_id=672222671]
 layout_mode = 2
 size_flags_vertical = 3
-alignment = 1
 
-[node name="Panel" type="Panel" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer" unique_id=1369393909]
-layout_mode = 2
-size_flags_horizontal = 3
+[node name="SubWinPanel1" type="Panel" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController" unique_id=1369393909]
+layout_mode = 0
+offset_right = 640.0
+offset_bottom = 1080.0
+size_flags_horizontal = 2
+size_flags_vertical = 3
 theme = SubResource("Theme_dibal")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel" unique_id=117547394]
+[node name="VBoxContainer" type="VBoxContainer" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel1" unique_id=117547394]
 custom_minimum_size = Vector2(640, 0)
 layout_mode = 1
 anchors_preset = 9
@@ -1879,45 +1881,49 @@ offset_right = 1.0
 grow_vertical = 2
 alignment = 1
 
-[node name="Title" type="Label" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel/VBoxContainer" unique_id=1612901520]
+[node name="Title" type="Label" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel1/VBoxContainer" unique_id=1612901520]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Most Ragdolls In Game"
 horizontal_alignment = 1
 
-[node name="SubViewportContainer" type="SubViewportContainer" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel/VBoxContainer" unique_id=451726045]
+[node name="SubViewportContainer" type="SubViewportContainer" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel1/VBoxContainer" unique_id=451726045]
 layout_mode = 2
 size_flags_vertical = 3
 stretch = true
 
-[node name="Winner1Viewport" type="SubViewport" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel/VBoxContainer/SubViewportContainer" unique_id=1399006951]
+[node name="Winner1Viewport" type="SubViewport" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel1/VBoxContainer/SubViewportContainer" unique_id=1399006951]
 transparent_bg = true
 handle_input_locally = false
-size = Vector2i(640, 748)
+size = Vector2i(2, 2)
 render_target_update_mode = 4
 
-[node name="WinnerDisplay" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel/VBoxContainer/SubViewportContainer/Winner1Viewport" unique_id=1535471850 instance=ExtResource("4_d6i7v")]
+[node name="WinnerDisplay" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel1/VBoxContainer/SubViewportContainer/Winner1Viewport" unique_id=1535471850 instance=ExtResource("4_d6i7v")]
 
-[node name="usr_label" type="Label" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel/VBoxContainer" unique_id=1676129288]
+[node name="usr_label" type="Label" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel1/VBoxContainer" unique_id=1676129288]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "user name"
 horizontal_alignment = 1
 
-[node name="amt_label" type="Label" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel/VBoxContainer" unique_id=1116181761]
+[node name="amt_label" type="Label" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel1/VBoxContainer" unique_id=1116181761]
 custom_minimum_size = Vector2(0, 240)
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "0 Ragdolls"
 horizontal_alignment = 1
 
-[node name="Panel2" type="Panel" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer" unique_id=890842256]
-layout_mode = 2
-size_flags_horizontal = 3
+[node name="SubWinPanel2" type="Panel" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController" unique_id=890842256]
+layout_mode = 0
+offset_left = 644.0
+offset_right = 1284.0
+offset_bottom = 1080.0
+size_flags_horizontal = 6
+size_flags_vertical = 3
 theme = SubResource("Theme_d6i7v")
 theme_override_styles/panel = SubResource("StyleBoxTexture_wf2q1")
 
-[node name="VBoxContainer2" type="VBoxContainer" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel2" unique_id=1067640693]
+[node name="VBoxContainer2" type="VBoxContainer" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel2" unique_id=1067640693]
 custom_minimum_size = Vector2(640, 0)
 layout_mode = 1
 anchors_preset = 13
@@ -1930,44 +1936,48 @@ grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
 
-[node name="Title2" type="Label" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel2/VBoxContainer2" unique_id=259685517]
+[node name="Title2" type="Label" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel2/VBoxContainer2" unique_id=259685517]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "The Quickest to Die"
 horizontal_alignment = 1
 
-[node name="SubViewportContainer" type="SubViewportContainer" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel2/VBoxContainer2" unique_id=535065114]
+[node name="SubViewportContainer" type="SubViewportContainer" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel2/VBoxContainer2" unique_id=535065114]
 layout_mode = 2
 size_flags_vertical = 3
 stretch = true
 
-[node name="Winner2Viewport" type="SubViewport" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel2/VBoxContainer2/SubViewportContainer" unique_id=1691189385]
+[node name="Winner2Viewport" type="SubViewport" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel2/VBoxContainer2/SubViewportContainer" unique_id=1691189385]
 transparent_bg = true
 handle_input_locally = false
-size = Vector2i(640, 748)
+size = Vector2i(2, 2)
 render_target_update_mode = 4
 
-[node name="WinnerDisplay" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel2/VBoxContainer2/SubViewportContainer/Winner2Viewport" unique_id=80730790 instance=ExtResource("4_d6i7v")]
+[node name="WinnerDisplay" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel2/VBoxContainer2/SubViewportContainer/Winner2Viewport" unique_id=80730790 instance=ExtResource("4_d6i7v")]
 
-[node name="usr_label" type="Label" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel2/VBoxContainer2" unique_id=234758720]
+[node name="usr_label" type="Label" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel2/VBoxContainer2" unique_id=234758720]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "user name"
 horizontal_alignment = 1
 
-[node name="amt_label" type="Label" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel2/VBoxContainer2" unique_id=1328587808]
+[node name="amt_label" type="Label" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel2/VBoxContainer2" unique_id=1328587808]
 custom_minimum_size = Vector2(0, 240)
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Died in 4 seconds"
 horizontal_alignment = 1
 
-[node name="Panel3" type="Panel" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer" unique_id=2086202583]
-layout_mode = 2
-size_flags_horizontal = 3
+[node name="SubWinPanel3" type="Panel" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController" unique_id=2086202583]
+layout_mode = 0
+offset_left = 1288.0
+offset_right = 1928.0
+offset_bottom = 1080.0
+size_flags_horizontal = 2
+size_flags_vertical = 3
 theme = SubResource("Theme_ht6pa")
 
-[node name="VBoxContainer3" type="VBoxContainer" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel3" unique_id=928336709]
+[node name="VBoxContainer3" type="VBoxContainer" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel3" unique_id=928336709]
 custom_minimum_size = Vector2(640, 0)
 layout_mode = 1
 anchors_preset = 11
@@ -1979,39 +1989,39 @@ grow_horizontal = 0
 grow_vertical = 2
 alignment = 1
 
-[node name="Title3" type="Label" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel3/VBoxContainer3" unique_id=1481080049]
+[node name="Title3" type="Label" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel3/VBoxContainer3" unique_id=1481080049]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "\"I didn't even jump!\""
 horizontal_alignment = 1
 
-[node name="SubViewportContainer" type="SubViewportContainer" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel3/VBoxContainer3" unique_id=690195280]
+[node name="SubViewportContainer" type="SubViewportContainer" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel3/VBoxContainer3" unique_id=690195280]
 layout_mode = 2
 size_flags_vertical = 3
 stretch = true
 
-[node name="Winner3Viewport" type="SubViewport" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel3/VBoxContainer3/SubViewportContainer" unique_id=1865729252]
+[node name="Winner3Viewport" type="SubViewport" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel3/VBoxContainer3/SubViewportContainer" unique_id=1865729252]
 transparent_bg = true
 handle_input_locally = false
-size = Vector2i(640, 748)
+size = Vector2i(2, 2)
 render_target_update_mode = 4
 
-[node name="WinnerDisplay" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel3/VBoxContainer3/SubViewportContainer/Winner3Viewport" unique_id=1314976448 instance=ExtResource("4_d6i7v")]
+[node name="WinnerDisplay" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel3/VBoxContainer3/SubViewportContainer/Winner3Viewport" unique_id=1314976448 instance=ExtResource("4_d6i7v")]
 
-[node name="usr_label" type="Label" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel3/VBoxContainer3" unique_id=1363306139]
+[node name="usr_label" type="Label" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel3/VBoxContainer3" unique_id=1363306139]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "user name"
 horizontal_alignment = 1
 
-[node name="amt_label" type="Label" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel3/VBoxContainer3" unique_id=1494703826]
+[node name="amt_label" type="Label" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel3/VBoxContainer3" unique_id=1494703826]
 custom_minimum_size = Vector2(0, 240)
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "2 jumps"
 horizontal_alignment = 1
 
-[node name="ContinueBar" type="MarginContainer" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel3" unique_id=2010067984]
+[node name="ContinueBar" type="MarginContainer" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel3" unique_id=2010067984]
 custom_minimum_size = Vector2(300, 120)
 layout_mode = 1
 anchors_preset = 12
@@ -2022,7 +2032,7 @@ offset_top = -72.0
 grow_horizontal = 2
 grow_vertical = 0
 
-[node name="ContinueButton" type="Button" parent="Winning_UI/SCR_02_SUBWINNERS/HBoxContainer/Panel3/ContinueBar" unique_id=1900000002]
+[node name="ContinueButton" type="Button" parent="Winning_UI/SCR_02_SUBWINNERS/SubwinController/SubWinPanel3/ContinueBar" unique_id=1900000002]
 custom_minimum_size = Vector2(360, 72)
 layout_mode = 2
 theme = SubResource("Theme_dibal")

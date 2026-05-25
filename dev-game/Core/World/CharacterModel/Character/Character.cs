@@ -37,6 +37,17 @@ public partial class Character : CharacterBody3D
     [ExportGroup("Fall Recovery")]
     [Export] public float FallLimit = -50.0f;
 
+    /// <summary>
+    /// Marque cette instance comme rendu UI (SubViewport Lobby/Profile/Winning).
+    /// Doit être assigné <b>avant</b> AddChild() pour que <see cref="_Ready"/> y
+	/// réagisse&#160;: skip l'inscription au groupe <c>players_alive</c> (sinon le
+	/// spectateur cible des pengouins de preview) et bloque la FSM en
+	/// <see cref="CharacterState.Preview"/> dès le départ. L'anim Idle est jouée
+    /// une fois manuellement&#160;; <see cref="PhysicsSkeleton"/> continue de
+    /// tourner pour le jiggle des springs.
+    /// </summary>
+    [Export] public bool IsPreview = false;
+
     protected float speed;
     protected float jumpVelocity = 5.0f;
     protected Vector3 velocity = Vector3.Zero;
@@ -283,6 +294,18 @@ public partial class Character : CharacterBody3D
 	{
 		_spineCollBox = GetNodeOrNull<CollisionShape3D>(
 			"PhysicsRig/Armature/Skeleton3D/PhysicalBoneSimulator3D/Physical Bone Spine_001/CollisionShape3D");
+
+		if (IsPreview)
+		{
+			// FSM bloquée dès le _Ready: _PhysicsProcess early-return sur Preview,
+			// _Process mappe vers MovementState.Idle via le default switch.
+			// AnimPlayer reste muet sans ce Play() (currentMovementState=Idle déjà,
+			// donc la garde "if equal return" de _Process ne déclenche jamais Play).
+			_characterState = CharacterState.Preview;
+			PlayAnimationFromMovement(MovementState.Idle, AnimPlayer);
+			return;
+		}
+
 		// Groupe de référence pour la sélection de cibles spectateur. Maintenu
 		// par EnterState(Dead) qui retire l'entrée à la mort. Joindre ici (pas
 		// dans Player._Ready) garantit que toutes les répliques distantes sont
@@ -292,134 +315,139 @@ public partial class Character : CharacterBody3D
 
 	public override void _PhysicsProcess(double delta)
 	{
+		// Instance UI: pas de MoveAndSlide, pas de FSM, pas de respawn. Le pitch
+		// de tête est piloté de l'extérieur via Preview.cs qui écrit directement
+		// PhysicsSkelton.HeadAngle; le yaw via Rotation sur ce node.
+		if (_characterState == CharacterState.Preview) return;
+
 		// Respawn local — uniquement quand on n'est pas en réseau. En multi le
-        // serveur fait autorité (cf. NetworkManager.OnPacketReceived /
-        // FallThreshold) et envoie la correction de position ; téléporter ici
-        // en plus produirait un fight client/serveur sur la position.
-        if (GlobalPosition.Y < FallLimit && (NetworkManager.Instance is null || !NetworkManager.Instance.IsRunning))
-        {
-            GlobalPosition = SpawnPosition;
-            velocity = Vector3.Zero;
-            TransitionTo(CharacterState.Idle);
-        }
+		// serveur fait autorité (cf. NetworkManager.OnPacketReceived /
+		// FallThreshold) et envoie la correction de position ; téléporter ici
+		// en plus produirait un fight client/serveur sur la position.
+		if (GlobalPosition.Y < FallLimit && (NetworkManager.Instance is null || !NetworkManager.Instance.IsRunning))
+		{
+			GlobalPosition = SpawnPosition;
+			velocity = Vector3.Zero;
+			TransitionTo(CharacterState.Idle);
+		}
 
 
-        if (PhysicsSkelton.RagdollTriggered
-            && _characterState != CharacterState.Ragdoll
-            && _characterState != CharacterState.Recovering)
-            TransitionTo(CharacterState.Ragdoll);
+		if (PhysicsSkelton.RagdollTriggered
+			&& _characterState != CharacterState.Ragdoll
+			&& _characterState != CharacterState.Recovering)
+			TransitionTo(CharacterState.Ragdoll);
 
-        switch (_characterState)
-        {
-            case CharacterState.Ragdoll:
-                return;
+		switch (_characterState)
+		{
+			case CharacterState.Ragdoll:
+				return;
 
-            case CharacterState.Dead:
-                return;
+			case CharacterState.Dead:
+				return;
 
-            case CharacterState.Spectating:
-                return;
+			case CharacterState.Spectating:
+				return;
 
-            case CharacterState.Recovering:
-                _graceTime -= (float)delta;
-                _PhysicsGrounded(delta);
-                _CheckRecoveringTransitions();
-                break;
+			case CharacterState.Recovering:
+				_graceTime -= (float)delta;
+				_PhysicsGrounded(delta);
+				_CheckRecoveringTransitions();
+				break;
 
-            case CharacterState.Paused:
-                if (!IsOnFloor()) velocity += GetGravity() * (float)delta;
-                Velocity = velocity;
-                MoveAndSlide();
-                break;
+			case CharacterState.Paused:
+				if (!IsOnFloor()) velocity += GetGravity() * (float)delta;
+				Velocity = velocity;
+				MoveAndSlide();
+				break;
 
-            case CharacterState.Airborne:
-                _PhysicsAirborne(delta);
-                _CheckAirborneTransitions();
-                break;
+			case CharacterState.Airborne:
+				_PhysicsAirborne(delta);
+				_CheckAirborneTransitions();
+				break;
 
-            default: // Idle, Moving
-                _PhysicsGrounded(delta);
-                _CheckGroundedTransitions();
-                break;
-        }
-    }
+			default: // Idle, Moving
+				_PhysicsGrounded(delta);
+				_CheckGroundedTransitions();
+				break;
+		}
+	}
 
-    private void _PhysicsGrounded(double delta)
-    {
-        if (!IsOnFloor()) velocity += GetGravity() * (float)delta;
-        if (aimVec != Vector3.Zero)
-        {
-            velocity.X = aimVec.X * speed;
-            velocity.Z = aimVec.Z * speed;
-        }
-        else
-        {
-            velocity.X = Mathf.MoveToward(Velocity.X, 0, speed);
-            velocity.Z = Mathf.MoveToward(Velocity.Z, 0, speed);
-        }
-        PhysicsSkelton.HeadAngle = -headAngle;
-        ComputeEmotePhysics();
-        Velocity = velocity;
-        MoveAndSlide();
-    }
+	private void _PhysicsGrounded(double delta)
+	{
+		if (!IsOnFloor()) velocity += GetGravity() * (float)delta;
+		if (aimVec != Vector3.Zero)
+		{
+			velocity.X = aimVec.X * speed;
+			velocity.Z = aimVec.Z * speed;
+		}
+		else
+		{
+			velocity.X = Mathf.MoveToward(Velocity.X, 0, speed);
+			velocity.Z = Mathf.MoveToward(Velocity.Z, 0, speed);
+		}
+		PhysicsSkelton.HeadAngle = -headAngle;
+		ComputeEmotePhysics();
+		Velocity = velocity;
+		MoveAndSlide();
+	}
 
-    private void _PhysicsAirborne(double delta)
-    {
-        velocity += GetGravity() * (float)delta;
-        if (aimVec != Vector3.Zero)
-        {
-            velocity.X = aimVec.X * speed;
-            velocity.Z = aimVec.Z * speed;
-        }
-        PhysicsSkelton.HeadAngle = -headAngle;
-        ComputeEmotePhysics();
-        Velocity = velocity;
-        MoveAndSlide();
-    }
+	private void _PhysicsAirborne(double delta)
+	{
+		velocity += GetGravity() * (float)delta;
+		if (aimVec != Vector3.Zero)
+		{
+			velocity.X = aimVec.X * speed;
+			velocity.Z = aimVec.Z * speed;
+		}
+		PhysicsSkelton.HeadAngle = -headAngle;
+		ComputeEmotePhysics();
+		Velocity = velocity;
+		MoveAndSlide();
+	}
 
-    private void _CheckGroundedTransitions()
-    {
-        if (!IsOnFloor())
-            TransitionTo(CharacterState.Airborne);
-        else if (moveVec != Vector3.Zero)
-            TransitionTo(CharacterState.Moving);
-        else
-            TransitionTo(CharacterState.Idle);
-    }
+	private void _CheckGroundedTransitions()
+	{
+		if (!IsOnFloor())
+			TransitionTo(CharacterState.Airborne);
+		else if (moveVec != Vector3.Zero)
+			TransitionTo(CharacterState.Moving);
+		else
+			TransitionTo(CharacterState.Idle);
+	}
 
-    private void _CheckAirborneTransitions()
-    {
-        if (IsOnFloor())
-            TransitionTo(moveVec != Vector3.Zero ? CharacterState.Moving : CharacterState.Idle);
-    }
+	private void _CheckAirborneTransitions()
+	{
+		if (IsOnFloor())
+			TransitionTo(moveVec != Vector3.Zero ? CharacterState.Moving : CharacterState.Idle);
+	}
 
-    private void _CheckRecoveringTransitions()
-    {
-        if (_graceTime <= 0f && IsOnFloor())
-            TransitionTo(moveVec != Vector3.Zero ? CharacterState.Moving : CharacterState.Idle);
-    }
+	private void _CheckRecoveringTransitions()
+	{
+		if (_graceTime <= 0f && IsOnFloor())
+			TransitionTo(moveVec != Vector3.Zero ? CharacterState.Moving : CharacterState.Idle);
+	}
 
-    private MovementState _CharacterStateToMovementState()
-    {
-        return _characterState switch
-        {
-            CharacterState.Moving => MovementState.Walking,
-            CharacterState.Ragdoll or CharacterState.Recovering or CharacterState.Dead or CharacterState.Spectating => MovementState.Ragdolling,
-            _ => MovementState.Idle
-        };
-    }
+	private MovementState _CharacterStateToMovementState()
+	{
+		return _characterState switch
+		{
+			CharacterState.Moving => MovementState.Walking,
+			CharacterState.Ragdoll or CharacterState.Recovering or CharacterState.Dead or CharacterState.Spectating => MovementState.Ragdolling,
+			_ => MovementState.Idle
+		};
+	}
 
-    public override void _Process(double delta)
-    {
-        MovementState newMovementState = _CharacterStateToMovementState();
-        if (currentMovementState == newMovementState) return;
-        currentMovementState = newMovementState;
-        PlayAnimationFromMovement(newMovementState, AnimPlayer);
-    }
+	public override void _Process(double delta)
+	{
+		MovementState newMovementState = _CharacterStateToMovementState();
+		if (currentMovementState == newMovementState) return;
+		currentMovementState = newMovementState;
+		PlayAnimationFromMovement(newMovementState, AnimPlayer);
+	}
 
-    public override void _Notification(int what) { if (what == Node.NotificationExitTree) { GD.Print($"[Character] EXIT TREE: {Name}"); } else if (what == Node.NotificationEnterTree) { GD.Print($"[Character] ENTER TREE: {Name}"); } base._Notification(what); }
-    public override void _ExitTree()
-    {
-        base._ExitTree();
-    }
+	public override void _Notification(int what) { if (what == Node.NotificationExitTree) { GD.Print($"[Character] EXIT TREE: {Name}"); } else if (what == Node.NotificationEnterTree) { GD.Print($"[Character] ENTER TREE: {Name}"); } base._Notification(what); }
+	public override void _ExitTree()
+	{
+		base._ExitTree();
+	}
 }

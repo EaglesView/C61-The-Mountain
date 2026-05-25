@@ -14,18 +14,29 @@ grow_vertical = 2
 theme = ExtResource("1_glnub")
 script = ExtResource("1_profile")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=101640225]
+[node name="HBoxContainer" type="MarginContainer" parent="." unique_id=1866482446]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 0
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="HBoxContainer" unique_id=200000012]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+stretch = true
+
+[node name="PreviewViewport" type="SubViewport" parent="HBoxContainer/SubViewportContainer" unique_id=200000013]
+handle_input_locally = false
+size = Vector2i(1920, 1080)
+render_target_update_mode = 4
 
 [node name="PanelContainer" type="PanelContainer" parent="HBoxContainer" unique_id=200000001]
-layout_mode = 2
 custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 0
 size_flags_vertical = 3
 
 [node name="InnerMargin" type="MarginContainer" parent="HBoxContainer/PanelContainer" unique_id=200000002]
@@ -74,8 +85,8 @@ text = "<"
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.6, 0.85, 1, 1)
-horizontal_alignment = 1
 text = "Aucun"
+horizontal_alignment = 1
 
 [node name="HatNext" type="Button" parent="HBoxContainer/PanelContainer/InnerMargin/VBoxContainer/HatBox" unique_id=200000010]
 custom_minimum_size = Vector2(32, 0)
@@ -99,14 +110,3 @@ visible = false
 layout_mode = 2
 horizontal_alignment = 1
 autowrap_mode = 2
-
-[node name="SubViewportContainer" type="SubViewportContainer" parent="HBoxContainer" unique_id=200000012]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-stretch = true
-
-[node name="PreviewViewport" type="SubViewport" parent="HBoxContainer/SubViewportContainer" unique_id=200000013]
-handle_input_locally = false
-size = Vector2i(800, 800)
-render_target_update_mode = 4
