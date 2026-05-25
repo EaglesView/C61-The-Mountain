@@ -10,6 +10,7 @@ public sealed partial class WinningSlide1 : MarginContainer
 {
 	private Label _titleLabel;
 	private Preview _winnerDisplay;
+	private SubViewportContainer _previewContainer;
 
 	/// <summary>Définit le texte du titre («&#160;Player X Won&#160;»). Optionnel.</summary>
 	public void SetWinnerLabel(string InText)
@@ -19,18 +20,24 @@ public sealed partial class WinningSlide1 : MarginContainer
 
 	/// <summary>
 	/// Pousse le peer du gagnant au slot 3D pour qu'il reconstruise le penguin
-	/// avec le chapeau du joueur correspondant. Sans effet si le slot est
-	/// introuvable (ex. tscn pas encore raccordé).
+	/// avec le chapeau du joueur correspondant, puis branche le pipeline réseau
+	/// (MouseLook+send si le gagnant est le pair local, NetworkedRemote+receive
+	/// sinon). Sans effet si le slot est introuvable (ex. tscn pas encore raccordé).
 	/// </summary>
 	public void SetWinnerPeer(int InPeerId)
 	{
-		_winnerDisplay?.Show(InPeerId);
+		if (_winnerDisplay is null) return;
+		_winnerDisplay.Show(InPeerId);
+		_winnerDisplay.BindNetwork(InPeerId);
+		if (_previewContainer is not null)
+			_winnerDisplay.BindMouseInput(_previewContainer);
 	}
 
 	public override void _Ready()
 	{
-		_titleLabel = GetNodeOrNull<Label>("Panel/VBoxContainer/Label");
-		_winnerDisplay = GetNodeOrNull<Preview>(
+		_titleLabel       = GetNodeOrNull<Label>("Panel/VBoxContainer/Label");
+		_previewContainer = GetNodeOrNull<SubViewportContainer>("Panel/VBoxContainer/SubViewportContainer");
+		_winnerDisplay    = GetNodeOrNull<Preview>(
 			"Panel/VBoxContainer/SubViewportContainer/SubViewport/Preview");
 	}
 }
