@@ -10,7 +10,7 @@ using Utils;
 public partial class Water : MeshInstance3D
 {
 	[Export] public Area3D? WaterArea;
-
+	[Export] private bool _isDeadly = true;
 	private static Character? _FindCharacter(Node? InNode)
 	{
 		while (InNode != null)
@@ -23,6 +23,7 @@ public partial class Water : MeshInstance3D
 
 	private void _OnBodyEntered(Node InBody)
 	{
+		if (!_isDeadly) return;
 		Character? character = _FindCharacter(InBody);
 		GD.Print($"[Water] _OnBodyEntered body={InBody?.Name} character={(character is null ? "null" : character.PeerId.ToString())} authority={(character?.IsMultiplayerAuthority() ?? false)} myPath={GetPath()}");
 		if (character is null) return;

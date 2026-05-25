@@ -32,7 +32,7 @@ public sealed partial class WinningSlide2 : MarginContainer
 	private Label[] _titleLabels;
 	private Label[] _usrLabels;
 	private Label[] _amtLabels;
-	private WinnerDisplay[] _winnerDisplays;
+	private Preview[] _winnerDisplays;
 
 	/// <summary>Rend le bouton «&#160;Continue&#160;» visible et cliquable.</summary>
 	public void ShowContinueButton()
@@ -111,13 +111,13 @@ public sealed partial class WinningSlide2 : MarginContainer
 		_usrLabels[2] = GetNodeOrNull<Label>("HBoxContainer/Panel3/VBoxContainer3/usr_label");
 		_amtLabels[2] = GetNodeOrNull<Label>("HBoxContainer/Panel3/VBoxContainer3/amt_label");
 
-		_winnerDisplays = new WinnerDisplay[3];
-		_winnerDisplays[0] = GetNodeOrNull<WinnerDisplay>(
-			"HBoxContainer/Panel/VBoxContainer/SubViewportContainer/Winner1Viewport/WinnerDisplay");
-		_winnerDisplays[1] = GetNodeOrNull<WinnerDisplay>(
-			"HBoxContainer/Panel2/VBoxContainer2/SubViewportContainer/Winner2Viewport/WinnerDisplay");
-		_winnerDisplays[2] = GetNodeOrNull<WinnerDisplay>(
-			"HBoxContainer/Panel3/VBoxContainer3/SubViewportContainer/Winner3Viewport/WinnerDisplay");
+		_winnerDisplays = new Preview[3];
+		_winnerDisplays[0] = GetNodeOrNull<Preview>(
+			"HBoxContainer/Panel/VBoxContainer/SubViewportContainer/Winner1Viewport/Preview");
+		_winnerDisplays[1] = GetNodeOrNull<Preview>(
+			"HBoxContainer/Panel2/VBoxContainer2/SubViewportContainer/Winner2Viewport/Preview");
+		_winnerDisplays[2] = GetNodeOrNull<Preview>(
+			"HBoxContainer/Panel3/VBoxContainer3/SubViewportContainer/Winner3Viewport/Preview");
 
 		// État initial&#160;: les panneaux restent visibles avec leur texte de scène
 		// (placeholders) jusqu'à ce que Populate() les remplace ou les masque.
