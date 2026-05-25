@@ -23,17 +23,21 @@ public sealed class FirestorePlayerProfileRepository : IPlayerProfileRepository
         if (doc is null) return null;
 
         var fields = doc.RootElement.GetProperty("fields");
+        string? hatId = null;
+        if (fields.TryGetProperty("hatId", out var hatProp))
+            hatId = hatProp.GetProperty("stringValue").GetString();
         return new PlayerProfile(
             userId,
-            fields.GetProperty("username").GetProperty("stringValue").GetString()!
-        );
+            fields.GetProperty("username").GetProperty("stringValue").GetString()!,
+            hatId);
     }
 
     public async Task SaveAsync(PlayerProfile profile)
     {
         var fields = new
         {
-            username = new { stringValue = profile.Username }
+            username = new { stringValue = profile.Username },
+            hatId    = new { stringValue = profile.SelectedHatId }
         };
         await _client.SetDocumentAsync(Collection, profile.UserId, fields, _getIdToken());
     }

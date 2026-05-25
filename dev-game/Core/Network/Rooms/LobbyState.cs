@@ -45,6 +45,9 @@ public static class LobbyState
     public static void SetSelectedMap(string mapId) => SelectedMapId = mapId;
     public static void SetSelectedHat(string hatId) => SelectedHatId = string.IsNullOrEmpty(hatId) ? HatRegistry.DefaultHatId : hatId;
 
+    public static string ProfileUsername { get; private set; } = "";
+    public static void SetProfileUsername(string name) => ProfileUsername = string.IsNullOrEmpty(name) ? "" : name.Trim();
+
     /// <summary>
     /// Mémorise les gagnants de la dernière partie. Survit à <see cref="Clear"/> pour que
     /// la phase Winning puisse l'afficher après la destruction du LobbyState courant.

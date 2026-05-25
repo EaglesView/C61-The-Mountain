@@ -8,6 +8,8 @@
 /// </summary>
 public static class HatRegistry
 {
+    public static Godot.Vector3 GlobalOffset { get; set; } = new Godot.Vector3(0f, 0.075f, 0.015f);
+    public static Godot.Vector3 GlobalScale  { get; set; } = new Godot.Vector3(0.3f, 0.3f, 0.3f);
     /// <summary>Id réservé indiquant «&#160;aucun chapeau&#160;».</summary>
     public const string NoneHatId = "none";
 
@@ -37,6 +39,8 @@ public static class HatRegistry
         /// disponible.
         /// </summary>
         public string ImagePath { get; init; } = PlaceholderImagePath;
+        public Godot.Vector3 Offset { get; init; } = Godot.Vector3.Zero;
+        public Godot.Vector3 Scale { get; init; } = Godot.Vector3.One;
     }
 
     public static readonly HatDefinition[] All =
@@ -52,14 +56,109 @@ public static class HatRegistry
             Id = "summerhat",
             DisplayName = "Chapeau d'été",
             ScenePath = "res://Assets/Models/hats/SummerHat1/scene.gltf"
-        }
-        // Ajouter de nouveaux chapeaux ici, p.ex.:
-        // new HatDefinition
-        // {
-        //     Id = "tuque",
-        //     DisplayName = "Tuque",
-        //     ScenePath = "res://Core/World/Cosmetics/Hats/tuque.tscn"
-        // },
+        },
+        new HatDefinition
+        {
+            Id = "ananas",
+            DisplayName = "Ananas",
+            ScenePath = "res://Assets/Models/hats/model_ananas/model_ananas.gltf"
+        },
+        new HatDefinition
+        {
+            Id = "canadien",
+            DisplayName = "Canadien",
+            ScenePath = "res://Assets/Models/hats/model_canadien/model_canadien.gltf"
+        },
+        new HatDefinition
+        {
+            Id = "can",
+            DisplayName = "Canette",
+            ScenePath = "res://Assets/Models/hats/model_can/model_can.gltf"
+        },
+        new HatDefinition
+        {
+            Id = "chapeau",
+            DisplayName = "Chapeau",
+            ScenePath = "res://Assets/Models/hats/model_chapeau/model_chapeau.gltf"
+        },
+        new HatDefinition
+        {
+            Id = "chef",
+            DisplayName = "Chef",
+            ScenePath = "res://Assets/Models/hats/model_chef/model_chef.gltf"
+        },
+        new HatDefinition
+        {
+            Id = "cone",
+            DisplayName = "Cône",
+            ScenePath = "res://Assets/Models/hats/model_cone/model_cone.gltf"
+        },
+        new HatDefinition
+        {
+            Id = "fete",
+            DisplayName = "Fête",
+            ScenePath = "res://Assets/Models/hats/model_fete/model_fete.gltf"
+        },
+        new HatDefinition
+        {
+            Id = "flower",
+            DisplayName = "Fleur",
+            ScenePath = "res://Assets/Models/hats/model_flower/model_flower.gltf"
+        },
+        new HatDefinition
+        {
+            Id = "fries",
+            DisplayName = "Frites",
+            ScenePath = "res://Assets/Models/hats/model_fries/model_fries.gltf"
+        },
+        new HatDefinition
+        {
+            Id = "hat",
+            DisplayName = "Hat",
+            ScenePath = "res://Assets/Models/hats/model_hat/model_hat.gltf"
+        },
+        new HatDefinition
+        {
+            Id = "lunette",
+            DisplayName = "Lunettes",
+            ScenePath = "res://Assets/Models/hats/model_lunette/model_lunette.gltf"
+        },
+        new HatDefinition
+        {
+            Id = "night_goggles",
+            DisplayName = "Night Goggles",
+            ScenePath = "res://Assets/Models/hats/model_night_goggles/model_night_goggles.gltf"
+        },
+        new HatDefinition
+        {
+            Id = "ninja",
+            DisplayName = "Ninja",
+            ScenePath = "res://Assets/Models/hats/model_ninja/model_ninja.gltf"
+        },
+        new HatDefinition
+        {
+            Id = "noel",
+            DisplayName = "Père Noël",
+            ScenePath = "res://Assets/Models/hats/model_noel/model_noel.gltf"
+        },
+        new HatDefinition
+        {
+            Id = "pingouino",
+            DisplayName = "Pingouino",
+            ScenePath = "res://Assets/Models/hats/model_pingouino/model_pingouino.gltf"
+        },
+        new HatDefinition
+        {
+            Id = "sable",
+            DisplayName = "Chapeau de sable",
+            ScenePath = "res://Assets/Models/hats/model_sable/model_sable.gltf"
+        },
+        new HatDefinition
+        {
+            Id = "witch",
+            DisplayName = "Sorcière",
+            ScenePath = "res://Assets/Models/hats/model_witch/model_witch.gltf"
+        },
     ];
 
     public static HatDefinition? Get(string id)

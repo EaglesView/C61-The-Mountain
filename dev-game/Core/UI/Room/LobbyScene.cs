@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using Godot;
 using Core.Network.Rooms;
 
@@ -11,59 +13,41 @@ public partial class LobbyScene : Control
     /// </summary>
     [Signal] public delegate void GameStartRequestedEventHandler();
 
-    private Label _codeValue = null!;
-    private Label _serverValue = null!;
-    private Label _statusValue = null!;
-    private Label _mapValue = null!;
+    private Label  _codeValue     = null!;
+    private Label  _statusValue   = null!;
+    private Label  _mapValue      = null!;
     private Button _mapPrevButton = null!;
     private Button _mapNextButton = null!;
-    private Label _hatValue = null!;
-    private Button _hatPrevButton = null!;
-    private Button _hatNextButton = null!;
-    private Label _playersTitle = null!;
-    private VBoxContainer _playersList = null!;
-    private Button _leaveButton = null!;
-    private Button _startButton = null!;
+    private Button _leaveButton   = null!;
+    private Button _startButton   = null!;
 
-    private bool _leaving = false;
-    private bool _wasHost = false;
-    private int _mapIndex = 0;
-    private int _hatIndex = 0;
+    private HBoxContainer _penguinsRow = null!;
+    private readonly Dictionary<string, Control> _playerSlots = new();
+
+    private bool  _leaving = false;
+    private bool  _wasHost = false;
+    private int   _mapIndex = 0;
     private ulong _instantiatedAtMsec;
-    private const string Root = "PanelContainer/MarginContainer/VBoxContainer";
-    private const float PollInterval = 4.0f;
-    /// <summary>
-    /// Période de grâce après instanciation pendant laquelle on ignore un
-    /// statut "started" lu depuis Firestore. Évite qu'un non-hôte re-entrant
-    /// dans le lobby (cycle Winning → Lobby) déclenche immédiatement
-    /// GameStartRequested sur un snapshot encore stale, avant que l'hôte
-    /// ait eu le temps de remettre le statut à "waiting".
-    /// </summary>
+    private const float PollInterval            = 4.0f;
     private const ulong StartedTriggerGraceMsec = 4_000;
 
     public override void _Ready()
     {
         _instantiatedAtMsec = Time.GetTicksMsec();
-        _codeValue = GetNode<Label>($"{Root}/CodeBox/CodeValue");
-        _serverValue = GetNode<Label>($"{Root}/ServerBox/ServerValue");
-        _statusValue = GetNode<Label>($"{Root}/StatusBox/StatusValue");
-        _mapValue = GetNode<Label>($"{Root}/MapBox/MapValue");
-        _mapPrevButton = GetNode<Button>($"{Root}/MapBox/MapPrev");
-        _mapNextButton = GetNode<Button>($"{Root}/MapBox/MapNext");
-        _hatValue = GetNode<Label>($"{Root}/HatBox/HatValue");
-        _hatPrevButton = GetNode<Button>($"{Root}/HatBox/HatPrev");
-        _hatNextButton = GetNode<Button>($"{Root}/HatBox/HatNext");
-        _playersTitle = GetNode<Label>($"{Root}/PlayersTitle");
-        _playersList = GetNode<VBoxContainer>($"{Root}/PlayersPanel/ScrollContainer/PlayersList");
-        _leaveButton = GetNode<Button>($"{Root}/ButtonsBox/LeaveButton");
-        _startButton = GetNode<Button>($"{Root}/ButtonsBox/StartButton");
+        const string TopHBox = "VBox/TopBar/Margin/HBox";
+        _codeValue     = GetNode<Label> ($"{TopHBox}/CodeValue");
+        _statusValue   = GetNode<Label> ($"{TopHBox}/StatusValue");
+        _mapValue      = GetNode<Label> ($"{TopHBox}/MapBox/MapValue");
+        _mapPrevButton = GetNode<Button>($"{TopHBox}/MapBox/MapPrev");
+        _mapNextButton = GetNode<Button>($"{TopHBox}/MapBox/MapNext");
+        _leaveButton   = GetNode<Button>($"{TopHBox}/LeaveButton");
+        _startButton   = GetNode<Button>($"{TopHBox}/StartButton");
+        _penguinsRow   = GetNode<HBoxContainer>("VBox/PlayersArea/Center/PenguinsRow");
 
-        _leaveButton.Pressed += OnLeavePressed;
-        _startButton.Pressed += OnStartPressed;
+        _leaveButton.Pressed   += OnLeavePressed;
+        _startButton.Pressed   += OnStartPressed;
         _mapPrevButton.Pressed += OnMapPrev;
         _mapNextButton.Pressed += OnMapNext;
-        _hatPrevButton.Pressed += OnHatPrev;
-        _hatNextButton.Pressed += OnHatNext;
 
         var snapshot = LobbyState.Current;
         if (snapshot is null)
@@ -73,31 +57,137 @@ public partial class LobbyScene : Control
             return;
         }
 
-        _codeValue.Text = snapshot.Code;
-        _serverValue.Text = $"{snapshot.ServerIp}:{snapshot.ServerPort}";
+        _codeValue.Text   = snapshot.Code;
         _statusValue.Text = snapshot.Status;
-
         _mapIndex = MapRegistry.IndexOf(snapshot.MapId);
         _RefreshMapDisplay();
 
-        // Only the host can change the map
         _mapPrevButton.Visible = LobbyState.IsHost;
         _mapNextButton.Visible = LobbyState.IsHost;
+        _startButton.Visible   = LobbyState.IsHost;
+        _startButton.Disabled  = !LobbyState.IsHost;
 
-        // Chapeau : chacun choisit le sien — toujours visible et toujours actif.
-        _hatIndex = HatRegistry.IndexOf(_LocalHatIdFromSnapshot(snapshot));
-        _RefreshHatDisplay();
+        RefreshPlayerDisplay(snapshot);
 
-        if (LobbyState.IsHost)
-            _startButton.Disabled = false;
-
-        RefreshPlayerList(snapshot);
-
-        var timer = new Timer();
-        timer.WaitTime = PollInterval;
-        timer.Autostart = true;
+        var timer = new Timer { WaitTime = PollInterval, Autostart = true };
         timer.Timeout += OnPollTick;
         AddChild(timer);
+    }
+
+    // ── Penguin display ──────────────────────────────────────────────────────
+
+    private void RefreshPlayerDisplay(RoomSnapshot snapshot)
+    {
+        var currentIds = new HashSet<string>(snapshot.Players.Keys);
+        foreach (var id in _playerSlots.Keys.ToList())
+        {
+            if (!currentIds.Contains(id))
+            {
+                _playerSlots[id].QueueFree();
+                _playerSlots.Remove(id);
+            }
+        }
+        foreach (var (userId, entry) in snapshot.Players)
+        {
+            if (!_playerSlots.ContainsKey(userId))
+                _playerSlots[userId] = _CreatePlayerSlot(entry.Username, entry.HatId, entry.IsHost);
+        }
+    }
+
+    private Control _CreatePlayerSlot(string username, string hatId, bool isHost)
+    {
+        var vbox = new VBoxContainer();
+        vbox.AddThemeConstantOverride("separation", 2);
+
+        var svContainer = new SubViewportContainer();
+        svContainer.CustomMinimumSize = new Vector2(180, 260);
+        svContainer.StretchShrink = 1;
+
+        var viewport = new SubViewport();
+        viewport.Size = new Vector2I(180, 260);
+        viewport.TransparentBg = true;
+        viewport.HandleInputLocally = false;
+        viewport.RenderTargetUpdateMode = SubViewport.UpdateMode.Always;
+        svContainer.AddChild(viewport);
+        _BuildPenguinScene(viewport, hatId);
+
+        var nameLabel = new Label();
+        nameLabel.Text = isHost ? username + " ★" : username;
+        nameLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        nameLabel.AddThemeFontSizeOverride("font_size", 18);
+
+        vbox.AddChild(svContainer);
+        vbox.AddChild(nameLabel);
+        _penguinsRow.AddChild(vbox);
+        return vbox;
+    }
+
+    private void _BuildPenguinScene(SubViewport vp, string hatId)
+    {
+        var root = new Node3D();
+        vp.AddChild(root);
+
+        var worldEnv = new WorldEnvironment();
+        var env = new Godot.Environment();
+        env.BackgroundMode = Godot.Environment.BGMode.Color;
+        env.BackgroundColor = new Color(0, 0, 0, 0);
+        env.AmbientLightSource = Godot.Environment.AmbientSource.Color;
+        env.AmbientLightColor = Colors.White;
+        env.AmbientLightEnergy = 0.6f;
+        worldEnv.Environment = env;
+        root.AddChild(worldEnv);
+
+        var light = new DirectionalLight3D();
+        light.RotationDegrees = new Vector3(-50f, 30f, 0f);
+        light.LightEnergy = 1.2f;
+        root.AddChild(light);
+
+        var camera = new Camera3D();
+        camera.Position = new Vector3(0f, 0.32f, 1.1f);
+        camera.LookAt(new Vector3(0f, 0.32f, 0f));
+        root.AddChild(camera);
+
+        var penguinScene = ResourceLoader.Load<PackedScene>("res://Assets/Models/penguin01.glb");
+        if (penguinScene == null) return;
+        var penguin = penguinScene.Instantiate<Node3D>();
+        root.AddChild(penguin);
+
+        var animPlayer = _FindFirst<AnimationPlayer>(penguin);
+        animPlayer?.Play("Idle_001");
+        animPlayer?.Advance(0.0);
+
+        if (!string.IsNullOrEmpty(hatId) && hatId != HatRegistry.NoneHatId)
+        {
+            var hatDef = HatRegistry.Get(hatId);
+            if (hatDef != null && !string.IsNullOrEmpty(hatDef.ScenePath))
+            {
+                var skeleton = _FindFirst<Skeleton3D>(penguin);
+                if (skeleton != null)
+                {
+                    var attachment = new BoneAttachment3D { Name = "HatAttachment", BoneName = "Head.001" };
+                    skeleton.AddChild(attachment);
+                    var hatScene = ResourceLoader.Load<PackedScene>(hatDef.ScenePath);
+                    if (hatScene != null)
+                    {
+                        var hatNode = hatScene.Instantiate<Node3D>();
+                        hatNode.Position = HatRegistry.GlobalOffset + hatDef.Offset;
+                        hatNode.Scale    = HatRegistry.GlobalScale  * hatDef.Scale;
+                        attachment.AddChild(hatNode);
+                    }
+                }
+            }
+        }
+    }
+
+    private static T? _FindFirst<T>(Node node) where T : Node
+    {
+        if (node is T found) return found;
+        foreach (Node child in node.GetChildren())
+        {
+            var result = _FindFirst<T>(child);
+            if (result != null) return result;
+        }
+        return null;
     }
 
     private async void OnPollTick()
@@ -130,7 +220,7 @@ public partial class LobbyScene : Control
             }
 
             LobbyState.Set(fresh, LobbyState.IsHost);
-            RefreshPlayerList(fresh);
+            RefreshPlayerDisplay(fresh);
             _statusValue.Text = fresh.Status;
 
             // Non-host clients pick up map changes on each poll
@@ -139,12 +229,6 @@ public partial class LobbyScene : Control
                 _mapIndex = MapRegistry.IndexOf(fresh.MapId);
                 _RefreshMapDisplay();
             }
-
-            // Le chapeau du joueur local peut avoir été modifié depuis une
-            // autre session : on resynchronise l'affichage sur la valeur
-            // canonique de Firestore.
-            _hatIndex = HatRegistry.IndexOf(_LocalHatIdFromSnapshot(fresh));
-            _RefreshHatDisplay();
 
             if (fresh.Status == "started" && !_leaving)
             {
@@ -206,73 +290,6 @@ public partial class LobbyScene : Control
         await _PushMapUpdate();
     }
 
-    private void _RefreshHatDisplay()
-    {
-        _hatValue.Text = HatRegistry.All[_hatIndex].DisplayName;
-    }
-
-    private async void OnHatPrev()
-    {
-        _hatIndex = (_hatIndex - 1 + HatRegistry.All.Length) % HatRegistry.All.Length;
-        _RefreshHatDisplay();
-        await _PushHatUpdate();
-    }
-
-    private async void OnHatNext()
-    {
-        _hatIndex = (_hatIndex + 1) % HatRegistry.All.Length;
-        _RefreshHatDisplay();
-        await _PushHatUpdate();
-    }
-
-    /// <summary>
-    /// Renvoie le HatId du joueur local dans le snapshot fourni, ou le défaut
-    /// si l'utilisateur n'est pas authentifié / n'a pas encore d'entrée.
-    /// </summary>
-    private static string _LocalHatIdFromSnapshot(RoomSnapshot snapshot)
-    {
-        var me = Core.Auth.AuthServiceProvider.Instance.CurrentUser;
-        if (me is null) return HatRegistry.DefaultHatId;
-        if (!snapshot.Players.TryGetValue(me.Id, out var entry)) return HatRegistry.DefaultHatId;
-        return string.IsNullOrEmpty(entry.HatId) ? HatRegistry.DefaultHatId : entry.HatId;
-    }
-
-    private async System.Threading.Tasks.Task _PushHatUpdate()
-    {
-        var snapshot = LobbyState.Current;
-        var me = Core.Auth.AuthServiceProvider.Instance.CurrentUser;
-        if (snapshot is null || me is null) return;
-        _hatPrevButton.Disabled = true;
-        _hatNextButton.Disabled = true;
-        try
-        {
-            var newHatId = HatRegistry.All[_hatIndex].Id;
-            await RoomServiceProvider.Repository.UpdateHatAsync(snapshot.Code, me.Id, newHatId);
-
-            // Mise à jour locale du snapshot pour qu'un futur poll ne réécrase
-            // pas le choix avec un état stale, et pour que LobbyController.Enter
-            // lise la bonne valeur s'il s'exécute avant le prochain poll.
-            if (snapshot.Players.TryGetValue(me.Id, out var existing))
-            {
-                snapshot.Players[me.Id] = new RoomSnapshot.PlayerEntry
-                {
-                    Username = existing.Username,
-                    IsHost = existing.IsHost,
-                    HatId = newHatId
-                };
-            }
-        }
-        catch (System.Exception ex)
-        {
-            GD.PrintErr($"[Lobby] Hat update failed: {ex.Message}");
-        }
-        finally
-        {
-            _hatPrevButton.Disabled = false;
-            _hatNextButton.Disabled = false;
-        }
-    }
-
     private async System.Threading.Tasks.Task _PushMapUpdate()
     {
         var snapshot = LobbyState.Current;
@@ -304,34 +321,6 @@ public partial class LobbyScene : Control
             _mapPrevButton.Disabled = false;
             _mapNextButton.Disabled = false;
         }
-    }
-
-    private void RefreshPlayerList(RoomSnapshot snapshot)
-    {
-        foreach (Node child in _playersList.GetChildren())
-            child.QueueFree();
-
-        foreach (var (_, entry) in snapshot.Players)
-            AddPlayerRow(entry.Username, entry.IsHost);
-
-        _playersTitle.Text = $"Players ({snapshot.Players.Count} / {snapshot.MaxPlayers})";
-    }
-
-    private void AddPlayerRow(string username, bool isHost)
-    {
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 8);
-
-        var icon = new Label();
-        icon.Text = isHost ? "★" : "•";
-
-        var name = new Label();
-        name.Text = isHost ? $"{username}  (Hôte)" : username;
-        name.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-
-        row.AddChild(icon);
-        row.AddChild(name);
-        _playersList.AddChild(row);
     }
 
     private void OnLeavePressed()

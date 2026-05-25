@@ -48,6 +48,17 @@ public partial class MainMenu : Control
             var user = Core.Auth.AuthServiceProvider.Instance.CurrentUser
                 ?? throw new System.InvalidOperationException("Not authenticated.");
 
+            if (string.IsNullOrEmpty(LobbyState.ProfileUsername) || LobbyState.SelectedHatId == HatRegistry.DefaultHatId)
+            {
+                ShowStatus("Chargement du profil…");
+                var profile = await Core.Profile.ProfileServiceProvider.Instance.GetOrCreateProfileAsync(
+                    user.Id, user.Username);
+                LobbyState.SetProfileUsername(profile.Username);
+                LobbyState.SetSelectedHat(profile.SelectedHatId);
+            }
+
+            var displayName = !string.IsNullOrEmpty(LobbyState.ProfileUsername) ? LobbyState.ProfileUsername : user.Username;
+
             var snapshot = await RoomServiceProvider.Repository.GetAsync(Room.SharedLobbyCode);
             bool isHost;
 
@@ -65,17 +76,17 @@ public partial class MainMenu : Control
 
                 isHost = !lobbyHasLivingHost;
                 await RoomServiceProvider.Repository.AddPlayerAsync(
-                    Room.SharedLobbyCode, user.Id, user.Username, isHost);
+                    Room.SharedLobbyCode, user.Id, displayName, isHost, LobbyState.SelectedHatId);
                 if (isHost)
                     await RoomServiceProvider.Repository.UpdateHostAsync(
                         Room.SharedLobbyCode, user.Id);
                 snapshot.Players[user.Id] = new RoomSnapshot.PlayerEntry
-                { Username = user.Username, IsHost = isHost, HatId = HatRegistry.DefaultHatId };
+                { Username = displayName, IsHost = isHost, HatId = LobbyState.SelectedHatId };
             }
             else
             {
                 // No open lobby (or it's full / already started) — create a fresh one
-                var room = new Room(Room.SharedLobbyCode, user.Id, user.Username);
+                var room = new Room(Room.SharedLobbyCode, user.Id, displayName);
                 await RoomServiceProvider.Repository.CreateAsync(room, serverIp);
                 snapshot = new RoomSnapshot
                 {
@@ -88,7 +99,7 @@ public partial class MainMenu : Control
                     Players = new Dictionary<string, RoomSnapshot.PlayerEntry>
                     {
                         [user.Id] = new RoomSnapshot.PlayerEntry
-                        { Username = user.Username, IsHost = true, HatId = HatRegistry.DefaultHatId }
+                        { Username = displayName, IsHost = true, HatId = LobbyState.SelectedHatId }
                     }
                 };
                 isHost = true;
