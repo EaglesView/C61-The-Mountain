@@ -245,7 +245,7 @@ collision_mask = 5
 shape = SubResource("BoxShape3D_yy8ho")
 
 [node name="MeshInstance3D9" type="MeshInstance3D" parent="Iceberg" unique_id=1310363775]
-transform = Transform3D(34.28667, 0.22442602, 0, -2.9996943, 2.5652013, 0, 0, 0, 27.68177, -179.54309, 24.360058, 15.07403)
+transform = Transform3D(34.28667, 0.22442602, 0, -2.9996943, 2.5652013, 0, 0, 0, 27.68177, -179.34846, 24.34303, 15.07403)
 mesh = SubResource("BoxMesh_mgk26")
 
 [node name="StaticBody3D" type="StaticBody3D" parent="Iceberg/MeshInstance3D9" unique_id=868437350]
