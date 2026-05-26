@@ -380,6 +380,23 @@ public partial class NetworkManager : Node
                 StateReceived?.Invoke(respawned);
                 return;
             }
+            else if ((incomingFell || lastFell) && !_peerSpawn.ContainsKey(fromPeerId))
+            {
+                // Fallback si _peerSpawn n'a pas été peuplé
+                Vector3 fallbackSpawn = Vector3.Zero;
+                if (incomingFell)
+                    _provider.SendReliable(fromPeerId, PlayerNetState.SerializeCorrection(fromPeerId, fallbackSpawn));
+                var respawned = new PlayerNetState(
+                    state.PeerId, fallbackSpawn, Vector3.Zero,
+                    state.BodyYaw, state.HeadPitch, state.ArmPointDir,
+                    (byte)state.MoveState, (byte)state.EmoteState, state.Flags);
+                _lastKnownState[fromPeerId] = respawned;
+                _provider.BroadcastUnreliable(
+                    PlayerNetState.Serialize(PacketType.StateUpdate, respawned),
+                    excludePeerId: fromPeerId);
+                StateReceived?.Invoke(respawned);
+                return;
+            }
 
             // 2) Anti-teleport classique. Sur rejet, on rate-limite l'envoi de
             //    correction (la correction en vol n'est pas instantanée — pas

@@ -313,8 +313,8 @@ public partial class PhysicsSkeleton : Skeleton3D
 			float ang = qDelta.GetAngle();
 			if (ang > 1e-5f) frameAngVel = qDelta.GetAxis() * ang * invDt;
 		}
-		if (Engine.GetPhysicsFrames() % 30 == 0)
-			GD.Print($"frameAngVel={frameAngVel.Length():F3} frameLinVel={frameLinVel.Length():F3}");
+		//if (Engine.GetPhysicsFrames() % 30 == 0)
+		//	GD.Print($"frameAngVel={frameAngVel.Length():F3} frameLinVel={frameLinVel.Length():F3}");
 		_lastFramePos = frameXf.Origin;
 		_lastFrameBasis = frameXf.Basis;
 		_hasLastFrame = true;
