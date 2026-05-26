@@ -28,8 +28,22 @@ public sealed partial class MainController : Node3D
 		_fsm = new StateMachine<State>(State.Lobby, OnEnter, OnExit);
 
 		// Transition Lobby -> Jeu
+		// Sur serveur dédié, LobbyController.IsDone passe à true dès Enter()
+		// (pas d'UI à attendre), GameController auto-done à peers=0, et
+		// WinningController auto-done à peers=0 aussi. Sans ce gate, le
+		// serveur boucle Lobby→Game→Winning→Lobby à chaque frame tant
+		// qu'aucun client n'est connecté — instanciation/teardown du
+		// map_container 60 fois par seconde. On reste donc en Lobby tant
+		// que personne n'est connecté ; pour les clients la condition est
+		// inerte (ils ont toujours au moins le serveur comme peer).
 		_fsm.When(State.Lobby,
-			new PredicateCondition<State>(() => _phases[State.Lobby].IsDone),
+			new PredicateCondition<State>(() =>
+			{
+				if (!_phases[State.Lobby].IsDone) return false;
+				var net = NetworkManager.Instance;
+				if (net is not null && net.IsServer && Multiplayer.GetPeers().Length == 0) return false;
+				return true;
+			}),
 			State.Game
 		);
 		// Transition Jeu -> Winning
@@ -80,8 +94,17 @@ public sealed partial class MainController : Node3D
 		_fsm.Tick((float)delta);
 	}
 
-	private void OnEnter(State s) { _current = _phases[s]; _current.Enter(); }
-	private void OnExit(State s) { _phases[s].Exit(); }
+	private void OnEnter(State s)
+	{
+		GD.Print($"[LoadDiag] MainController phase ENTER: {s} (server={NetworkManager.Instance?.IsServer ?? false})");
+		_current = _phases[s];
+		_current.Enter();
+	}
+	private void OnExit(State s)
+	{
+		GD.Print($"[LoadDiag] MainController phase EXIT: {s} (server={NetworkManager.Instance?.IsServer ?? false})");
+		_phases[s].Exit();
+	}
 
 	private void OnServerDisconnected()
 	{
