@@ -55,7 +55,7 @@ public static class HatRegistry
         {
             Id = "summerhat",
             DisplayName = "Chapeau d'été",
-            ScenePath = "res://Assets/Models/hats/SummerHat1/scene.gltf"
+                ScenePath = "res://Assets/Models/hats/SummerHat1/scene.glb"
         },
         new HatDefinition
         {
