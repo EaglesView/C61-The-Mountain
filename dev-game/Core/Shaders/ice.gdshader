@@ -12,7 +12,7 @@ uniform sampler2D surface_normalmap : hint_normal, filter_linear_mipmap, repeat_
 // Here's another CC0 ice texture -> https://ambientcg.com/view?id=Ice002
 // You can use the displacement map of this texture as the under_texture
 
-uniform vec4 top_color : source_color = vec4(0.6764, 0.980092, 1.0, 1.0);
+uniform vec4 top_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
 uniform float depth : hint_range(0.0, 1.0, 0.005) = 0.1;
 uniform float normal_depth : hint_range(0.0, 4.0, 0.05) = 1.0;
 uniform float roughness : hint_range(0.0, 1.0) = 0.0;

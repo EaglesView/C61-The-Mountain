@@ -14,7 +14,7 @@ namespace Core.Stats;
 public sealed class SubwinningResolver
 {
     /// <summary>Une entrée de sous-gagnant&#160;: peer + identifiant + libellé de la condition gagnée.</summary>
-    public sealed record SubWinnerEntry(int PeerId, string ConditionId, string DisplayName, float Score);
+    public sealed record SubWinnerEntry(int PeerId, string ConditionId, string DisplayName, string Detail, float Score);
 
     /// <summary>
     /// Résultat de l'algorithme. <c>MainWinnerPeerId == 0</c> signifie qu'aucune condition
@@ -24,6 +24,7 @@ public sealed class SubwinningResolver
         int MainWinnerPeerId,
         string MainConditionId,
         string MainConditionDisplayName,
+        string MainConditionDetail,
         IReadOnlyList<SubWinnerEntry> SubWinners);
 
     private const int MaxSubWinners = 3;
@@ -40,14 +41,20 @@ public sealed class SubwinningResolver
             var (peerId, relevance) = wc.Condition.Evaluate(InStats);
             if (peerId == 0 || relevance <= 0f) continue;
 
+            string detail = "";
+            if (InStats.TryGetValue(peerId, out var stats))
+            {
+                detail = wc.Condition.FormatDetail(stats);
+            }
+
             float finalScore = wc.Condition.BaseWeight * wc.ModeWeight * relevance;
-            scored.Add(new SubWinnerEntry(peerId, wc.Condition.Id, wc.Condition.DisplayName, finalScore));
+            scored.Add(new SubWinnerEntry(peerId, wc.Condition.Id, wc.Condition.DisplayName, detail, finalScore));
         }
 
         scored.Sort((a, b) => b.Score.CompareTo(a.Score));
 
         if (scored.Count == 0)
-            return new Result(0, "", "", System.Array.Empty<SubWinnerEntry>());
+            return new Result(0, "", "", "", System.Array.Empty<SubWinnerEntry>());
 
         var main = scored[0];
         var subs = new List<SubWinnerEntry>(MaxSubWinners);
@@ -65,7 +72,7 @@ public sealed class SubwinningResolver
             subs.Add(scored[i]);
         }
 
-        return new Result(main.PeerId, main.ConditionId, main.DisplayName, subs);
+        return new Result(main.PeerId, main.ConditionId, main.DisplayName, main.Detail, subs);
     }
 
     private static int CountUniquePeers(IReadOnlyDictionary<int, PlayerGameStats> InStats)

@@ -26,4 +26,9 @@ public sealed class LastSurvivorCondition : ISubwinningCondition
         }
         return count == 1 ? (survivor, 1f) : (0, 0f);
     }
+
+    public string FormatDetail(PlayerGameStats InStats)
+    {
+        return "Survécu";
+    }
 }

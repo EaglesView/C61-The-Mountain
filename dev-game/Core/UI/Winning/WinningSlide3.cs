@@ -20,7 +20,7 @@ public sealed partial class WinningSlide3 : MarginContainer
 	[Signal] public delegate void MapVoteCastEventHandler(string InMapId);
 
 	/// <summary>Émis quand l'hôte confirme le résultat du vote (bouton CONFIRM).</summary>
-	[Signal] public delegate void VoteConfirmedEventHandler(string InMapId);
+    [Signal] public delegate void VoteConfirmedEventHandler(string InMapId);
 
 	/// <summary>Émis quand l'utilisateur clique sur QUIT (sortie volontaire).</summary>
 	[Signal] public delegate void QuitPressedEventHandler();
@@ -63,6 +63,8 @@ public sealed partial class WinningSlide3 : MarginContainer
 			else continue;
 
 			_mapGrid.AddChild(item);
+			item.CustomMinimumSize = new Vector2(400, 250);
+			item.Visible = true;
 			item.SetMap(def.Id, def.DisplayName, def.ImagePath);
 			item.SetVoteCount(0);
 			item.Selected += OnMapSelected;
@@ -80,6 +82,8 @@ public sealed partial class WinningSlide3 : MarginContainer
 				else continue;
 
 				_lobbyList.AddChild(user);
+				user.CustomMinimumSize = new Vector2(380, 32);
+				user.Visible = true;
 				user.SetUser(player.Username, player.IsHost);
 				_spawnedLobbyUsers.Add(user);
 			}
@@ -96,6 +100,8 @@ public sealed partial class WinningSlide3 : MarginContainer
 			if (user is not null)
 			{
 				_lobbyList.AddChild(user);
+				user.CustomMinimumSize = new Vector2(380, 32);
+				user.Visible = true;
 				user.SetUser(localUsername, true);
 				_spawnedLobbyUsers.Add(user);
 			}
@@ -108,21 +114,21 @@ public sealed partial class WinningSlide3 : MarginContainer
 
 	/// <summary>
 	/// Détruit les items spawned à l'entrée précédente (les templates de la scène
-	/// sont conservés). Doit être appelé en sortie de slide.
-	/// </summary>
-	public void ClearSpawned()
-	{
-		foreach (var item in _spawnedMapItems) if (IsInstanceValid(item)) item.QueueFree();
-		foreach (var user in _spawnedLobbyUsers) if (IsInstanceValid(user)) user.QueueFree();
-		_spawnedMapItems.Clear();
-		_spawnedLobbyUsers.Clear();
-		_selectedMapId = "";
-		_majorityMapId = "";
-		_populated = false;
-	}
+    /// sont conservés). Doit être appelé en sortie de slide.
+    /// </summary>
+    public void ClearSpawned()
+    {
+        foreach (var item in _spawnedMapItems) if (IsInstanceValid(item)) item.QueueFree();
+        foreach (var user in _spawnedLobbyUsers) if (IsInstanceValid(user)) user.QueueFree();
+        _spawnedMapItems.Clear();
+        _spawnedLobbyUsers.Clear();
+        _selectedMapId = "";
+        _majorityMapId = "";
+        _populated = false;
+    }
 
-	/// <summary>
-	/// Met à jour le compteur de votes par map et le candidat majoritaire&#160;:
+    /// <summary>
+    /// Met à jour le compteur de votes par map et le candidat majoritaire&#160;:
 	/// rafraîchit les <c>VoteCountLabel</c> et l'état du bouton CONFIRM.
 	/// </summary>
 	public void ApplyTally(Godot.Collections.Dictionary<string, int> InCounts, string InMajorityMapId)
@@ -137,30 +143,30 @@ public sealed partial class WinningSlide3 : MarginContainer
 	}
 
 	/// <summary>Indique si ce client est l'hôte (autorisé à confirmer le vote).</summary>
-	public void SetIsHost(bool InIsHost)
-	{
-		_isHost = InIsHost;
-		RefreshConfirmButton();
-	}
+    public void SetIsHost(bool InIsHost)
+    {
+        _isHost = InIsHost;
+        RefreshConfirmButton();
+    }
 
-	public override void _Ready()
-	{
-		_mapGrid = GetNodeOrNull<GridContainer>("Panel/HBoxContainer/LeftPanel/VBoxContainer/ScrollContainer/GridContainer");
-		_lobbyList = GetNodeOrNull<VBoxContainer>("Panel/HBoxContainer/RightPanel/MainLobbyPanel/VBoxContainer/LobbyPanel/VBoxContainer");
-		_quitButton = GetNodeOrNull<Button>("Panel/HBoxContainer/LeftPanel/VBoxContainer/BottomControls/ButtonMargin1/QuitButton");
-		_confirmButton = GetNodeOrNull<Button>("Panel/HBoxContainer/LeftPanel/VBoxContainer/BottomControls/ButtonMargin3/Button");
+    public override void _Ready()
+    {
+        _mapGrid = GetNodeOrNull<GridContainer>("Panel/HBoxContainer/LeftPanel/VBoxContainer/ScrollContainer/GridContainer");
+        _lobbyList = GetNodeOrNull<VBoxContainer>("Panel/HBoxContainer/RightPanel/MainLobbyPanel/VBoxContainer/LobbyPanel/VBoxContainer");
+        _quitButton = GetNodeOrNull<Button>("Panel/HBoxContainer/LeftPanel/VBoxContainer/BottomControls/ButtonMargin1/QuitButton");
+        _confirmButton = GetNodeOrNull<Button>("Panel/HBoxContainer/LeftPanel/VBoxContainer/BottomControls/ButtonMargin3/Button");
 
-		_mapItemTemplate = _mapGrid?.GetNodeOrNull<MapGridItem>("MapGridItem");
-		_lobbyUserTemplate = _lobbyList?.GetNodeOrNull<LobbyUser>("LobbyUser");
+        _mapItemTemplate = _mapGrid?.GetNodeOrNull<MapGridItem>("MapGridItem");
+        _lobbyUserTemplate = _lobbyList?.GetNodeOrNull<LobbyUser>("LobbyUser");
 
-		// Les templates qui vivent dans la scène servent uniquement de référence
+        // Les templates qui vivent dans la scène servent uniquement de référence
 		// visuelle dans l'éditeur&#160;: on les cache à l'exécution pour ne pas
-		// laisser un item «&#160;vide&#160;» (mapId="") cliquable au-dessus des items
-		// instanciés depuis MapRegistry.
-		if (_mapItemTemplate is not null) _mapItemTemplate.Visible = false;
-		if (_lobbyUserTemplate is not null) _lobbyUserTemplate.Visible = false;
+        // laisser un item «&#160;vide&#160;» (mapId="") cliquable au-dessus des items
+        // instanciés depuis MapRegistry.
+        if (_mapItemTemplate is not null) _mapItemTemplate.Visible = false;
+        if (_lobbyUserTemplate is not null) _lobbyUserTemplate.Visible = false;
 
-		// Bouton intermédiaire «&#160;VOTE SELECTED&#160;» laissé en place dans la
+        // Bouton intermédiaire «&#160;VOTE SELECTED&#160;» laissé en place dans la
 		// scène mais sans rôle&#160;: la sélection d'une map vaut déjà vote (cf.
 		// OnMapSelected). On le masque pour éviter le bouton-mort visible.
 		var voteSelectedBtn = GetNodeOrNull<Button>("Panel/HBoxContainer/LeftPanel/VBoxContainer/BottomControls/ButtonMargin2/Button");

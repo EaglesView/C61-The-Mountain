@@ -91,9 +91,10 @@ public partial class ProfileScene : Control
 		// _cameraPivot.RotateY(-delta * 0.008f).
 		_preview.Mode = Preview.InteractionMode.MouseLook;
 		viewport.AddChild(_preview);
-		// Le hat initial sera posé par _ApplySelectedHat() depuis LoadProfile()
-		// une fois le profil chargé; Preview._Ready a déjà spawné un penguin
-		// avec LobbyState.SelectedHatId par défaut, ce qui suffit avant LoadProfile.
+		// Spawn explicite&#160;: Preview ne fait plus d'auto-spawn en _Ready (cf.
+		// commentaire dans Preview.cs). LoadProfile() ré-applique ensuite le
+		// hat sauvegardé via SetHat() une fois le profil récupéré.
+		_preview.SpawnCharacter(LobbyState.SelectedHatId);
 		_preview.BindMouseInput(svContainer);
 	}
 

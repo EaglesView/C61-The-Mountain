@@ -13,13 +13,13 @@ public partial class LobbyScene : Control
 	/// </summary>
 	[Signal] public delegate void GameStartRequestedEventHandler();
 
-	private Label  _codeValue     = null!;
-	private Label  _statusValue   = null!;
-	private Label  _mapValue      = null!;
+	private Label _codeValue = null!;
+	private Label _statusValue = null!;
+	private Label _mapValue = null!;
 	private Button _mapPrevButton = null!;
 	private Button _mapNextButton = null!;
-	private Button _leaveButton   = null!;
-	private Button _startButton   = null!;
+	private Button _leaveButton = null!;
+	private Button _startButton = null!;
 
 	private HBoxContainer _penguinsRow = null!;
 	private readonly Dictionary<string, Control> _playerSlots = new();
@@ -29,28 +29,29 @@ public partial class LobbyScene : Control
 	// pour BindMouseInput côté local. Keyé par userId comme _playerSlots.
 	private readonly Dictionary<string, (Preview preview, SubViewportContainer container)> _previewSlots = new();
 
-	private bool  _leaving = false;
-	private bool  _wasHost = false;
-	private int   _mapIndex = 0;
+	private bool _leaving = false;
+	private bool _wasHost = false;
+	private bool _isLocal = false;
+	private int _mapIndex = 0;
 	private ulong _instantiatedAtMsec;
-	private const float PollInterval            = 4.0f;
+	private const float PollInterval = 4.0f;
 	private const ulong StartedTriggerGraceMsec = 4_000;
 
 	public override void _Ready()
 	{
 		_instantiatedAtMsec = Time.GetTicksMsec();
 		const string TopHBox = "VBox/TopBar/Margin/HBox";
-		_codeValue     = GetNode<Label> ($"{TopHBox}/CodeValue");
-		_statusValue   = GetNode<Label> ($"{TopHBox}/StatusValue");
-		_mapValue      = GetNode<Label> ($"{TopHBox}/MapBox/MapValue");
+		_codeValue = GetNode<Label>($"{TopHBox}/CodeValue");
+		_statusValue = GetNode<Label>($"{TopHBox}/StatusValue");
+		_mapValue = GetNode<Label>($"{TopHBox}/MapBox/Panel/MapValue");
 		_mapPrevButton = GetNode<Button>($"{TopHBox}/MapBox/MapPrev");
 		_mapNextButton = GetNode<Button>($"{TopHBox}/MapBox/MapNext");
-		_leaveButton   = GetNode<Button>($"{TopHBox}/LeaveButton");
-		_startButton   = GetNode<Button>($"{TopHBox}/StartButton");
-		_penguinsRow   = GetNode<HBoxContainer>("VBox/PlayersArea/Center/PenguinsRow");
+		_leaveButton = GetNode<Button>($"{TopHBox}/LeaveButton");
+		_startButton = GetNode<Button>($"{TopHBox}/StartButton");
+		_penguinsRow = GetNode<HBoxContainer>("VBox/PlayersArea/Center/PenguinsRow");
 
-		_leaveButton.Pressed   += OnLeavePressed;
-		_startButton.Pressed   += OnStartPressed;
+		_leaveButton.Pressed += OnLeavePressed;
+		_startButton.Pressed += OnStartPressed;
 		_mapPrevButton.Pressed += OnMapPrev;
 		_mapNextButton.Pressed += OnMapNext;
 
@@ -62,15 +63,15 @@ public partial class LobbyScene : Control
 			return;
 		}
 
-		_codeValue.Text   = snapshot.Code;
+		_codeValue.Text = snapshot.Code;
 		_statusValue.Text = snapshot.Status;
 		_mapIndex = MapRegistry.IndexOf(snapshot.MapId);
 		_RefreshMapDisplay();
 
 		_mapPrevButton.Visible = LobbyState.IsHost;
 		_mapNextButton.Visible = LobbyState.IsHost;
-		_startButton.Visible   = LobbyState.IsHost;
-		_startButton.Disabled  = !LobbyState.IsHost;
+		_startButton.Visible = LobbyState.IsHost;
+		_startButton.Disabled = !LobbyState.IsHost;
 
 		RefreshPlayerDisplay(snapshot);
 
@@ -147,6 +148,9 @@ public partial class LobbyScene : Control
 		viewport.TransparentBg = true;
 		viewport.HandleInputLocally = false;
 		viewport.RenderTargetUpdateMode = SubViewport.UpdateMode.Always;
+		// Sans World3D propre, tous les SubViewports partagent le monde du
+		// parent ⇒ chaque caméra voit TOUS les penguins de TOUS les slots.
+		viewport.OwnWorld3D = true;
 		svContainer.AddChild(viewport);
 
 		var packed = ResourceLoader.Load<PackedScene>(PreviewScenePath);
@@ -180,7 +184,7 @@ public partial class LobbyScene : Control
 
 	private async void OnPollTick()
 	{
-		if (_leaving || !IsInsideTree()) return;
+		if (_leaving || !IsInsideTree() || _isLocal) return;
 
 		var snapshot = LobbyState.Current;
 		if (snapshot is null) return;

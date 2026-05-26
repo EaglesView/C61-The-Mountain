@@ -11,6 +11,7 @@
 [ext_resource type="PackedScene" uid="uid://blchon3025mrj" path="res://Core/World/Terrain/WindArea/wind_zone_dcm.tscn" id="9_pien6"]
 [ext_resource type="PackedScene" uid="uid://cihs25qij1jtb" path="res://Core/World/Terrain/WindArea/wind_area.tscn" id="10_u8372"]
 [ext_resource type="Script" uid="uid://dds81g3nsewph" path="res://Core/World/MapAssets/MainAssets/SnowballSpawner.cs" id="11_u8372"]
+[ext_resource type="PackedScene" uid="uid://pyyf2q46j574" path="res://Core/World/CharacterModel/Player/Player.tscn" id="12_s4n5g"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_u8372"]
 albedo_texture = ExtResource("1_0jqa6")
@@ -160,3 +161,7 @@ CollisionShape = SubResource("SphereShape3D_s4n5g")
 PhysicsMaterial = SubResource("PhysicsMaterial_d6ibe")
 CollisionLayer = 2
 CollisionMask = 7
+
+[node name="Player" parent="." unique_id=1298834634 instance=ExtResource("12_s4n5g")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 36.805702, 3.0018435, 0)
+SpeedRagdollThreshold = 575.8290000000001

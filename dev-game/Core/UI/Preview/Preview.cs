@@ -62,10 +62,12 @@ public partial class Preview : Node3D
 	private const float DragYawPerPixel = 0.008f;
 	private const float DragPitchPerPixel = 0.005f;
 
-	public override void _Ready()
-	{
-		SpawnCharacter(LobbyState.SelectedHatId);
-	}
+	// Volontairement pas d'_Ready avec SpawnCharacter par défaut&#160;: en lobby,
+	// le slot peut être instancié AVANT d'entrer dans l'arbre (chaîne
+	// viewport→container→vbox→penguinsRow), et l'hôte appelle SpawnCharacter
+	// avec le bon hatId entre les deux. Un auto-spawn ici écraserait ce hatId
+	// quand la chaîne entre enfin dans l'arbre et déclenche _Ready. Les
+	// appelants sont responsables d'appeler SpawnCharacter / Show.
 
 	/// <summary>
 	/// Instancie le penguin avec le chapeau demandé. Idempotent&#160;: libère

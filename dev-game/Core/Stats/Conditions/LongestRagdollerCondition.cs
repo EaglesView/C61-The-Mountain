@@ -36,4 +36,9 @@ public sealed class LongestRagdollerCondition : ISubwinningCondition
         float relevance = (max - secondMax) / max;
         return (leader, relevance);
     }
+
+    public string FormatDetail(PlayerGameStats InStats)
+    {
+        return $"{InStats.TotalRagdollSeconds:F1}s";
+    }
 }
