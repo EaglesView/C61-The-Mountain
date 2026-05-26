@@ -1296,7 +1296,11 @@ public sealed partial class GameController : Node3D, IPhase
     private void TickClientReadyRetry(float InDelta)
     {
         if (_clientSpawnAcked) return;
-        if (_localPlayer is not null) return; // spawn replicated localement, OK
+        // Le MultiplayerSpawner peut répliquer le pawn local AVANT que
+        // ServerSetMap n'arrive (ENet sync auto). Ne sortir que si la map
+        // est aussi chargée — sinon on resterait coincé sans _mode et le
+        // watchdog tuerait le loading après son timeout.
+        if (_mode is not null && _localPlayer is not null) return;
         var net = NetworkManager.Instance;
         if (net is null || !net.IsClient) return;
         if (_clientReadyRetries >= ClientReadyMaxRetries) return;
