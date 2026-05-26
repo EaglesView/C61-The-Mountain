@@ -24,6 +24,13 @@ public sealed class PlayerProfileUseCase
         return profile;
     }
 
+    public Task<PlayerProfile?> GetProfileAsync(string userId)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+            return Task.FromResult<PlayerProfile?>(null);
+        return _repository.GetByUserIdAsync(userId);
+    }
+
     public async Task<PlayerProfile> UpdateUsernameAsync(string userId, string newUsername)
     {
         if (string.IsNullOrWhiteSpace(newUsername) || newUsername.Trim().Length < 2)

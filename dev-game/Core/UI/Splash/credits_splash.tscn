@@ -5,7 +5,7 @@
 [ext_resource type="FontFile" uid="uid://d3iekdubpmgvd" path="res://Assets/fonts/Gorditas/Gorditas-Bold.ttf" id="3_bold"]
 [ext_resource type="FontFile" uid="uid://1ub3n8rl4quv" path="res://Assets/fonts/Gorditas/Gorditas-Regular.ttf" id="4_regular"]
 
-[node name="CreditsScene" type="Control" unique_id=1115306295 node_paths=PackedStringArray("_creditsContent", "_backButton")]
+[node name="CreditsScene" type="Control" unique_id=1115306295 node_paths=PackedStringArray("_creditsContent", "_backButton", "_developersGrid", "_testersGrid")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -16,6 +16,8 @@ theme = ExtResource("2_theme")
 script = ExtResource("1_credits")
 _creditsContent = NodePath("ClipContainer/CreditsContent")
 _backButton = NodePath("BackButton")
+_developersGrid = NodePath("ClipContainer/CreditsContent/DevelopersGrid")
+_testersGrid = NodePath("ClipContainer/CreditsContent/TestersGrid")
 
 [node name="Background" type="ColorRect" parent="." unique_id=773488481]
 layout_mode = 1
@@ -84,8 +86,86 @@ layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("4_regular")
 theme_override_font_sizes/font_size = 22
-text = "jim"
+text = "Profils chargés depuis Firebase"
 horizontal_alignment = 1
+
+[node name="SepDevelopersTop" type="Control" parent="ClipContainer/CreditsContent" unique_id=1799001001]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+
+[node name="DevelopersGrid" type="GridContainer" parent="ClipContainer/CreditsContent" unique_id=708001002]
+layout_mode = 2
+size_flags_horizontal = 4
+columns = 2
+theme_override_constants/separation = 44
+
+[node name="DevCard1" type="VBoxContainer" parent="ClipContainer/CreditsContent/DevelopersGrid" unique_id=708001003]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ViewportContainer" type="SubViewportContainer" parent="ClipContainer/CreditsContent/DevelopersGrid/DevCard1" unique_id=708001004]
+custom_minimum_size = Vector2(190, 240)
+layout_mode = 2
+stretch = true
+
+[node name="PreviewViewport" type="SubViewport" parent="ClipContainer/CreditsContent/DevelopersGrid/DevCard1/ViewportContainer" unique_id=708001005]
+size = Vector2i(190, 240)
+transparent_bg = true
+handle_input_locally = false
+render_target_update_mode = 4
+own_world_3d = true
+
+[node name="RoleLabel" type="Label" parent="ClipContainer/CreditsContent/DevelopersGrid/DevCard1" unique_id=708001006]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 20
+text = "Développeur"
+horizontal_alignment = 1
+
+[node name="NameLabel" type="Label" parent="ClipContainer/CreditsContent/DevelopersGrid/DevCard1" unique_id=708001007]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("4_regular")
+theme_override_font_sizes/font_size = 18
+text = "loading..."
+horizontal_alignment = 1
+
+[node name="DevCard2" type="VBoxContainer" parent="ClipContainer/CreditsContent/DevelopersGrid" unique_id=708001008]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ViewportContainer" type="SubViewportContainer" parent="ClipContainer/CreditsContent/DevelopersGrid/DevCard2" unique_id=708001009]
+custom_minimum_size = Vector2(190, 240)
+layout_mode = 2
+stretch = true
+
+[node name="PreviewViewport" type="SubViewport" parent="ClipContainer/CreditsContent/DevelopersGrid/DevCard2/ViewportContainer" unique_id=708001010]
+size = Vector2i(190, 240)
+transparent_bg = true
+handle_input_locally = false
+render_target_update_mode = 4
+own_world_3d = true
+
+[node name="RoleLabel" type="Label" parent="ClipContainer/CreditsContent/DevelopersGrid/DevCard2" unique_id=708001011]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 20
+text = "Développeur"
+horizontal_alignment = 1
+
+[node name="NameLabel" type="Label" parent="ClipContainer/CreditsContent/DevelopersGrid/DevCard2" unique_id=708001012]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("4_regular")
+theme_override_font_sizes/font_size = 18
+text = "loading..."
+horizontal_alignment = 1
+
+[node name="SepDevelopersBottom" type="Control" parent="ClipContainer/CreditsContent" unique_id=1799001002]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
 
 [node name="Sep3" type="Control" parent="ClipContainer/CreditsContent" unique_id=125441480]
 custom_minimum_size = Vector2(0, 60)
@@ -137,6 +217,92 @@ horizontal_alignment = 1
 
 [node name="Sep7" type="Control" parent="ClipContainer/CreditsContent" unique_id=1289993811]
 custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+
+[node name="TestersTitle" type="Label" parent="ClipContainer/CreditsContent" unique_id=108880001]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 28
+text = "— Nos testeurs —"
+horizontal_alignment = 1
+
+[node name="SepTesters" type="Control" parent="ClipContainer/CreditsContent" unique_id=108880002]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+
+[node name="TestersGrid" type="GridContainer" parent="ClipContainer/CreditsContent" unique_id=108880003]
+layout_mode = 2
+size_flags_horizontal = 4
+columns = 2
+theme_override_constants/separation = 44
+
+[node name="TesterCard1" type="VBoxContainer" parent="ClipContainer/CreditsContent/TestersGrid" unique_id=108880004]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ViewportContainer" type="SubViewportContainer" parent="ClipContainer/CreditsContent/TestersGrid/TesterCard1" unique_id=108880005]
+custom_minimum_size = Vector2(190, 240)
+layout_mode = 2
+stretch = true
+
+[node name="PreviewViewport" type="SubViewport" parent="ClipContainer/CreditsContent/TestersGrid/TesterCard1/ViewportContainer" unique_id=108880006]
+size = Vector2i(190, 240)
+transparent_bg = true
+handle_input_locally = false
+render_target_update_mode = 4
+own_world_3d = true
+
+[node name="RoleLabel" type="Label" parent="ClipContainer/CreditsContent/TestersGrid/TesterCard1" unique_id=108880007]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 20
+text = "Testeur"
+horizontal_alignment = 1
+
+[node name="NameLabel" type="Label" parent="ClipContainer/CreditsContent/TestersGrid/TesterCard1" unique_id=108880008]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("4_regular")
+theme_override_font_sizes/font_size = 18
+text = "loading..."
+horizontal_alignment = 1
+
+[node name="TesterCard2" type="VBoxContainer" parent="ClipContainer/CreditsContent/TestersGrid" unique_id=108880009]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ViewportContainer" type="SubViewportContainer" parent="ClipContainer/CreditsContent/TestersGrid/TesterCard2" unique_id=108880010]
+custom_minimum_size = Vector2(190, 240)
+layout_mode = 2
+stretch = true
+
+[node name="PreviewViewport" type="SubViewport" parent="ClipContainer/CreditsContent/TestersGrid/TesterCard2/ViewportContainer" unique_id=108880011]
+size = Vector2i(190, 240)
+transparent_bg = true
+handle_input_locally = false
+render_target_update_mode = 4
+own_world_3d = true
+
+[node name="RoleLabel" type="Label" parent="ClipContainer/CreditsContent/TestersGrid/TesterCard2" unique_id=108880012]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 20
+text = "Testeur"
+horizontal_alignment = 1
+
+[node name="NameLabel" type="Label" parent="ClipContainer/CreditsContent/TestersGrid/TesterCard2" unique_id=108880013]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("4_regular")
+theme_override_font_sizes/font_size = 18
+text = "loading..."
+horizontal_alignment = 1
+
+[node name="SepTestersBottom" type="Control" parent="ClipContainer/CreditsContent" unique_id=108880014]
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 
 [node name="EndLabel" type="Label" parent="ClipContainer/CreditsContent" unique_id=938207334]
