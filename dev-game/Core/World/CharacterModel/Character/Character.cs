@@ -63,34 +63,66 @@ public partial class Character : CharacterBody3D
     private CollisionShape3D? _spineCollBox;
     public Vector3 SpawnPosition { get; set; } = Vector3.Zero;
 
-
-    public void RotateHead(float InXAngle)
-    {
-        prevHeadAngle = headAngle;
-        headAngle = InXAngle;
-    }
-    public void PointAt(Vector3 InDirection)
-    {
-        PhysicsSkelton.ArmPointDir = InDirection;
-    }
-    public Vector3 GetHeadBonePosition()
-    {
-        return PhysicsSkelton.GetPoseTargetSkel().Origin;
-    }
-    public Vector3 GetPhysicsHeadBonePosition()
-    {
-        return PhysicsSkelton.GetPoseTargetSkel(true).Origin;
-    }
-    public float GetHeadAngle() => headAngle;
-    public CharacterState GetCurrentState() => _characterState;
-
-    // ── Network ──────────────────────────────────────────────────────────────
-
-    public int PeerId { get; set; } = 0;
-
-    // ── Stats (authority only) ───────────────────────────────────────────────
-
     /// <summary>
+    /// Durée (en secondes) pendant laquelle ce personnage est immunisé contre
+    /// les morts «&#160;environnementales&#160;» (Water&#160;: noyade) après son spawn. Couvre
+	/// la fenêtre où les <c>PhysicalBone3D</c> du squelette n'ont pas encore
+	/// rattrapé la transform du <c>CharacterBody3D</c>&#160;: leurs positions
+	/// transitoires au repos peuvent déclencher des <c>body_entered</c> sur
+	/// l'<c>Area3D</c> de l'eau alors que le corps lui-même est sur la
+	/// plateforme. Sert aussi à laisser le filet de sécurité aux téléportations
+	/// (respawn) déclenchées par le serveur.
+	/// </summary>
+	[Export(PropertyHint.Range, "0.0f,5.0f,0.05f,suffix:sec")] public float SpawnProtectionDuration = 0.75f;
+
+	private ulong _spawnProtectionUntilMsec = 0UL;
+
+	/// <summary>
+	/// Vrai tant que le personnage est encore dans sa fenêtre de protection
+	/// post-spawn. Consommé par <see cref="Water"/> pour ignorer les morts par
+	/// noyade transitoires.
+	/// </summary>
+	public bool IsSpawnProtected => Time.GetTicksMsec() < _spawnProtectionUntilMsec;
+
+	/// <summary>
+	/// (Re)déclenche la protection post-spawn. Appelé par <see cref="_Ready"/>
+	/// et utilisable par les systèmes de respawn pour réarmer la fenêtre après
+	/// une téléportation forcée.
+	/// </summary>
+	public void ArmSpawnProtection()
+	{
+		float d = MathF.Max(0f, SpawnProtectionDuration);
+		_spawnProtectionUntilMsec = Time.GetTicksMsec() + (ulong)(d * 1000f);
+	}
+
+
+	public void RotateHead(float InXAngle)
+	{
+		prevHeadAngle = headAngle;
+		headAngle = InXAngle;
+	}
+	public void PointAt(Vector3 InDirection)
+	{
+		PhysicsSkelton.ArmPointDir = InDirection;
+	}
+	public Vector3 GetHeadBonePosition()
+	{
+		return PhysicsSkelton.GetPoseTargetSkel().Origin;
+	}
+	public Vector3 GetPhysicsHeadBonePosition()
+	{
+		return PhysicsSkelton.GetPoseTargetSkel(true).Origin;
+	}
+	public float GetHeadAngle() => headAngle;
+	public CharacterState GetCurrentState() => _characterState;
+
+	// ── Network ──────────────────────────────────────────────────────────────
+
+	public int PeerId { get; set; } = 0;
+
+	// ── Stats (authority only) ───────────────────────────────────────────────
+
+	/// <summary>
 	/// Compteurs de la partie en cours. Rempli sur l'instance authority uniquement
 	/// (les répliques distantes ne tracent rien&#160;: le serveur agrège la version
 	/// authoritative via le RPC <c>SubmitStats</c> en fin de phase Game).
@@ -113,44 +145,58 @@ public partial class Character : CharacterBody3D
 	/// Émis lorsque ce personnage entre en état <see cref="CharacterState.Dead"/>.
 	/// Fire-once par mort&#160;: l'événement n'est pas réémis si <see cref="Die"/> est rappelé
 	/// alors qu'on est déjà mort (idempotent). Signature&#160;: <c>(peerId, reason)</c>.
-    /// Hook prévu pour le futur service de stats.
-    /// </summary>
-    public event System.Action<int, DeathReason> Died;
+	/// Hook prévu pour le futur service de stats.
+	/// </summary>
+	public event System.Action<int, DeathReason> Died;
 
-    /// <summary>
-    /// Bascule le personnage en mort. Application locale uniquement&#160;: la propagation réseau
-    /// (RPC) est faite par <see cref="Player.RequestDeath"/> côté authority/serveur.
-    /// Idempotent&#160;: ne fait rien si déjà mort.
-    /// </summary>
-    /// <param name="InReason">Cause de la mort, transmise au futur système de stats.</param>
-    public virtual void Die(DeathReason InReason)
-    {
-        if (_characterState == CharacterState.Dead) return;
-        // Diagnostic&#160;: imprime la cause + une stack trace managée pour identifier
-        // quel call site a déclenché la mort. À retirer une fois la cause des
-        // morts spurieuses comprise.
-        GD.Print($"[Character.Die] peer={PeerId} reason={InReason} authority={IsMultiplayerAuthority()} pos={GlobalPosition}\n{System.Environment.StackTrace}");
-        LastDeathReason = InReason;
-        if (IsMultiplayerAuthority())
-        {
-            _stats.PeerId = PeerId;
-            _stats.TimeOfDeathSeconds = GameController.GameElapsedSeconds;
-            _stats.DeathReason = InReason;
-        }
-        TransitionTo(CharacterState.Dead);
-        Died?.Invoke(PeerId, InReason);
-    }
+	/// <summary>
+	/// Bascule le personnage en mort. Application locale uniquement&#160;: la propagation réseau
+	/// (RPC) est faite par <see cref="Player.RequestDeath"/> côté authority/serveur.
+	/// Idempotent&#160;: ne fait rien si déjà mort.
+	/// </summary>
+	/// <param name="InReason">Cause de la mort, transmise au futur système de stats.</param>
+	public virtual void Die(DeathReason InReason)
+	{
+		if (_characterState == CharacterState.Dead) return;
+		// Diagnostic&#160;: imprime la cause + une stack trace managée pour identifier
+		// quel call site a déclenché la mort. À retirer une fois la cause des
+		// morts spurieuses comprise.
+		GD.Print($"[Character.Die] peer={PeerId} reason={InReason} authority={IsMultiplayerAuthority()} pos={GlobalPosition}\n{System.Environment.StackTrace}");
+		LastDeathReason = InReason;
+		if (IsMultiplayerAuthority())
+		{
+			_stats.PeerId = PeerId;
+			_stats.TimeOfDeathSeconds = GameController.GameElapsedSeconds;
+			_stats.DeathReason = InReason;
+		}
+		TransitionTo(CharacterState.Dead);
+		Died?.Invoke(PeerId, InReason);
+	}
 
-    public virtual PlayerNetState SnapshotState()
-    {
-        byte flags = 0;
-        if (PhysicsSkelton.Aiming) flags |= 0x01;
-        if (PhysicsSkelton.ArmsUp) flags |= 0x02;
+	/// <summary>
+	/// Enregistre l'instant où ce personnage a franchi la ligne d'arrivée du
+	/// mode Obby/Racing. Authority-only (les stats sont remplies sur le côté
+	/// authoritative puis transmises via <c>SubmitStats</c>). Idempotent&#160;: ne
+	/// re-écrit pas si une finition a déjà été enregistrée.
+	/// </summary>
+	public void RecordFinish(float InGameElapsedSeconds)
+	{
+		if (!IsMultiplayerAuthority()) return;
+		if (_stats.TimeOfFinishSeconds >= 0f) return;
+		_stats.PeerId = PeerId;
+		_stats.TimeOfFinishSeconds = InGameElapsedSeconds;
+	}
 
-        if (_characterState == CharacterState.Ragdoll || _characterState == CharacterState.Dead)
-        {
-            // Position and Velocity are repurposed: spine physics world position
-            // and velocity so remote players can anchor their local simulation.
+	public virtual PlayerNetState SnapshotState()
+	{
+		byte flags = 0;
+		if (PhysicsSkelton.Aiming) flags |= 0x01;
+		if (PhysicsSkelton.ArmsUp) flags |= 0x02;
+
+		if (_characterState == CharacterState.Ragdoll || _characterState == CharacterState.Dead)
+		{
+			// Position and Velocity are repurposed: spine physics world position
+			// and velocity so remote players can anchor their local simulation.
 			// BodyYaw and HeadPitch carry the head physical bone's world rotation
 			// so the remote correction steers head orientation correctly.
 			var (headPitch, headYaw) = PhysicsSkelton.GetHeadPhysicsWorldAngles();
@@ -311,6 +357,10 @@ public partial class Character : CharacterBody3D
 		// dans Player._Ready) garantit que toutes les répliques distantes sont
 		// énumérables — le joueur local doit pouvoir cibler les autres peers.
 		AddToGroup("players_alive");
+
+		// Fenêtre d'immunité post-spawn : couvre la frame où les PhysicalBone3D
+		// du squelette n'ont pas encore rattrapé la transform du CharacterBody3D.
+		ArmSpawnProtection();
 	}
 
 	public override void _PhysicsProcess(double delta)

@@ -55,7 +55,13 @@ public static class MapRegistry
             Id = "Soccer Dev",
             DisplayName = "Soccer Dev",
             ScenePath = "res://Core/Dev/soccer_dev.tscn"
-        }
+        },
+        new MapDefinition
+        {
+            Id = "obby",
+            DisplayName = "Obby Race!",
+            ScenePath = "res://Core/World/Maps/racing.tscn"
+        },    
     ];
 
     public static MapDefinition? Get(string id)
