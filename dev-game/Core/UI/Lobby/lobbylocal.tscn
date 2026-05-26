@@ -1,0 +1,118 @@
+[gd_scene format=3 uid="uid://4wubcqx8yfa6"]
+
+[ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="1_t0atk"]
+[ext_resource type="Texture2D" uid="uid://d00ws7wljnit4" path="res://Assets/ui/UIpack_vector.svg" id="2_4o3u8"]
+[ext_resource type="FontFile" uid="uid://d3iekdubpmgvd" path="res://Assets/fonts/Gorditas/Gorditas-Bold.ttf" id="3_feh1k"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_m0bx0"]
+texture = ExtResource("2_4o3u8")
+texture_margin_left = 12.3202
+texture_margin_top = 15.3469
+texture_margin_right = 13.3469
+texture_margin_bottom = 11.2935
+region_rect = Rect2(1, 310, 100, 100)
+
+[node name="Lobbylocal_tscn" type="Control" unique_id=1264556778]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_t0atk")
+
+[node name="VBox" type="VBoxContainer" parent="." unique_id=1682249000]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
+
+[node name="TopBar" type="PanelContainer" parent="VBox" unique_id=2117984878]
+layout_mode = 2
+theme = ExtResource("1_t0atk")
+
+[node name="Panel" type="Panel" parent="VBox/TopBar" unique_id=1872508213]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxTexture_m0bx0")
+
+[node name="Margin" type="MarginContainer" parent="VBox/TopBar" unique_id=837595687]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
+
+[node name="HBox" type="HBoxContainer" parent="VBox/TopBar/Margin" unique_id=1381245880]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Title" type="Label" parent="VBox/TopBar/Margin/HBox" unique_id=140596738]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("3_feh1k")
+theme_override_font_sizes/font_size = 22
+text = "PARTIE LOCALE"
+
+[node name="VSep3" type="VSeparator" parent="VBox/TopBar/Margin/HBox" unique_id=816211465]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="MapBox" type="HBoxContainer" parent="VBox/TopBar/Margin/HBox" unique_id=1588362988]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="MapLabel" type="Label" parent="VBox/TopBar/Margin/HBox/MapBox" unique_id=589434033]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Carte :"
+
+[node name="MapPrev" type="Button" parent="VBox/TopBar/Margin/HBox/MapBox" unique_id=946811632]
+custom_minimum_size = Vector2(28, 0)
+layout_mode = 2
+text = "<"
+
+[node name="MapValue" type="Label" parent="VBox/TopBar/Margin/HBox/MapBox" unique_id=835328406]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "La Montagne (Dev)"
+horizontal_alignment = 1
+
+[node name="MapNext" type="Button" parent="VBox/TopBar/Margin/HBox/MapBox" unique_id=1980452022]
+custom_minimum_size = Vector2(28, 0)
+layout_mode = 2
+text = ">"
+
+[node name="Spacer" type="Control" parent="VBox/TopBar/Margin/HBox" unique_id=1686101911]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LeaveButton" type="Button" parent="VBox/TopBar/Margin/HBox" unique_id=217511306]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "Quitter"
+
+[node name="StartButton" type="Button" parent="VBox/TopBar/Margin/HBox" unique_id=1949693630]
+custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
+text = "Démarrer"
+
+[node name="PlayersArea" type="Control" parent="VBox" unique_id=701161031]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Center" type="CenterContainer" parent="VBox/PlayersArea" unique_id=757071582]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PenguinsRow" type="HBoxContainer" parent="VBox/PlayersArea/Center" unique_id=364818268]
+layout_mode = 2
+theme_override_constants/separation = 32

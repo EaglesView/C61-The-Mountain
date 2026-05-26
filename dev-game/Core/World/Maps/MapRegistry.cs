@@ -49,8 +49,14 @@ public static class MapRegistry
             Id = "Falling Tiles",
             DisplayName = "Falling Tiles",
             ScenePath = "res://Core/World/Maps/falling_tiles.tscn"
-        }
-    ];
+        },
+
+        new MapDefinition
+        {
+            Id = "obby",
+            DisplayName = "Obby Race!",
+            ScenePath = "res://Core/World/Maps/racing.tscn"
+        },    ];
 
     public static MapDefinition? Get(string id)
     {
