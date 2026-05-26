@@ -34,6 +34,17 @@ public partial class Player : Character
 	private CameraType _lastCamType;
 	private Label3D? _nameLabel;
 
+	public enum TeamKind
+	{
+		None = 0,
+		Blue = 1,
+		Red = 2,
+	}
+
+	public TeamKind TeamId { get; private set; } = TeamKind.None;
+	private static readonly Color TeamBlueColor = new Color(0.35f, 0.65f, 1.0f);
+	private static readonly Color TeamRedColor = new Color(1.0f, 0.35f, 0.35f);
+
 	/// <summary>
 	/// Identifiant du chapeau cosmétique à instancier sur la tête du
 	/// personnage. Assigné par <c>GameController.SpawnPlayerNode</c> à partir
@@ -170,6 +181,7 @@ public partial class Player : Character
 			_nameLabel.Position = new Vector3(0f, 2.2f, 0f);
 			_nameLabel.NoDepthTest = true;
 			AddChild(_nameLabel);
+			ApplyTeamVisual();
 			_SpawnHat();
 			return;
 		}
@@ -239,6 +251,37 @@ public partial class Player : Character
 		hatNode.Scale = HatRegistry.GlobalScale * hatDef.Scale;
 		attachment.AddChild(hatNode);
 		_hatInstance = hatNode;
+	}
+
+	public void SetTeam(int InTeamId)
+	{
+		TeamId = InTeamId switch
+		{
+			1 => TeamKind.Blue,
+			2 => TeamKind.Red,
+			_ => TeamKind.None,
+		};
+		ApplyTeamVisual();
+	}
+
+	private void ApplyTeamVisual()
+	{
+		if (_nameLabel is null) return;
+		switch (TeamId)
+		{
+			case TeamKind.Blue:
+				_nameLabel.Modulate = TeamBlueColor;
+				_nameLabel.Text = $"P{PeerId} [BLEU]";
+				break;
+			case TeamKind.Red:
+				_nameLabel.Modulate = TeamRedColor;
+				_nameLabel.Text = $"P{PeerId} [ROUGE]";
+				break;
+			default:
+				_nameLabel.Modulate = Colors.White;
+				_nameLabel.Text = $"P{PeerId}";
+				break;
+		}
 	}
 
 	/// <summary>
