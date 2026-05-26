@@ -91,6 +91,7 @@ public sealed partial class GameController : Node3D, IPhase
 	// la phase Winning va le lire pour reconstruire les penguins.
 	private readonly Dictionary<int, string> _hatsByPeer = new();
 	private string _pendingHostMapPick;
+	private string _currentGameMapId = null;
 	private bool _clientSpawnAcked;
 	private float _clientReadyAccum;
 	private int _clientReadyRetries;
@@ -204,6 +205,8 @@ public sealed partial class GameController : Node3D, IPhase
 		_pendingSpawns.Clear();
 		_spawnedPeers.Clear();
 		_hatsByPeer.Clear();
+		_pendingHostMapPick = null;
+		_currentGameMapId = null;
 		_clientSpawnAcked = false;
 		_clientReadyAccum = 0f;
 		_clientReadyRetries = 0;
