@@ -80,8 +80,17 @@ public sealed partial class MainController : Node3D
 		_fsm.Tick((float)delta);
 	}
 
-	private void OnEnter(State s) { _current = _phases[s]; _current.Enter(); }
-	private void OnExit(State s) { _phases[s].Exit(); }
+	private void OnEnter(State s)
+	{
+		GD.Print($"[LoadDiag] MainController phase ENTER: {s} (server={NetworkManager.Instance?.IsServer ?? false})");
+		_current = _phases[s];
+		_current.Enter();
+	}
+	private void OnExit(State s)
+	{
+		GD.Print($"[LoadDiag] MainController phase EXIT: {s} (server={NetworkManager.Instance?.IsServer ?? false})");
+		_phases[s].Exit();
+	}
 
 	private void OnServerDisconnected()
 	{

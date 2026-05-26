@@ -205,7 +205,11 @@ public sealed partial class GameController : Node3D, IPhase
 		_pendingSpawns.Clear();
 		_spawnedPeers.Clear();
 		_hatsByPeer.Clear();
-		_pendingHostMapPick = null;
+		// _pendingHostMapPick délibérément PAS reset ici : si un client a déjà
+		// envoyé ClientJoinRequest pendant Lobby/Winning, sa map est stockée
+		// dans ce champ et la branche ~ligne 269 ci-dessous est censée la
+		// consommer pour appeler LoadLevel. Le clobber qui était ici annulait
+		// ce dépôt, laissant le serveur en Game phase sans map chargée.
 		_currentGameMapId = null;
 		_clientSpawnAcked = false;
 		_clientReadyAccum = 0f;
@@ -439,6 +443,7 @@ public sealed partial class GameController : Node3D, IPhase
 		var net = NetworkManager.Instance;
 		if (net != null && net.IsServer && Multiplayer.GetPeers().Length == 0 && _currentGameMapId == null)
 		{
+			GD.Print($"[LoadDiag] GameController.Tick auto-done: peers={Multiplayer.GetPeers().Length} currentGameMapId=null pendingHostMapPick={(_pendingHostMapPick ?? "null")} → _done=true");
 			_done = true;
 			return;
 		}
@@ -549,6 +554,13 @@ public sealed partial class GameController : Node3D, IPhase
 		_spawnedPeers.Clear();
 		_hatsByPeer.Clear();
 		_pendingHostMapPick = null;
+		// Indispensable : sans ce reset, _currentGameMapId garde l'id de la
+		// map précédente pendant tout Winning/Lobby. ClientJoinRequest voit
+		// alors _currentGameMapId != null et renvoie un ServerSetMap périmé
+		// au client (la map n'est plus chargée côté serveur — mapContainer
+		// est null, _mode aussi). Voir [LoadDiag] currentGameMapId=Soccer Dev
+		// avec mapContainer=null dans les logs antérieurs.
+		_currentGameMapId = null;
 		_clientSpawnAcked = false;
 		_clientReadyAccum = 0f;
 		_clientReadyRetries = 0;
@@ -578,7 +590,12 @@ public sealed partial class GameController : Node3D, IPhase
 		player.Position = pos;
 		player.HatId = hatId;
 
-		GD.Print($"[LoadDiag] SpawnPlayerNode: peerId={peerId}, pos={pos}, hat={hatId}, authorityAtSpawn={player.IsMultiplayerAuthority()}, localPeerId={NetworkManager.Instance?.LocalPeerId ?? -1}");
+		// NB : pas d'appel à IsMultiplayerAuthority() ici — le node n'est pas
+		// encore dans l'arbre (MultiplayerSpawner l'ajoutera après le retour
+		// de la SpawnFunction), et Godot émettrait un ERROR "Condition
+		// !is_inside_tree()" trompeur qui polluait stderr. L'authority a été
+		// configurée juste au-dessus via SetMultiplayerAuthority(peerId).
+		GD.Print($"[LoadDiag] SpawnPlayerNode: peerId={peerId}, pos={pos}, hat={hatId}, configuredAuthority={peerId}, localPeerId={NetworkManager.Instance?.LocalPeerId ?? -1}");
 		return player;
 	}
 
@@ -1317,7 +1334,11 @@ public sealed partial class GameController : Node3D, IPhase
 	/// </summary>
 	private void TickClientReadyRetry(float InDelta)
 	{
-		if (_clientSpawnAcked) return;
+		// Ne pas court-circuiter sur _clientSpawnAcked seul : si ServerSpawnAck
+		// arrive avant ServerSetMap (RPCs sur canaux distincts, ordre relatif
+		// non garanti), on stoppe les retries alors que _mode est toujours
+		// null → watchdog tue le loading. On exige aussi _mode loaded.
+		if (_clientSpawnAcked && _mode is not null) return;
 		// Le MultiplayerSpawner peut répliquer le pawn local AVANT que
 		// ServerSetMap n'arrive (ENet sync auto). Ne sortir que si la map
 		// est aussi chargée — sinon on resterait coincé sans _mode et le
