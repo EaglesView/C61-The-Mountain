@@ -1,0 +1,446 @@
+[gd_scene format=3 uid="uid://dns142sqfubcr"]
+
+[ext_resource type="PackedScene" uid="uid://bvqj5ukmwkfh5" path="res://Assets/Models/goal/soccer.tscn" id="2_8kdkq"]
+[ext_resource type="Script" uid="uid://c16cwu4br0che" path="res://Core/Dev/SoccerBall.cs" id="2_socdev"]
+[ext_resource type="Script" uid="uid://dmq53218nqd7c" path="res://Core/Dev/GoalZone.cs" id="4_socdev"]
+[ext_resource type="Script" uid="uid://cnj0e7n01romt" path="res://Core/Dev/AutoSceneCollisions.cs" id="5_socdev"]
+[ext_resource type="Script" uid="uid://du8mp3v1ucxqb" path="res://Core/Dev/SoccerModeController.cs" id="6_socdev"]
+[ext_resource type="Script" uid="uid://c07lylcrncmf6" path="res://Core/World/MapAssets/MainAssets/PlayerSpawner/PlayerSpawner.cs" id="7_socdev"]
+[ext_resource type="PackedScene" uid="uid://bvmigfks33r4g" path="res://Core/World/MapAssets/world_environment_base.tscn" id="8_30emy"]
+[ext_resource type="PackedScene" uid="uid://blxnhy8a0mxon" path="res://Core/World/Terrain/endless_water.tscn" id="9_n77yk"]
+[ext_resource type="Shader" uid="uid://c3d638behmwd8" path="res://Core/Shaders/water.gdshader" id="10_pr5x7"]
+[ext_resource type="Texture2D" uid="uid://cpqx5abj7gsp5" path="res://Assets/Textures/Tiles/water_normal.jpg" id="11_0yxw7"]
+[ext_resource type="PackedScene" uid="uid://i7k20gcwfda6" path="res://Core/World/MapAssets/MainAssets/WindTurbine/eolienne.tscn" id="12_y8hyy"]
+[ext_resource type="Texture2D" uid="uid://uhabcecu8axm" path="res://Assets/Textures/Particles/snowparticle.png" id="13_aylxt"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall_side"]
+size = Vector3(0.6, 6, 3.9128418)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall_end"]
+size = Vector3(34, 6, 0.6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_mgy3e"]
+size = Vector3(78.639404, 11.39917, 75.869934)
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_ball"]
+friction = 0.5
+bounce = 0.4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ball"]
+albedo_color = Color(1, 0.5, 0, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_ball"]
+material = SubResource("StandardMaterial3D_ball")
+radius = 0.2
+height = 0.4
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_ball"]
+radius = 0.2
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_goal"]
+size = Vector3(5.9105835, 4.1401978, 0.5)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_d6caa"]
+render_priority = 0
+shader = ExtResource("10_pr5x7")
+shader_parameter/color_shallow = Color(0.01, 0.2, 0.3, 1)
+shader_parameter/color_deep = Color(0.3, 0.5, 0.6, 1)
+shader_parameter/transparency = 0.6
+shader_parameter/metallic = 0.0
+shader_parameter/roughness = 0.25
+shader_parameter/max_visible_depth = 20.0
+shader_parameter/wave_a = ExtResource("11_0yxw7")
+shader_parameter/wave_b = ExtResource("11_0yxw7")
+shader_parameter/wave_move_direction_a = Vector2(-0.5, 0)
+shader_parameter/wave_move_direction_b = Vector2(0, 2)
+shader_parameter/wave_noise_scale_a = 24.0
+shader_parameter/wave_noise_scale_b = 24.0
+shader_parameter/wave_time_scale_a = 0.15
+shader_parameter/wave_time_scale_b = 0.15
+shader_parameter/wave_height_scale = 0.815
+shader_parameter/wave_normal_flatness = 100.0
+shader_parameter/surface_normals_a = ExtResource("11_0yxw7")
+shader_parameter/surface_normals_b = ExtResource("11_0yxw7")
+shader_parameter/surface_normals_move_direction_a = Vector2(-1, -2.775)
+shader_parameter/surface_normals_move_direction_b = Vector2(0.2, 1)
+shader_parameter/surface_texture_roughness = 0.32999999262384
+shader_parameter/surface_texture_scale = 0.1
+shader_parameter/surface_texture_time_scale = 0.12400000589
+shader_parameter/ssr_resolution = 1.91000002808876
+shader_parameter/ssr_max_travel = 44.5000006631034
+shader_parameter/ssr_max_diff = 7.500000111758999
+shader_parameter/ssr_mix_strength = 0.78999998234192
+shader_parameter/ssr_screen_border_fadeout = 1.0
+shader_parameter/refraction_intensity = 0.4
+shader_parameter/border_color = Color(1, 1, 1, 1)
+shader_parameter/border_scale = 2.0
+shader_parameter/border_near = 0.5
+shader_parameter/border_far = 300.0
+shader_parameter/cut_out_x = 0.0
+shader_parameter/cut_out_z = 0.0
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_glwe5"]
+material = SubResource("ShaderMaterial_d6caa")
+size = Vector2(6000, 6000)
+subdivide_width = 500
+subdivide_depth = 500
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_slf8e"]
+lifetime_randomness = 0.1
+emission_shape = 3
+emission_box_extents = Vector3(2.17, 1.015, 2.275)
+initial_velocity_max = 0.099999994
+gravity = Vector3(0, -0.2, 0)
+linear_accel_min = -2.2351742e-06
+linear_accel_max = 0.49999776
+radial_accel_min = -1.0800022
+radial_accel_max = 1.0799978
+tangential_accel_min = -4.300002
+tangential_accel_max = 4.3099976
+damping_max = 2.6880002
+turbulence_enabled = true
+turbulence_noise_strength = 4.74
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s4n5g"]
+transparency = 1
+shading_mode = 0
+diffuse_mode = 3
+disable_ambient_light = true
+disable_specular_occlusion = true
+albedo_color = Color(4.5019746, 4.5019746, 4.5019746, 0.3372549)
+albedo_texture = ExtResource("13_aylxt")
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_ee6jm"]
+material = SubResource("StandardMaterial3D_s4n5g")
+size = Vector2(0.1, 0.1)
+
+[node name="SoccerDev" type="Node3D" unique_id=372636527]
+script = ExtResource("6_socdev")
+
+[node name="soccer" parent="." unique_id=23486021 instance=ExtResource("2_8kdkq")]
+script = ExtResource("5_socdev")
+
+[node name="BoundaryWalls" type="Node3D" parent="." unique_id=1213633054]
+
+[node name="WallLeft" type="StaticBody3D" parent="BoundaryWalls" unique_id=1301610213]
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundaryWalls/WallLeft" unique_id=1470545539]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.0815449, 1.9655695, 16.559486)
+shape = SubResource("BoxShape3D_wall_side")
+
+[node name="CollisionShape3D4" type="CollisionShape3D" parent="BoundaryWalls/WallLeft" unique_id=1437364895]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.9105759, 1.9655695, 16.559486)
+shape = SubResource("BoxShape3D_wall_side")
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="BoundaryWalls/WallLeft" unique_id=1109108857]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.0815449, 1.9655695, -16.831669)
+shape = SubResource("BoxShape3D_wall_side")
+
+[node name="CollisionShape3D3" type="CollisionShape3D" parent="BoundaryWalls/WallLeft" unique_id=215835167]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.1082978, 1.9655695, -16.831669)
+shape = SubResource("BoxShape3D_wall_side")
+
+[node name="WallTop" type="StaticBody3D" parent="BoundaryWalls" unique_id=724923971]
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundaryWalls/WallTop" unique_id=2062752428]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9655695, -18.479635)
+shape = SubResource("BoxShape3D_wall_end")
+
+[node name="WallBottom" type="StaticBody3D" parent="BoundaryWalls" unique_id=1905665566]
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundaryWalls/WallBottom" unique_id=1294441686]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9655695, 18.380085)
+shape = SubResource("BoxShape3D_wall_end")
+
+[node name="WallBottom2" type="StaticBody3D" parent="BoundaryWalls" unique_id=532705069]
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundaryWalls/WallBottom2" unique_id=1767794712]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.207642, -6.1279316, -7.954071)
+shape = SubResource("BoxShape3D_mgy3e")
+
+[node name="SoccerBall" type="RigidBody3D" parent="." unique_id=1764525413]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.028448582, 1.4960321, 0)
+collision_layer = 2
+collision_mask = 3
+mass = 3.048
+physics_material_override = SubResource("PhysicsMaterial_ball")
+linear_damp = 0.5
+angular_damp = 1.0
+script = ExtResource("2_socdev")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="SoccerBall" unique_id=398230800]
+transform = Transform3D(2.005, 0, 0, 0, 2.005, 0, 0, 0, 2.005, 0, 0, 0)
+mesh = SubResource("SphereMesh_ball")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SoccerBall" unique_id=1794691872]
+transform = Transform3D(2.005, 0, 0, 0, 2.005, 0, 0, 0, 2.005, 0, 0, 0)
+shape = SubResource("SphereShape3D_ball")
+
+[node name="GoalZoneA" type="Area3D" parent="." unique_id=106321172]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9960979, -14.583251)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("4_socdev")
+goal_name = "But Bleu"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="GoalZoneA" unique_id=739423356]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.021636963, 0.7230835, 0)
+shape = SubResource("BoxShape3D_goal")
+
+[node name="GoalZoneB" type="Area3D" parent="." unique_id=1227869228]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("4_socdev")
+goal_name = "But Rouge"
+defending_team_id = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="GoalZoneB" unique_id=1502016539]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.060420394, 1.336697, 14.511759)
+shape = SubResource("BoxShape3D_goal")
+
+[node name="PlayerSpawner" type="Node3D" parent="." unique_id=822481817]
+script = ExtResource("7_socdev")
+
+[node name="BlueSpawn1" type="Marker3D" parent="PlayerSpawner" unique_id=954942113]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 2, -8)
+
+[node name="BlueSpawn2" type="Marker3D" parent="PlayerSpawner" unique_id=1247422135]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 2, -8)
+
+[node name="BlueSpawn3" type="Marker3D" parent="PlayerSpawner" unique_id=814026412]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2, -8)
+
+[node name="BlueSpawn4" type="Marker3D" parent="PlayerSpawner" unique_id=1888493218]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 2, -8)
+
+[node name="RedSpawn1" type="Marker3D" parent="PlayerSpawner" unique_id=1131889534]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 2, 8)
+
+[node name="RedSpawn2" type="Marker3D" parent="PlayerSpawner" unique_id=969063092]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 2, 8)
+
+[node name="RedSpawn3" type="Marker3D" parent="PlayerSpawner" unique_id=570405895]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2, 8)
+
+[node name="RedSpawn4" type="Marker3D" parent="PlayerSpawner" unique_id=328172885]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 2, 8)
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=30148515]
+
+[node name="ScoreLabel" type="Label" parent="HUD" unique_id=1718484592]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -250.0
+offset_top = 16.0
+offset_right = 250.0
+offset_bottom = 64.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 36
+text = "Bleu  0  -  0  Rouge"
+horizontal_alignment = 1
+
+[node name="CountdownLabel" type="Label" parent="HUD" unique_id=2020572128]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -40.0
+offset_right = 320.0
+offset_bottom = 40.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.92, 0.2, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_x = 3
+theme_override_constants/shadow_offset_y = 3
+theme_override_font_sizes/font_size = 52
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="WorldEnvironment" parent="." unique_id=1478789142 instance=ExtResource("8_30emy")]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=825837251]
+transform = Transform3D(0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, -0.75, 0.433013, 0, 10, 0)
+light_energy = 1.5
+shadow_enabled = true
+
+[node name="Water" parent="." unique_id=2121387950 instance=ExtResource("9_n77yk")]
+transform = Transform3D(0.86942166, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.1949768, 0)
+mesh = SubResource("PlaneMesh_glwe5")
+
+[node name="DecorAssets" type="Node3D" parent="." unique_id=1125606311]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 24.43371, 0)
+
+[node name="WindTurbines" type="Node" parent="DecorAssets" unique_id=1391982360]
+
+[node name="WindTurbine2" parent="DecorAssets/WindTurbines" unique_id=1412030690 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -171.57294, -23.69007, 643.44604)
+
+[node name="WindTurbine3" parent="DecorAssets/WindTurbines" unique_id=1623493771 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -171.57294, -23.69007, 510.44608)
+
+[node name="WindTurbine4" parent="DecorAssets/WindTurbines" unique_id=1071894358 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -171.57294, -23.69007, 746.3166)
+
+[node name="WindTurbine5" parent="DecorAssets/WindTurbines" unique_id=1045436816 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -171.57294, -23.69007, 829.3166)
+
+[node name="WindTurbine6" parent="DecorAssets/WindTurbines" unique_id=848202179 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(0.71003383, 0.25524327, 0.6562795, -0.18743996, 0.96687686, -0.1732495, -0.67876226, 0, 0.7343581, -171.57294, -35.10061, 198.44608)
+
+[node name="WindTurbine7" parent="DecorAssets/WindTurbines" unique_id=664252113 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -171.57294, -23.69007, 65.446075)
+
+[node name="WindTurbine8" parent="DecorAssets/WindTurbines" unique_id=1394580315 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -171.57294, -23.69007, 301.31662)
+
+[node name="WindTurbine9" parent="DecorAssets/WindTurbines" unique_id=520801179 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -171.57294, -23.69007, 384.31662)
+
+[node name="WindTurbine10" parent="DecorAssets/WindTurbines" unique_id=83407317 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(0.998625, 0.052423105, 0, -0.052423105, 0.998625, 0, 0, 0, 1, -171.57294, -23.69007, -263.69873)
+
+[node name="WindTurbine11" parent="DecorAssets/WindTurbines" unique_id=183377248 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -171.57294, -23.69007, -396.6987)
+
+[node name="WindTurbine12" parent="DecorAssets/WindTurbines" unique_id=326402503 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(0.8624076, -0.32269838, -0.3900241, 0.3504526, 0.9365805, 0, 0.36528894, -0.13668495, 0.9208046, -171.57294, -23.69007, -160.82819)
+
+[node name="WindTurbine13" parent="DecorAssets/WindTurbines" unique_id=2079839267 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(0.9884622, 0, 0.15146784, 0, 1, 0, -0.15146784, 0, 0.9884622, -171.57294, -23.69007, -77.828186)
+
+[node name="WindTurbine14" parent="DecorAssets/WindTurbines" unique_id=214245483 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -171.57294, -23.69007, -708.6987)
+
+[node name="WindTurbine15" parent="DecorAssets/WindTurbines" unique_id=871793652 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -171.57294, -23.69007, -841.6987)
+
+[node name="WindTurbine16" parent="DecorAssets/WindTurbines" unique_id=24693073 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -171.57294, -23.69007, -605.8281)
+
+[node name="WindTurbine17" parent="DecorAssets/WindTurbines" unique_id=1509433418 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -171.57294, -23.69007, -522.8281)
+
+[node name="WindTurbine18" parent="DecorAssets/WindTurbines" unique_id=950965512 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -387.4358, -23.69007, 643.44604)
+
+[node name="WindTurbine19" parent="DecorAssets/WindTurbines" unique_id=1095212241 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -387.4358, -23.69007, 510.44608)
+
+[node name="WindTurbine20" parent="DecorAssets/WindTurbines" unique_id=1908294429 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -387.4358, -23.69007, 746.3166)
+
+[node name="WindTurbine21" parent="DecorAssets/WindTurbines" unique_id=1968283973 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -387.4358, -23.69007, 829.3166)
+
+[node name="WindTurbine22" parent="DecorAssets/WindTurbines" unique_id=144963118 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -387.4358, -23.69007, 198.44608)
+
+[node name="WindTurbine23" parent="DecorAssets/WindTurbines" unique_id=768171733 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(0.9991986, 0.040027156, 0, -0.040027156, 0.9991986, 0, 0, 0, 1, -387.4358, -23.69007, 65.446075)
+
+[node name="WindTurbine24" parent="DecorAssets/WindTurbines" unique_id=1035734282 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -387.4358, -23.69007, 301.31662)
+
+[node name="WindTurbine25" parent="DecorAssets/WindTurbines" unique_id=610688251 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -387.4358, -23.69007, 384.31662)
+
+[node name="WindTurbine26" parent="DecorAssets/WindTurbines" unique_id=98336614 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -387.4358, -23.69007, -263.69873)
+
+[node name="WindTurbine27" parent="DecorAssets/WindTurbines" unique_id=1428137338 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -387.4358, -23.69007, -396.6987)
+
+[node name="WindTurbine28" parent="DecorAssets/WindTurbines" unique_id=1888800849 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -387.4358, -23.69007, -160.82819)
+
+[node name="WindTurbine29" parent="DecorAssets/WindTurbines" unique_id=1309172628 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(0.9449261, 0, -0.32728386, 0.030947987, 0.99551916, 0.08935229, 0.32581735, -0.09456008, 0.940692, -387.4358, -23.69007, -77.828186)
+
+[node name="WindTurbine30" parent="DecorAssets/WindTurbines" unique_id=1358958555 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -387.4358, -23.69007, -708.6987)
+
+[node name="WindTurbine31" parent="DecorAssets/WindTurbines" unique_id=686383083 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -387.4358, -23.69007, -841.6987)
+
+[node name="WindTurbine32" parent="DecorAssets/WindTurbines" unique_id=587279270 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -387.4358, -23.69007, -605.8281)
+
+[node name="WindTurbine33" parent="DecorAssets/WindTurbines" unique_id=742273975 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -387.4358, -23.69007, -522.8281)
+
+[node name="WindTurbine34" parent="DecorAssets/WindTurbines" unique_id=992609195 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -673.3153, -23.69007, 643.44604)
+
+[node name="WindTurbine35" parent="DecorAssets/WindTurbines" unique_id=370283537 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -673.3153, -23.69007, 510.44608)
+
+[node name="WindTurbine36" parent="DecorAssets/WindTurbines" unique_id=1568396164 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -673.3153, -23.69007, 746.3166)
+
+[node name="WindTurbine37" parent="DecorAssets/WindTurbines" unique_id=279653387 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -673.3153, -23.69007, 829.3166)
+
+[node name="WindTurbine38" parent="DecorAssets/WindTurbines" unique_id=1499536249 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -673.3153, -23.69007, 198.44608)
+
+[node name="WindTurbine39" parent="DecorAssets/WindTurbines" unique_id=1052536265 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(0.9608509, 0.094925314, 0.26029727, -0.17468551, 0.93677807, 0.3032026, -0.2150592, -0.33680263, 0.9166861, -673.3153, -23.69007, 65.446075)
+
+[node name="WindTurbine40" parent="DecorAssets/WindTurbines" unique_id=347824241 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -673.3153, -23.69007, 301.31662)
+
+[node name="WindTurbine41" parent="DecorAssets/WindTurbines" unique_id=460496652 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -673.3153, -23.69007, 384.31662)
+
+[node name="WindTurbine42" parent="DecorAssets/WindTurbines" unique_id=1414007380 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -673.3153, -23.69007, -263.69873)
+
+[node name="WindTurbine43" parent="DecorAssets/WindTurbines" unique_id=521206701 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -673.3153, -23.69007, -396.6987)
+
+[node name="WindTurbine44" parent="DecorAssets/WindTurbines" unique_id=635406065 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -673.3153, -23.69007, -160.82819)
+
+[node name="WindTurbine45" parent="DecorAssets/WindTurbines" unique_id=503604713 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -673.3153, -23.69007, -77.828186)
+
+[node name="WindTurbine46" parent="DecorAssets/WindTurbines" unique_id=259514918 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -673.3153, -23.69007, -708.6987)
+
+[node name="WindTurbine47" parent="DecorAssets/WindTurbines" unique_id=1015791496 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -673.3153, -23.69007, -841.6987)
+
+[node name="WindTurbine48" parent="DecorAssets/WindTurbines" unique_id=899644777 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -673.3153, -23.69007, -605.8281)
+
+[node name="WindTurbine49" parent="DecorAssets/WindTurbines" unique_id=10234995 instance=ExtResource("12_y8hyy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -673.3153, -23.69007, -522.8281)
+
+[node name="GPUParticles3D2" type="GPUParticles3D" parent="DecorAssets" unique_id=1638194325]
+transform = Transform3D(11.074426, 0, 0, 0, 35.0612, 0, 0, 0, 16.910715, 0, 27.164997, 0)
+cast_shadow = 0
+ignore_occlusion_culling = true
+amount = 20000
+lifetime = 5.0
+transform_align = 1
+process_material = SubResource("ParticleProcessMaterial_slf8e")
+draw_pass_1 = SubResource("QuadMesh_ee6jm")

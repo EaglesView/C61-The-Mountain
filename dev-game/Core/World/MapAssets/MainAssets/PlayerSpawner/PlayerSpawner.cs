@@ -1,5 +1,6 @@
 using Godot;
 using Godot.Collections;
+using System.Collections.Generic;
 
 public partial class PlayerSpawner : Node3D
 {
@@ -25,4 +26,23 @@ public partial class PlayerSpawner : Node3D
 		_nextSpawnIndex = (_nextSpawnIndex + 1) % _spawnPoints.Count;
 		return point.GlobalPosition;
 	}
+
+	public Vector3 GetNextSpawnPointWithTeam(out int OutTeamId)
+	{
+		if (_spawnPoints.Count == 0)
+		{
+			OutTeamId = 0;
+			return Vector3.Zero;
+		}
+
+		int index = _nextSpawnIndex;
+		var point = _spawnPoints[index];
+		_nextSpawnIndex = (_nextSpawnIndex + 1) % _spawnPoints.Count;
+
+		int half = _spawnPoints.Count / 2;
+		OutTeamId = index < half ? 1 : 2;
+		return point.GlobalPosition;
+	}
+
+	public IReadOnlyList<Marker3D> GetSpawnPoints() => _spawnPoints;
 }
