@@ -95,6 +95,7 @@ public sealed partial class GameController : Node3D, IPhase
 	private bool _clientSpawnAcked;
 	private float _clientReadyAccum;
 	private int _clientReadyRetries;
+	private bool _allPlayersReady;
 	private const float ClientReadyRetryInterval = 1.0f;
 	private const int ClientReadyMaxRetries = 10;
 
@@ -245,6 +246,7 @@ public sealed partial class GameController : Node3D, IPhase
 		_clientSpawnAcked = false;
 		_clientReadyAccum = 0f;
 		_clientReadyRetries = 0;
+		_allPlayersReady = false;
 		// Le serveur génère l'identifiant de partie et le diffusera au moment de
 		// la résolution. Les clients reçoivent _gameId via NetApplyWinnerData.
 		var netInit = NetworkManager.Instance;
@@ -341,7 +343,7 @@ public sealed partial class GameController : Node3D, IPhase
 		_waitingCondition = new TimeElapsedCondition<State>(_waitingDuration);
 		_fsm = new StateMachine<State>(State.Init, OnSubEnter, OnSubExit);
 		_fsm.When(State.Init,
-			new PredicateCondition<State>(() => _mode is not null && (IsDedicatedServer() || _localPlayer is not null)),
+			new PredicateCondition<State>(() => _mode is not null && (IsDedicatedServer() || _localPlayer is not null) && _allPlayersReady),
 			State.Waiting
 		);
 		_fsm.When(State.Init,
@@ -490,6 +492,19 @@ public sealed partial class GameController : Node3D, IPhase
 		// Diagnostic : dump périodique tant que le loading reste visible. À
 		// retirer une fois la cause du blocage RotatingBarrel comprise.
 		TickLoadingDiagnostic(InDelta);
+		// Le serveur détecte la condition « tout le monde est spawné » et la
+		// diffuse une seule fois aux clients pour qu'ils franchissent Init→Waiting
+		// en simultané plutôt que chacun à son propre rythme de chargement.
+		if (net is not null && net.IsServer && !_allPlayersReady && _mode is not null)
+		{
+			int expectedCount = 0;
+			foreach (var _ in LobbyPresence.Snapshot()) expectedCount++;
+			if (expectedCount > 0 && _spawnedPeers.Count >= expectedCount)
+			{
+				_allPlayersReady = true;
+				Rpc(MethodName.NetSyncAllReady, true);
+			}
+		}
 		if (_fsm is null) return;
 		if (_fsm.Is(State.Playing))
 		{
@@ -595,6 +610,7 @@ public sealed partial class GameController : Node3D, IPhase
 		_clientSpawnAcked = false;
 		_clientReadyAccum = 0f;
 		_clientReadyRetries = 0;
+		_allPlayersReady = false;
 		_gameId = "";
 		GameElapsedSeconds = 0f;
 	}
@@ -722,6 +738,12 @@ public sealed partial class GameController : Node3D, IPhase
 	private void ServerSpawnAck()
 	{
 		_clientSpawnAcked = true;
+	}
+
+	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void NetSyncAllReady(bool ready)
+	{
+		_allPlayersReady = ready;
 	}
 
 	/// <summary>
@@ -865,6 +887,7 @@ public sealed partial class GameController : Node3D, IPhase
 			return;
 		}
 		players.AddChild(player);
+		_allPlayersReady = true;
 	}
 
 	private void OnStateReceived(PlayerNetState state)
@@ -1473,6 +1496,15 @@ public sealed partial class GameController : Node3D, IPhase
 		bool playerReady = IsDedicatedServer() || _localPlayer is not null;
 		//GD.Print($"player ready? {playerReady}");
 		if (!levelReady || !playerReady) return;
+
+		// Localement prêt mais le groupe ne l'est pas encore : on garde l'overlay
+		// affiché avec un message d'attente plutôt que de laisser le joueur croire
+		// qu'il est figé.
+		if (!_allPlayersReady)
+		{
+			LoadingScreen.SetStatus("En attente des autres joueurs...", 0.9f);
+			return;
+		}
 
 		// Remplit la jauge à 100&#160;% avant de cacher pour que la disparition soit nette
 		// (et pour que les joueurs voient bien la barre arriver au bout).
