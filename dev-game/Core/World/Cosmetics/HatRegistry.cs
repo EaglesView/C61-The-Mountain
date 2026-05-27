@@ -119,6 +119,12 @@ public static class HatRegistry
         },
         new HatDefinition
         {
+            Id = "helice",
+            DisplayName = "Helice",
+            ScenePath = "res://Assets/Models/hats/model_helice/model_helice.glb"
+        },
+        new HatDefinition
+        {
             Id = "lunette",
             DisplayName = "Lunettes",
             ScenePath = "res://Assets/Models/hats/model_lunette/model_lunette.gltf"
