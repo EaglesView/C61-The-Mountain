@@ -315,27 +315,4 @@ public partial class Preview : Node3D
 		TryPlayHatAnimation(hatNode);
 		return attachment;
 	}
-
-	// ici faudrait cleanup on reutilise une methode de player. faudrait peut etre faire un utils
-	private static void TryPlayHatAnimation(Node3D hatRoot)
-	{
-		if (hatRoot == null) return;
-
-		var players = hatRoot.FindChildren("*", "AnimationPlayer", true, false);
-		foreach (Node node in players)
-		{
-			if (node is not AnimationPlayer ap) continue;
-
-			var names = ap.GetAnimationList();
-			if (names.Length == 0) continue;
-
-			string animName = names[0];
-			var anim = ap.GetAnimation(animName);
-			if (anim != null && anim.LoopMode == Animation.LoopModeEnum.None)
-				anim.LoopMode = Animation.LoopModeEnum.Linear;
-
-			ap.Play(animName);
-			return;
-		}
-	}
 }

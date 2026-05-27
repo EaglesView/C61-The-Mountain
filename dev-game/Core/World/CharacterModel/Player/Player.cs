@@ -254,28 +254,6 @@ public partial class Player : Character
 		TryPlayHatAnimation(hatNode);
 	}
 
-	private static void TryPlayHatAnimation(Node3D hatRoot)
-	{
-		if (hatRoot == null) return;
-
-		var players = hatRoot.FindChildren("*", "AnimationPlayer", true, false);
-		foreach (Node node in players)
-		{
-			if (node is not AnimationPlayer ap) continue;
-
-			var names = ap.GetAnimationList();
-			if (names.Length == 0) continue;
-
-			string animName = names[0];
-			var anim = ap.GetAnimation(animName);
-			if (anim != null && anim.LoopMode == Animation.LoopModeEnum.None)
-				anim.LoopMode = Animation.LoopModeEnum.Linear;
-
-			ap.Play(animName);
-			return;
-		}
-	}
-
 	public void SetTeam(int InTeamId)
 	{
 		TeamId = InTeamId switch
