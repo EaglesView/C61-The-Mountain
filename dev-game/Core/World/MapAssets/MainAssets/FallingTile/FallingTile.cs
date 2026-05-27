@@ -25,7 +25,7 @@ public partial class FallingTile : AnimatableBody3D
 		{
 			case TileState.White:
 				_state = TileState.Orange;
-				_mat.AlbedoColor = ColorOrange;
+				if (_mat != null) _mat.AlbedoColor = ColorOrange;
 				GetTree().CreateTimer(0.5).Timeout += OnOrangeTimerExpired;
 				break;
 			case TileState.Orange:
@@ -45,7 +45,7 @@ public partial class FallingTile : AnimatableBody3D
 	{
 		if (_state is TileState.Red or TileState.Gone) return;
 		_state = TileState.Red;
-		_mat.AlbedoColor = ColorRed;
+		if (_mat != null) _mat.AlbedoColor = ColorRed;
 		GetTree().CreateTimer(0.5).Timeout += () =>
 		{
 			_state = TileState.Gone;
@@ -57,8 +57,12 @@ public partial class FallingTile : AnimatableBody3D
 	{
 		if (TileMesh != null)
 		{
-			_mat = (StandardMaterial3D)TileMesh.GetActiveMaterial(0).Duplicate();
-			TileMesh.SetSurfaceOverrideMaterial(0, _mat);
+			var activeMat = TileMesh.GetActiveMaterial(0);
+			if (activeMat != null)
+			{
+				_mat = (StandardMaterial3D)activeMat.Duplicate();
+				TileMesh.SetSurfaceOverrideMaterial(0, _mat);
+			}
 		}
 		if (DetectionArea != null)
 			DetectionArea.BodyEntered += OnBodyEntered;

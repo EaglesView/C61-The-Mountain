@@ -12,13 +12,21 @@ public partial class Login : Control
 	[Export] public Button LoginButton;
 	[Export] public Button SignUpButton;
 	[Export] public Label ErrorLabel;
+	[Export] public LineEdit GuestName;
+	[Export] public Button GuestStart;
 	private AuthUseCase _auth = null!;
 	private LineEdit _emailField = null!;
 	private LineEdit _usernameField = null!;
 	private LineEdit _passwordField = null!;
 	private Button _loginButton = null!;
 	private Button _signUpButton = null!;
+	private LineEdit _guestName = null;
+	private Button _guestStart = null;
 	private Label? _errorLabel;
+
+	private string _emailGuestStart = "invite";
+	private string _emailGuestEnd = "@outilsenligne.ca";
+	private string _emailPWDGuest = "guest0";
 
 	public override void _Ready()
 	{
@@ -39,9 +47,12 @@ public partial class Login : Control
 		_loginButton = LoginButton;
 		_signUpButton = SignUpButton;
 		_errorLabel = ErrorLabel;
-
+		_guestName = GuestName;
+		_guestStart = GuestStart;
 		_loginButton.Pressed += OnLoginPressed;
 		_signUpButton.Pressed += OnSignUpPressed;
+		_guestStart.Pressed += OnGuestStartPressed;
+
 	}
 
 	private void GoToMainController()
@@ -51,6 +62,12 @@ public partial class Login : Control
 
 	private async void OnLoginPressed()
 	{
+		if (_auth.IsAuthenticated)
+		{
+			GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
+			return;
+		}
+
 		SetLoading(true);
 		ClearError();
 		var result = await _auth.SignInAsync(_emailField.Text, _passwordField.Text);
@@ -83,10 +100,62 @@ public partial class Login : Control
 		}
 	}
 
+	private async void OnGuestStartPressed()
+	{
+		if (_auth.IsAuthenticated)
+		{
+			GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
+			return;
+		}
+
+		SetLoading(true);
+		ClearError();
+
+		// Flux invité piloté par le serveur&#160;: on ouvre ENet d'abord, on
+		// demande au serveur le prochain slot libre (GuestSlotRegistry), puis
+		// on signe à Firebase avec les creds correspondants. Le serveur est
+		// la seule source de vérité pour "ce slot est-il pris&#160;?" — Firebase
+		// accepterait sans broncher la même session depuis plusieurs clients.
+		try
+		{
+			await NetworkManager.Instance.ConnectAndAwaitAsync(Room.HardcodedServerIp, Room.HardcodedServerPort);
+			int slot = await NetworkManager.Instance.RequestGuestSlotAsync();
+			if (slot < 1)
+			{
+				SetLoading(false);
+				ShowError("Aucun slot invité disponible. Réessayez dans un instant.");
+				return;
+			}
+
+			string email = $"{_emailGuestStart}{slot}{_emailGuestEnd}";
+			string password = $"{_emailPWDGuest}{slot}";
+			var result = await _auth.SignInAsync(email, password);
+			if (!result.Success)
+			{
+				SetLoading(false);
+				// La réservation côté serveur expirera d'elle-même (TTL) — pas
+				// besoin de RPC de libération explicite. Slot disponible à
+				// nouveau dans quelques secondes.
+				ShowError(result.ErrorMessage ?? "Guest sign-in failed.");
+				return;
+			}
+
+			Core.Auth.GuestSession.LocalSlotIndex = slot;
+			SetLoading(false);
+			GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
+		}
+		catch (System.Exception ex)
+		{
+			SetLoading(false);
+			ShowError($"Connexion invité impossible&#160;: {ex.Message}");
+		}
+	}
+
 	private void SetLoading(bool loading)
 	{
 		_loginButton.Disabled = loading;
 		_signUpButton.Disabled = loading;
+		if (_guestStart != null) _guestStart.Disabled = loading;
 		_loginButton.Text = loading ? "Signing in…" : "Login";
 		_signUpButton.Text = loading ? "…" : "Sign Up";
 	}

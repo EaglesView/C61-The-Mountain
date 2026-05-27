@@ -37,46 +37,51 @@ public partial class WinningScene : Node3D
 	private WinningSlide3 _slide3;
 	private Tween _slide1Tween;
 	private Tween _slide2Tween;
-	private Tween _slide3Tween;
 
-	private const float ViewportWidth = 1920f;
 	private const float ViewportHeight = 1080f;
 
-	private static readonly Vector2 SlideIn = Vector2.Zero;
 	private static readonly Vector2 SlideOutUp = new(0f, -ViewportHeight);
-	private static readonly Vector2 SlideOutRight = new(ViewportWidth, 0f);
 
 	/// <summary>Identifiant de la map sélectionnée localement sur la slide 3.</summary>
 	public string SelectedMapId => _slide3?.SelectedMapId ?? "";
 
 	/// <summary>
-	/// Anime l'arrivée de la slide 1 (état initial de l'écran). Les autres slides
-	/// sont supposées être hors-écran à ce point.
+	/// État initial de l'écran&#160;: les trois slides sont empilées à (0,0) dans
+	/// l'ordre de tscn (slide 3 derrière, slide 1 devant). Rien à animer ici.
 	/// </summary>
-	public void TweenToSlide1()
-	{
-		TweenSlide(_slide1, ref _slide1Tween, SlideIn);
-	}
+	public void TweenToSlide1() { }
 
 	/// <summary>
-	/// Fait glisser la slide 1 vers le haut hors-champ et la slide 2 depuis le
-	/// haut jusqu'au centre. Délègue la révélation du bouton «&#160;Continue&#160;»
-	/// au <c>WinningController</c> (cf. <see cref="ShowSlide2ContinueButton"/>).
+	/// Fait glisser la slide 1 vers le haut hors-champ pour révéler la slide 2
+	/// déjà positionnée derrière. Délègue la révélation du bouton
+	/// «&#160;Continue&#160;» au <c>WinningController</c>
+	/// (cf. <see cref="ShowSlide2ContinueButton"/>).
 	/// </summary>
 	public void TweenToSlide2()
 	{
 		TweenSlide(_slide1, ref _slide1Tween, SlideOutUp);
-		TweenSlide(_slide2, ref _slide2Tween, SlideIn);
 	}
 
 	/// <summary>
-	/// Fait glisser la slide 2 vers le haut et la slide 3 depuis la droite. À
-	/// l'entrée, la slide 3 est peuplée par <see cref="WinningSlide3.Populate"/>.
+	/// Fait glisser la slide 2 vers le haut pour révéler la slide 3 déjà
+	/// positionnée derrière, puis la peuple via <see cref="WinningSlide3.Populate"/>.
 	/// </summary>
 	public void TweenToSlide3()
 	{
 		TweenSlide(_slide2, ref _slide2Tween, SlideOutUp);
-		TweenSlide(_slide3, ref _slide3Tween, SlideIn);
+		_slide3?.Populate();
+	}
+
+	/// <summary>
+	/// Variante «&#160;skip slide 2&#160;»&#160;: utilisée quand il n'y a pas de
+	/// sous-gagnants à montrer. On masque slide 2 (qui n'a jamais été révélée)
+	/// pour éviter qu'elle ne flashe vide entre slide 1 et slide 3, puis on
+	/// lève slide 1 pour révéler slide 3 directement.
+	/// </summary>
+	public void TweenSkipToSlide3()
+	{
+		if (_slide2 is not null) _slide2.Visible = false;
+		TweenSlide(_slide1, ref _slide1Tween, SlideOutUp);
 		_slide3?.Populate();
 	}
 
@@ -117,7 +122,6 @@ public partial class WinningScene : Node3D
 	{
 		_slide1Tween?.Kill();
 		_slide2Tween?.Kill();
-		_slide3Tween?.Kill();
 	}
 
 	private void OnSlide3VoteConfirmed(string InMapId)

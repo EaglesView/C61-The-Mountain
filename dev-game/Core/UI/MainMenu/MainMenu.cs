@@ -145,6 +145,11 @@ public partial class MainMenu : Control
 	private async void OnSignOutPressed()
 	{
 		await Core.Auth.AuthServiceProvider.SignOutAsync();
+		// Coupe la session ENet pour libérer le slot invité côté serveur
+		// (PeerDisconnected → GuestSlotRegistry.ReleasePeer). Sans ça, la
+		// session ENet survit au sign-out (NetworkManager est autoload) et
+		// le slot reste revendiqué jusqu'au timeout ENet, ~30s.
+		Core.Network.NetworkManager.Instance?.Disconnect();
 		GetTree().ChangeSceneToFile("res://Core/UI/LoginTemp/login_temp.tscn");
 	}
 

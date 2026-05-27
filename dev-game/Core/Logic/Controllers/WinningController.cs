@@ -33,19 +33,19 @@ public sealed partial class WinningController : Node3D, IPhase
     [Export] private PackedScene _winningSceneAsset;
 
 	/// <summary>Durée d'affichage de la slide 1 (gagnant principal).</summary>
-	[Export] private float _celebrationDuration = 10f;
+	[Export] private float _celebrationDuration = 6f;
 
 	/// <summary>
 	/// Délai après l'apparition de la slide 2 avant que le bouton «&#160;Continue&#160;»
     /// soit révélé (secondes).
     /// </summary>
-    [Export] private float _slide2ButtonDelay = 4f;
+    [Export] private float _slide2ButtonDelay = 2f;
 
     /// <summary>
 	/// Délai max après l'apparition du bouton «&#160;Continue&#160;» avant le passage
 	/// forcé vers la slide de vote (secondes).
 	/// </summary>
-	[Export] private float _slide2ForceAdvance = 15f;
+	[Export] private float _slide2ForceAdvance = 10f;
 
 	/// <summary>Délai max du vote (slide 3) avant auto-avance vers <c>NewGame</c>.</summary>
 	[Export] private float _voteTimeout = 30f;
@@ -107,6 +107,7 @@ public sealed partial class WinningController : Node3D, IPhase
 			return;
 		}
 
+		GD.Print($"[WinningDiag] Enter: instantiating winning scene. LastWinnerPeerId={LobbyState.LastWinnerPeerId} SubWinners={LobbyState.LastSubWinners?.Count ?? -1} Hats={LobbyState.LastHats?.Count ?? -1}");
 		_winningInstance = _winningSceneAsset.Instantiate<WinningScene>();
 		_winningInstance.MapVoteCast += OnMapVoteCast;
 		_winningInstance.ContinuePressed += OnContinuePressed;
@@ -114,12 +115,15 @@ public sealed partial class WinningController : Node3D, IPhase
 		_winningInstance.QuitPressed += OnQuitPressed;
 		_winningInstance.LaunchNewLobby += OnLaunchNewLobby;
 		AddChild(_winningInstance);
+		GD.Print("[WinningDiag] Enter: winning scene added to tree.");
 
 		// Pousse le libellé du gagnant principal à la slide 1 et remplit les
 		// panneaux de sous-gagnants de la slide 2 à partir des données stockées
 		// dans LobbyState par GameController.
-		ApplyWinnerLabel();
-		ApplySubWinners();
+		try { ApplyWinnerLabel(); GD.Print("[WinningDiag] Enter: ApplyWinnerLabel done."); }
+		catch (System.Exception ex) { GD.PrintErr($"[WinningDiag] ApplyWinnerLabel threw: {ex}"); }
+		try { ApplySubWinners(); GD.Print("[WinningDiag] Enter: ApplySubWinners done."); }
+		catch (System.Exception ex) { GD.PrintErr($"[WinningDiag] ApplySubWinners threw: {ex}"); }
 
 		_fsm = new StateMachine<State>(State.Init, OnSubEnter, OnSubExit);
 
@@ -129,28 +133,45 @@ public sealed partial class WinningController : Node3D, IPhase
 			State.Slide1
 		);
 
-		// Slide1 -> Slide2WaitButton après le délai d'affichage du gagnant.
-        _fsm.When(State.Slide1,
-            new TimeElapsedCondition<State>(_celebrationDuration),
-            State.Slide2WaitButton
-        );
+		// Slide 2 n'a de sens que s'il y a au moins un sous-gagnant à afficher.
+		// Cas typique du skip : partie solo où une seule condition a marqué (elle
+		// devient le gagnant principal, plus rien à montrer en sous-conditions).
+		bool hasSubWinners = (LobbyState.LastSubWinners?.Count ?? 0) > 0;
 
-        // Slide2WaitButton -> Slide2ButtonShown après _slide2ButtonDelay.
-        _fsm.When(State.Slide2WaitButton,
-            new TimeElapsedCondition<State>(_slide2ButtonDelay),
-            State.Slide2ButtonShown
-        );
+		if (hasSubWinners)
+		{
+			// Slide1 -> Slide2WaitButton après le délai d'affichage du gagnant.
+			_fsm.When(State.Slide1,
+				new TimeElapsedCondition<State>(_celebrationDuration),
+				State.Slide2WaitButton
+			);
 
-		// Slide2ButtonShown -> Slide3 quand l'utilisateur appuie sur Continue
-		// ou après le délai d'auto-avance.
-        _fsm.When(State.Slide2ButtonShown,
-            new PredicateCondition<State>(() => _continuePressed),
-            State.Slide3
-        );
-        _fsm.When(State.Slide2ButtonShown,
-            new TimeElapsedCondition<State>(_slide2ForceAdvance),
-            State.Slide3
-        );
+			// Slide2WaitButton -> Slide2ButtonShown après _slide2ButtonDelay.
+			_fsm.When(State.Slide2WaitButton,
+				new TimeElapsedCondition<State>(_slide2ButtonDelay),
+				State.Slide2ButtonShown
+			);
+
+			// Slide2ButtonShown -> Slide3 quand l'utilisateur appuie sur Continue
+			// ou après le délai d'auto-avance.
+			_fsm.When(State.Slide2ButtonShown,
+				new PredicateCondition<State>(() => _continuePressed),
+				State.Slide3
+			);
+			_fsm.When(State.Slide2ButtonShown,
+				new TimeElapsedCondition<State>(_slide2ForceAdvance),
+				State.Slide3
+			);
+		}
+		else
+		{
+			// Pas de sous-gagnants : on saute slide 2 et on file au vote directement.
+			GD.Print("[WinningDiag] No sub-winners — skipping Slide2.");
+			_fsm.When(State.Slide1,
+				new TimeElapsedCondition<State>(_celebrationDuration),
+				State.Slide3
+			);
+		}
 
         // Slide3 -> NewGame sur confirmation explicite ou expiration du timeout.
         _fsm.When(State.Slide3,
@@ -162,6 +183,7 @@ public sealed partial class WinningController : Node3D, IPhase
             State.NewGame
         );
 
+        GD.Print("[WinningDiag] Enter: FSM built, entering Init state.");
         OnSubEnter(State.Init);
     }
 
@@ -262,7 +284,7 @@ public sealed partial class WinningController : Node3D, IPhase
     // ── Logique de vote (serveur ou offline) ─────────────────────────────────
 
     /// <summary>
-	/// Applique un vote dans <see cref="_votes"/>, recalcule la majorité et
+    /// Applique un vote dans <see cref="_votes"/>, recalcule la majorité et
     /// pousse la mise à jour: broadcast aux peers en mode serveur, mise à
 	/// jour locale de l'UI en offline. Idempotent par peer: re-voter écrase
 	/// le choix précédent.
@@ -399,7 +421,7 @@ public sealed partial class WinningController : Node3D, IPhase
 
     /// <summary>
     /// Reçu par les clients (et appelé localement sur le serveur via
-	/// <c>CallLocal=true</c>)&#160;: reconstruit <see cref="_votes"/> et pousse
+    /// <c>CallLocal=true</c>)&#160;: reconstruit <see cref="_votes"/> et pousse
 	/// les counts à l'UI.
 	/// </summary>
 	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
@@ -440,6 +462,7 @@ public sealed partial class WinningController : Node3D, IPhase
 
     private void OnSubEnter(State InState)
     {
+        GD.Print($"[WinningDiag] FSM enter: {InState}");
         switch (InState)
         {
             case State.Slide1:
@@ -452,7 +475,12 @@ public sealed partial class WinningController : Node3D, IPhase
                 _winningInstance?.ShowSlide2ContinueButton();
                 break;
             case State.Slide3:
-                _winningInstance?.TweenToSlide3();
+                // Si on saute slide 2 (cas «&#160;0 sous-gagnant&#160;»), il faut
+				// lever slide 1 plutôt que slide 2 — slide 2 n'a jamais été révélée.
+				if (_fsm is not null && _fsm.Previous == State.Slide1)
+					_winningInstance?.TweenSkipToSlide3();
+				else
+					_winningInstance?.TweenToSlide3();
 				// En offline, le joueur unique est de facto l'hôte du vote.
 				// En réseau, on se fie au flag LobbyState renseigné à la
 				// création de la salle.
@@ -462,25 +490,25 @@ public sealed partial class WinningController : Node3D, IPhase
 			case State.NewGame:
 			case State.Failure:
 				// Filet de sécurité côté UI&#160;: si rien n'a été confirmé via le
-                // flux serveur, applique la majorité courante (ou la sélection
-                // locale en repli) pour ne pas laisser le prochain Lobby sans
-                // map. Le serveur réseau passe par ServerFinalizeIfNeeded.
-                {
-                    string fallback = !string.IsNullOrEmpty(_majorityMapId)
-                        ? _majorityMapId
-                        : (_winningInstance?.SelectedMapId ?? "");
-                    if (!string.IsNullOrEmpty(fallback)) LobbyState.SetSelectedMap(fallback);
-                }
-                _done = true;
-                break;
-        }
-    }
+				// flux serveur, applique la majorité courante (ou la sélection
+				// locale en repli) pour ne pas laisser le prochain Lobby sans
+				// map. Le serveur réseau passe par ServerFinalizeIfNeeded.
+				{
+					string fallback = !string.IsNullOrEmpty(_majorityMapId)
+						? _majorityMapId
+						: (_winningInstance?.SelectedMapId ?? "");
+					if (!string.IsNullOrEmpty(fallback)) LobbyState.SetSelectedMap(fallback);
+				}
+				_done = true;
+				break;
+		}
+	}
 
-    private void OnSubExit(State _) { }
+	private void OnSubExit(State _) { }
 
-    public override void _Ready() { }
+	public override void _Ready() { }
 
-    /// <summary>
+	/// <summary>
 	/// Lit les données de gagnant persistées par <see cref="GameController"/> dans
 	/// <see cref="LobbyState"/> et les pousse au titre de la slide 1 via
 	/// <see cref="WinningScene"/>. Sans effet si aucun gagnant n'est enregistré (ex.&#160;:
@@ -496,15 +524,15 @@ public sealed partial class WinningController : Node3D, IPhase
 			? $"{username} Won"
 			: $"{username} — {LobbyState.LastWinnerConditionLabel}";
 		// Le _Ready des slides a tourné synchroniquement à l'AddChild du Winning
-        // instance, donc SetWinnerLabel peut être appelé directement.
-        var slide1 = _winningInstance.GetNodeOrNull<WinningSlide1>("Winning_UI/SCR_01_WHOWINS");
-        slide1?.SetWinnerLabel(label);
-        // Le slot 3D résout son chapeau via LobbyState.LastHats — qui a été
-        // rempli par GameController au moment du finalize/broadcast.
-        slide1?.SetWinnerPeer(peerId);
-    }
+		// instance, donc SetWinnerLabel peut être appelé directement.
+		var slide1 = _winningInstance.GetNodeOrNull<WinningSlide1>("Winning_UI/SCR_01_WHOWINS");
+		slide1?.SetWinnerLabel(label);
+		// Le slot 3D résout son chapeau via LobbyState.LastHats — qui a été
+		// rempli par GameController au moment du finalize/broadcast.
+		slide1?.SetWinnerPeer(peerId);
+	}
 
-    /// <summary>
+	/// <summary>
 	/// Pousse les sous-gagnants persistés par <see cref="GameController"/> à la
 	/// slide 2 sous forme d'entrées (titre, username, détail). Les panneaux sans
 	/// sous-gagnant correspondant seront masqués par
@@ -514,7 +542,12 @@ public sealed partial class WinningController : Node3D, IPhase
 	{
 		if (_winningInstance is null) return;
 		var slide2 = _winningInstance.GetNodeOrNull<WinningSlide2>("Winning_UI/SCR_02_SUBWINNERS");
-		if (slide2 is null) return;
+		if (slide2 is null)
+		{
+			GD.Print("Yo that aint good, slide2 is null");
+			return;
+		}
+		;
 		var subs = LobbyState.LastSubWinners;
 		var entries = new List<WinningSlide2.SubEntry>(subs?.Count ?? 0);
 		if (subs is not null)
@@ -536,9 +569,9 @@ public sealed partial class WinningController : Node3D, IPhase
 
 	/// <summary>
 	/// Résout un nom d'usager affichable pour <paramref name="InPeerId"/>. Pour
-    /// le joueur local (peer == <see cref="NetworkManager.LocalPeerId"/> ou peer
-    /// == 1 en offline) on utilise le username Firebase courant. Sans mapping
-    /// peer→userId broadcasté pour les autres joueurs, on retombe sur
+	/// le joueur local (peer == <see cref="NetworkManager.LocalPeerId"/> ou peer
+	/// == 1 en offline) on utilise le username Firebase courant. Sans mapping
+	/// peer→userId broadcasté pour les autres joueurs, on retombe sur
 	/// «&#160;Player N&#160;» jusqu'à ce que ce mapping soit ajouté au protocole.
 	/// </summary>
 	private static string ResolveUsername(int InPeerId)
@@ -550,6 +583,16 @@ public sealed partial class WinningController : Node3D, IPhase
 		{
 			var u = AuthServiceProvider.Instance.CurrentUser?.Username;
 			if (!string.IsNullOrEmpty(u)) return u;
+		}
+		// Peer distant&#160;: on passe par LobbyPresence (peer→userId) puis par le
+		// RoomSnapshot (userId→Username) pour afficher un vrai nom plutôt qu'un
+		// «&#160;Player N&#160;».
+		if (LobbyPresence.TryGetUserId(InPeerId, out var userId)
+			&& LobbyState.Current is { } snapshot
+			&& snapshot.Players.TryGetValue(userId, out var entry)
+			&& !string.IsNullOrEmpty(entry.Username))
+		{
+			return entry.Username;
 		}
 		return $"Player {InPeerId}";
 	}

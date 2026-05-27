@@ -7,6 +7,10 @@ using Godot;
 /// </summary>
 public sealed partial class MapGridItem : Control
 {
+
+	[Export] public Button VoteButton;
+	[Export] public Label VoteAmtLabel;
+	[Export] public Label MapNameLabel;
 	/// <summary>Émis quand l'item est cliqué.</summary>
 	[Signal] public delegate void SelectedEventHandler(string InMapId);
 
@@ -30,7 +34,9 @@ public sealed partial class MapGridItem : Control
 	public void SetMap(string InMapId, string InDisplayName, string InImagePath)
 	{
 		_mapId = InMapId;
-		if (_mapNameLabel is not null) _mapNameLabel.Text = InDisplayName;
+		if (MapNameLabel is not null) MapNameLabel.Text = InDisplayName;
+		else if (_mapNameLabel is not null) _mapNameLabel.Text = InDisplayName;
+
 		if (_mapImage is not null && !string.IsNullOrEmpty(InImagePath))
 		{
 			var tex = ResourceLoader.Load<Texture2D>(InImagePath);
@@ -41,8 +47,10 @@ public sealed partial class MapGridItem : Control
 	/// <summary>Met à jour le compteur de votes affiché sous le nom de la map.</summary>
 	public void SetVoteCount(int InCount)
 	{
-		if (_voteCountLabel is null) return;
-		_voteCountLabel.Text = InCount == 1 ? "1 vote" : $"{InCount} votes";
+		string text = InCount == 1 ? "1 vote" : $"{InCount} votes";
+
+		if (VoteAmtLabel is not null) VoteAmtLabel.Text = text;
+		else if (_voteCountLabel is not null) _voteCountLabel.Text = text;
 	}
 
 	/// <summary>Met à jour l'état sélectionné et le visuel associé.</summary>
@@ -55,9 +63,10 @@ public sealed partial class MapGridItem : Control
 	public override void _Ready()
 	{
 		_mapImage = GetNodeOrNull<TextureRect>("MarginContainer/MapPanel/VBoxContainer/MapImage");
-		_mapNameLabel = GetNodeOrNull<Label>("MarginContainer/MapPanel/VBoxContainer/MapNameLabel");
-		_voteCountLabel = GetNodeOrNull<Label>("MarginContainer/MapPanel/VBoxContainer/VoteCountLabel");
+		_mapNameLabel = GetNodeOrNull<Label>("MarginContainer/MapPanel/VBoxContainer/HBoxContainer/VBoxContainer/MapNameLabel");
+		_voteCountLabel = GetNodeOrNull<Label>("MarginContainer/MapPanel/VBoxContainer/HBoxContainer/VBoxContainer/VoteCountLabel");
 		MouseFilter = MouseFilterEnum.Stop;
+		if (VoteButton is not null) VoteButton.Pressed += () => EmitSignal(SignalName.Selected, _mapId);
 		SetSelected(false);
 	}
 

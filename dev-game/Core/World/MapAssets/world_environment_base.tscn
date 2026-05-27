@@ -35,9 +35,13 @@ glow_bloom = 1.0
 glow_blend_mode = 0
 glow_map = SubResource("NoiseTexture2D_1ddx8")
 volumetric_fog_enabled = true
-volumetric_fog_density = 0.004
-volumetric_fog_emission = Color(0.21322975, 0.5670321, 0.7566145, 1)
-volumetric_fog_length = 634.06
+volumetric_fog_density = 0.001
+volumetric_fog_emission = Color(0.5389566, 0.8002566, 0.9575209, 1)
+volumetric_fog_length = 799.85
+volumetric_fog_detail_spread = 3.2490087
+adjustment_enabled = true
+adjustment_contrast = 1.045
+adjustment_saturation = 1.52
 
 [sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_ft"]
 
