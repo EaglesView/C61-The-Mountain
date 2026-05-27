@@ -79,6 +79,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.46218204, 0)
 script = ExtResource("5_svcmn")
 CharacterScene = ExtResource("5_i43sa")
 AimDistance = 0.2
+HeadFollowSpeed = 30.0
 MaxPitchDegrees = 90.0
 
 [node name="Spawn1" type="Marker3D" parent="CharacterFollowers" unique_id=530434328]

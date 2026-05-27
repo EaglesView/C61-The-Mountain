@@ -111,59 +111,70 @@ public partial class Login : Control
 		SetLoading(true);
 		ClearError();
 
-		bool success = false;
-		string lastError = "Unknown error";
-		for (int i = 1; i <= 8; i++)
+		// Flux invité piloté par le serveur&#160;: on ouvre ENet d'abord, on
+		// demande au serveur le prochain slot libre (GuestSlotRegistry), puis
+		// on signe à Firebase avec les creds correspondants. Le serveur est
+		// la seule source de vérité pour "ce slot est-il pris&#160;?" — Firebase
+		// accepterait sans broncher la même session depuis plusieurs clients.
+		try
 		{
-			string email = $"{_emailGuestStart}{i}{_emailGuestEnd}";
-			var result = await _auth.SignInAsync(email, $"{_emailPWDGuest}{i}");
-
-			if (result.Success)
+			await NetworkManager.Instance.ConnectAndAwaitAsync(Room.HardcodedServerIp, Room.HardcodedServerPort);
+			int slot = await NetworkManager.Instance.RequestGuestSlotAsync();
+			if (slot < 1)
 			{
-				success = true;
-				break;
+				SetLoading(false);
+				ShowError("Aucun slot invité disponible. Réessayez dans un instant.");
+				return;
 			}
-			lastError = result.ErrorMessage ?? "Unknown error";
-			// If it failed, we assume it's because the guest is already taken (refused by Firebase/Backend)
-            // So we loop and try the next one.
-        }
 
-        SetLoading(false);
+			string email = $"{_emailGuestStart}{slot}{_emailGuestEnd}";
+			string password = $"{_emailPWDGuest}{slot}";
+			var result = await _auth.SignInAsync(email, password);
+			if (!result.Success)
+			{
+				SetLoading(false);
+				// La réservation côté serveur expirera d'elle-même (TTL) — pas
+				// besoin de RPC de libération explicite. Slot disponible à
+				// nouveau dans quelques secondes.
+				ShowError(result.ErrorMessage ?? "Guest sign-in failed.");
+				return;
+			}
 
-        if (success)
-        {
-            GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
-        }
-        else
-        {
-            ShowError($"Guest login failed. Last error: {lastError}");
-        }
-    }
+			Core.Auth.GuestSession.LocalSlotIndex = slot;
+			SetLoading(false);
+			GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
+		}
+		catch (System.Exception ex)
+		{
+			SetLoading(false);
+			ShowError($"Connexion invité impossible&#160;: {ex.Message}");
+		}
+	}
 
-    private void SetLoading(bool loading)
-    {
-        _loginButton.Disabled = loading;
-        _signUpButton.Disabled = loading;
-        if (_guestStart != null) _guestStart.Disabled = loading;
-        _loginButton.Text = loading ? "Signing in…" : "Login";
-        _signUpButton.Text = loading ? "…" : "Sign Up";
-    }
+	private void SetLoading(bool loading)
+	{
+		_loginButton.Disabled = loading;
+		_signUpButton.Disabled = loading;
+		if (_guestStart != null) _guestStart.Disabled = loading;
+		_loginButton.Text = loading ? "Signing in…" : "Login";
+		_signUpButton.Text = loading ? "…" : "Sign Up";
+	}
 
-    private void ShowError(string message)
-    {
-        if (_errorLabel is not null)
-        {
-            _errorLabel.Text = message;
-            _errorLabel.Visible = true;
-        }
-    }
+	private void ShowError(string message)
+	{
+		if (_errorLabel is not null)
+		{
+			_errorLabel.Text = message;
+			_errorLabel.Visible = true;
+		}
+	}
 
-    private void ClearError()
-    {
-        if (_errorLabel is not null)
-        {
-            _errorLabel.Text = "";
-            _errorLabel.Visible = false;
-        }
-    }
+	private void ClearError()
+	{
+		if (_errorLabel is not null)
+		{
+			_errorLabel.Text = "";
+			_errorLabel.Visible = false;
+		}
+	}
 }

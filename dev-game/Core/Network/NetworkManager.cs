@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Godot;
 using Core.Network.Providers;
 using Core.Network.Rooms;
@@ -205,6 +206,10 @@ public partial class NetworkManager : Node
             // validation dans GameController.ClientReady accepterait un peer
             // sous une identité périmée.
             LobbyPresence.Remove(id);
+            // Libère également le slot invité revendiqué par ce peer (cf.
+            // GuestSlotRegistry.Claim dans LobbyController.ServerReceiveIdentity).
+            // No-op pour un peer non-invité.
+            GuestSlotRegistry.ReleasePeer(id);
         };
         _provider.PacketReceived += OnPacketReceived;
         _provider.ServerStarted += () => GD.Print("[NetworkManager] Server started on port 7777.");
@@ -425,5 +430,98 @@ public partial class NetworkManager : Node
         {
             StateReceived?.Invoke(state);
         }
+    }
+
+    // ── Allocateur de slot invité ────────────────────────────────────────────
+    //
+    // Avant le sign-in Firebase, un client invité demande un slot libre au
+    // serveur via <see cref="RequestGuestSlotAsync"/>. Le serveur consulte
+    // <see cref="GuestSlotRegistry"/> et renvoie l'index 1..8 (ou -1). Ça
+    // évite la situation où Firebase auth réussit pour <c>invite1</c> sur
+    // plusieurs clients simultanément&#160;: l'allocator est la seule source
+    // de vérité du «&#160;ce slot est-il pris&#160;?&#160;».
+
+    private TaskCompletionSource<int> _pendingSlotRequest;
+
+    /// <summary>
+    /// Établit une connexion ENet vers le serveur et attend que la session
+    /// client locale soit confirmée. No-op si déjà connecté. La timeout couvre
+    /// les cas réseau morts (sinon l'attente est silencieusement infinie).
+    /// </summary>
+    public async Task ConnectAndAwaitAsync(string ip, int port, int timeoutMs = 5000)
+    {
+        if (IsClient && IsRunning
+            && Multiplayer.MultiplayerPeer?.GetConnectionStatus() == MultiplayerPeer.ConnectionStatus.Connected
+            && LocalPeerId > 1)
+            return;
+
+        var tcs = new TaskCompletionSource<bool>();
+        Action<int> onConnected = null;
+        Action<string> onFailed = null;
+        onConnected = _ =>
+        {
+            LocalConnected -= onConnected;
+            ConnectionFailed -= onFailed;
+            tcs.TrySetResult(true);
+        };
+        onFailed = msg =>
+        {
+            LocalConnected -= onConnected;
+            ConnectionFailed -= onFailed;
+            tcs.TrySetException(new Exception(msg));
+        };
+
+        LocalConnected += onConnected;
+        ConnectionFailed += onFailed;
+
+        ConnectToServer(ip, port);
+
+        var completed = await Task.WhenAny(tcs.Task, Task.Delay(timeoutMs));
+        if (completed != tcs.Task)
+        {
+            LocalConnected -= onConnected;
+            ConnectionFailed -= onFailed;
+            throw new TimeoutException($"ENet connect to {ip}:{port} timed out after {timeoutMs}ms.");
+        }
+        await tcs.Task;
+    }
+
+    /// <summary>
+    /// Demande au serveur le prochain slot invité libre. Retourne 1..8 si un
+    /// slot est attribué, -1 si tous sont occupés. La timeout protège contre
+    /// un serveur muet (pas de réponse RPC).
+    /// </summary>
+    public async Task<int> RequestGuestSlotAsync(int timeoutMs = 3000)
+    {
+        var tcs = new TaskCompletionSource<int>();
+        _pendingSlotRequest = tcs;
+        RpcId(1, MethodName.ServerRequestGuestSlot);
+
+        var completed = await Task.WhenAny(tcs.Task, Task.Delay(timeoutMs));
+        if (completed != tcs.Task)
+        {
+            if (ReferenceEquals(_pendingSlotRequest, tcs)) _pendingSlotRequest = null;
+            throw new TimeoutException("Guest slot request timed out.");
+        }
+        return await tcs.Task;
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ServerRequestGuestSlot()
+    {
+        if (!Multiplayer.IsServer()) return;
+        int senderId = Multiplayer.GetRemoteSenderId();
+        if (senderId <= 1) return;
+
+        int slot = GuestSlotRegistry.TryReserveFreeSlot();
+        RpcId(senderId, MethodName.ClientReceiveGuestSlot, slot);
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ClientReceiveGuestSlot(int slot)
+    {
+        var pending = _pendingSlotRequest;
+        _pendingSlotRequest = null;
+        pending?.TrySetResult(slot);
     }
 }

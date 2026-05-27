@@ -262,16 +262,16 @@ public sealed partial class LobbyController : Node3D, IPhase
 		_netState = NetConn.Connected;
 
 		// Handshake d'identité&#160;: dire au serveur quel userId est associé à
-        // notre peerId. Le serveur enregistre, broadcast aux autres clients,
-        // et back-fill les identités existantes vers nous. On joint le flag
-        // <c>isGuest</c> pour que le serveur puisse appliquer une règle
-		// d'unicité ciblée sur les comptes invités (cf.
-		// <see cref="ServerReceiveIdentity"/>).
+		// notre peerId. Le serveur enregistre, broadcast aux autres clients,
+		// et back-fill les identités existantes vers nous. On joint l'index
+		// de slot invité (0 si non-invité)&#160;: le serveur le revendique dans
+		// <c>GuestSlotRegistry</c> et applique la règle d'unicité par slot
+		// (cf. <see cref="ServerReceiveIdentity"/>).
 		var currentUser = Core.Auth.AuthServiceProvider.Instance.CurrentUser;
 		string localUserId = currentUser?.Id ?? "";
-		bool isGuest = currentUser?.IsGuest ?? false;
+		int guestSlot = currentUser?.IsGuest == true ? Core.Auth.GuestSession.LocalSlotIndex : 0;
 		if (!string.IsNullOrEmpty(localUserId))
-			RpcId(1, MethodName.ServerReceiveIdentity, localUserId, isGuest);
+			RpcId(1, MethodName.ServerReceiveIdentity, localUserId, guestSlot);
 
 		// Si l'utilisateur avait déjà cliqué Start (cas&#160;: il a cliqué
 		// pendant que la connexion était encore en cours), avance la FSM
@@ -318,7 +318,7 @@ public sealed partial class LobbyController : Node3D, IPhase
 	/// autres clients, puis back-fill les identités déjà connues vers nous.
 	/// </summary>
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-	private void ServerReceiveIdentity(string userId, bool isGuest)
+	private void ServerReceiveIdentity(string userId, int guestSlot)
 	{
 		if (!Multiplayer.IsServer()) return;
 		int senderId = Multiplayer.GetRemoteSenderId();
@@ -326,81 +326,86 @@ public sealed partial class LobbyController : Node3D, IPhase
 
 		// Unicité de session pour les invités&#160;: Firebase accepte le même
 		// "invite{N}@outilsenligne.ca" depuis plusieurs clients (cf. Login.cs),
-		// donc c'est ici qu'on garde la porte. Si le userId est déjà mappé à
-		// un autre peer encore connecté, on refuse&#160;: on signale au sender
-		// pour qu'il affiche un message, puis on coupe son lien ENet.
-		// PeerDisconnected nettoiera LobbyPresence côté serveur (cf.
-		// NetworkManager._Ready). Cette règle ne s'applique PAS aux comptes
-		// utilisateurs normaux — eux peuvent rester multi-sessions.
-		if (isGuest
-			&& LobbyPresence.TryGetPeerId(userId, out int existingPeer)
-			&& existingPeer != senderId
-			&& IsPeerStillConnected(existingPeer))
+		// donc c'est ici qu'on garde la porte. Le client annonce son slot
+		// (alloué par <c>ServerRequestGuestSlot</c>). Si ce slot est déjà
+		// revendiqué par un autre peer encore connecté, on refuse&#160;: on
+		// signale au sender pour qu'il affiche un message, puis on coupe son
+		// lien ENet. PeerDisconnected nettoiera <c>LobbyPresence</c> et
+		// <c>GuestSlotRegistry</c> côté serveur (cf. NetworkManager._Ready).
+		// guestSlot == 0 = compte utilisateur normal&#160;: pas de règle
+		// d'unicité — eux peuvent rester multi-sessions.
+		if (guestSlot > 0)
 		{
-			RpcId(senderId, MethodName.ClientReceiveIdentityRejected,
-				"Cette session invité est déjà utilisée. Réessayez pour obtenir un autre invité.");
-			// Disconnect non-forcé&#160;: laisse ENet flusher le paquet RPC
-			// ci-dessus avant de fermer le lien, pour que le client ait une
-			// chance de lire la raison du rejet plutôt qu'un simple
-			// "ServerDisconnected".
-			Multiplayer.MultiplayerPeer?.DisconnectPeer(senderId);
-			return;
+			if (GuestSlotRegistry.TryGetPeerForSlot(guestSlot, out int existingPeer)
+				&& existingPeer != senderId
+				&& IsPeerStillConnected(existingPeer))
+			{
+				RpcId(senderId, MethodName.ClientReceiveIdentityRejected,
+					"Cette session invité est déjà utilisée. Réessayez pour obtenir un autre invité.");
+				// Disconnect non-forcé&#160;: laisse ENet flusher le paquet RPC
+				// ci-dessus avant de fermer le lien, pour que le client ait une
+				// chance de lire la raison du rejet plutôt qu'un simple
+				// "ServerDisconnected".
+				Multiplayer.MultiplayerPeer?.DisconnectPeer(senderId);
+				return;
+			}
+			GuestSlotRegistry.Claim(guestSlot, senderId);
 		}
 
 		LobbyPresence.Set(senderId, userId);
 		// Broadcast aux autres clients pour qu'ils peuplent leur map.
-        Rpc(MethodName.ClientReceiveIdentity, senderId, userId);
-        // Back-fill&#160;: envoyer au sender toutes les identités déjà connues.
-        foreach (var (existingPeerSnap, existingUser) in LobbyPresence.Snapshot())
-        {
-            if (existingPeerSnap == senderId) continue;
-            RpcId(senderId, MethodName.ClientReceiveIdentity, existingPeerSnap, existingUser);
-        }
-    }
+		Rpc(MethodName.ClientReceiveIdentity, senderId, userId);
+		// Back-fill&#160;: envoyer au sender toutes les identités déjà connues.
+		foreach (var (existingPeerSnap, existingUser) in LobbyPresence.Snapshot())
+		{
+			if (existingPeerSnap == senderId) continue;
+			RpcId(senderId, MethodName.ClientReceiveIdentity, existingPeerSnap, existingUser);
+		}
+	}
 
-    // Vérifie via la liste des peers ENet que l'entrée LobbyPresence n'est pas
-    // un fantôme (cas&#160;: PeerDisconnected programmé mais pas encore traité).
-    // Sans ça, un retry légitime juste après un disconnect pourrait être
-    // refusé à tort.
-    private bool IsPeerStillConnected(int peerId)
-    {
-        foreach (int p in Multiplayer.GetPeers())
-            if (p == peerId) return true;
-        return false;
-    }
+	// Vérifie via la liste des peers ENet que l'entrée LobbyPresence n'est pas
+	// un fantôme (cas&#160;: PeerDisconnected programmé mais pas encore traité).
+	// Sans ça, un retry légitime juste après un disconnect pourrait être
+	// refusé à tort.
+	private bool IsPeerStillConnected(int peerId)
+	{
+		foreach (int p in Multiplayer.GetPeers())
+			if (p == peerId) return true;
+		return false;
+	}
 
-    /// <summary>Serveur → Clients&#160;: enregistre une identité (sender + back-fill).</summary>
-    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void ClientReceiveIdentity(int peerId, string userId)
-    {
-        LobbyPresence.Set(peerId, userId);
-    }
+	/// <summary>Serveur → Clients&#160;: enregistre une identité (sender + back-fill).</summary>
+	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void ClientReceiveIdentity(int peerId, string userId)
+	{
+		LobbyPresence.Set(peerId, userId);
+	}
 
-    /// <summary>
-    /// Serveur → Client refusé&#160;: le userId invité que le sender a annoncé
-    /// est déjà détenu par un autre peer connecté. Le serveur va couper le
-    /// lien ENet juste après ce RPC&#160;; on enregistre le message pour que la
+	/// <summary>
+	/// Serveur → Client refusé&#160;: le userId invité que le sender a annoncé
+	/// est déjà détenu par un autre peer connecté. Le serveur va couper le
+	/// lien ENet juste après ce RPC&#160;; on enregistre le message pour que la
 	/// FSM remonte un dialog d'erreur explicite plutôt qu'un "Lost connection
 	/// to server" générique.
-    /// </summary>
-    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void ClientReceiveIdentityRejected(string reason)
-    {
+	/// </summary>
+	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void ClientReceiveIdentityRejected(string reason)
+	{
 		GD.PrintErr($"[LobbyController] Identity rejected by server: {reason}");
-        _failureMessage = reason;
-        _connectionFailed = true;
-    }
+		_failureMessage = reason;
+		_connectionFailed = true;
+	}
 
-    /// <summary>
-    /// Vrai uniquement si la session multijoueur courante a un peer assigné,
+	/// <summary>
+	/// Vrai uniquement si la session multijoueur courante a un peer assigné,
 	/// que ce peer est dans l'état <c>Connected</c>, et que le local peer ID
 	/// a été attribué (&gt; 0). Les flags <c>IsRunning</c> et <c>IsClient</c>
 	/// du NetworkManager sont insuffisants&#160;: ils ne reflètent que l'état
-    /// local (provider instancié, rôle assigné) et restent vrais après un
-    /// timeout silencieux côté ENet. Cette vérification couvre les deux trous.
-    /// </summary>
-    private bool IsMultiplayerActuallyConnected()
-    {
+	/// local (provider instancié, rôle assigné) et restent vrais après un
+	/// timeout silencieux côté ENet. Cette vérification couvre les deux trous.
+	/// </summary>
+	private bool IsMultiplayerActuallyConnected()
+	{
 		// Multiplayer est une propriété d'instance de Node (raccourci vers
 		// GetTree().GetMultiplayer()) — d'où le non-static. Le LobbyController
 		// est dans l'arbre quand cette méthode tourne, donc Multiplayer est
@@ -439,20 +444,20 @@ public sealed partial class LobbyController : Node3D, IPhase
 				// Point d'entrée unique : tous les chemins d'erreur (asset
 				// manquant, échec réseau, …) renseignent _failureMessage puis
 				// routent vers Failure. Sans dialog ici l'état serait
-                // terminal silencieux (IsDone jamais vrai) et la FSM
-                // principale soft-lockerait.
-                ShowFailureDialog();
-                break;
-        }
-    }
+				// terminal silencieux (IsDone jamais vrai) et la FSM
+				// principale soft-lockerait.
+				ShowFailureDialog();
+				break;
+		}
+	}
 
-    private void OnSubExit(State _) { }
+	private void OnSubExit(State _) { }
 
-    /// <summary>
+	/// <summary>
 	/// Affiche le dialog d'erreur final de la phase Lobby. Idempotent : si un
 	/// dialog est déjà visible (typiquement parce qu'OnNetConnectionFailed a
-    /// déjà rempli le message et que la FSM ré-entre Failure), on ne le
-    /// rouvre pas. Les deux boutons (OK et X) déclenchent le même retour au
+	/// déjà rempli le message et que la FSM ré-entre Failure), on ne le
+	/// rouvre pas. Les deux boutons (OK et X) déclenchent le même retour au
 	/// menu principal pour que l'utilisateur ne puisse pas rester coincé.
 	/// </summary>
 	private void ShowFailureDialog()
