@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://b6li3g72816q6" path="res://Core/UI/LoginTemp/Login.cs" id="1_logea"]
 [ext_resource type="PackedScene" uid="uid://jkkf34tk07o" path="res://Core/UI/MainMenu/MainMenuAnimatedScene.tscn" id="3_0e8m3"]
 
-[node name="Control" type="Control" unique_id=1362554432 node_paths=PackedStringArray("EmailField", "UsernameField", "PasswordField", "LoginButton", "SignUpButton", "ErrorLabel")]
+[node name="Control" type="Control" unique_id=1362554432 node_paths=PackedStringArray("EmailField", "UsernameField", "PasswordField", "LoginButton", "SignUpButton", "ErrorLabel", "GuestName", "GuestStart")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -13,12 +13,14 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("1_5w32i")
 script = ExtResource("1_logea")
-EmailField = NodePath("HBoxContainer/MarginContainer/VBoxContainer2/VBoxContainer/EmailField")
-UsernameField = NodePath("HBoxContainer/MarginContainer/VBoxContainer2/VBoxContainer/UsernameField")
-PasswordField = NodePath("HBoxContainer/MarginContainer/VBoxContainer2/VBoxContainer/PasswordField")
-LoginButton = NodePath("HBoxContainer/MarginContainer/VBoxContainer2/VBoxContainer/LoginButton")
-SignUpButton = NodePath("HBoxContainer/MarginContainer/VBoxContainer2/VBoxContainer/SignUpButton")
-ErrorLabel = NodePath("HBoxContainer/MarginContainer/VBoxContainer2/VBoxContainer/ErrorLabel")
+EmailField = NodePath("HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/SignInBox/VBoxContainer/EmailField")
+UsernameField = NodePath("HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/SignInBox/VBoxContainer/UsernameField")
+PasswordField = NodePath("HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/SignInBox/VBoxContainer/PasswordField")
+LoginButton = NodePath("HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/SignInBox/VBoxContainer/LoginButton")
+SignUpButton = NodePath("HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/SignInBox/VBoxContainer/SignUpButton")
+ErrorLabel = NodePath("HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/SignInBox/VBoxContainer/ErrorLabel")
+GuestName = NodePath("HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/GuestBox/LineEdit")
+GuestStart = NodePath("HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/GuestBox/Button")
 
 [node name="SubViewportContainer" parent="." unique_id=1476608370 instance=ExtResource("3_0e8m3")]
 custom_minimum_size = Vector2(27.465, 0)
@@ -39,84 +41,114 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="HBoxContainer" unique_id=166680820]
+[node name="MarginContainer2" type="CenterContainer" parent="HBoxContainer" unique_id=1317067799]
+custom_minimum_size = Vector2(800, 500)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="AspectRatioContainer" type="VBoxContainer" parent="HBoxContainer/MarginContainer2" unique_id=1944480472]
+custom_minimum_size = Vector2(600, 600)
+layout_mode = 2
+
+[node name="RichTextLabel" type="RichTextLabel" parent="HBoxContainer/MarginContainer2/AspectRatioContainer" unique_id=873521803]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/default_color = Color(0.013702319, 0.2717592, 0.37882054, 1)
+theme_override_font_sizes/normal_font_size = 35
+bbcode_enabled = true
+text = "[center] \"I know of no better life purpose than to perish in attempting the great and the impossible\" [/center]
+- Friedrich Nietzsche"
+
+[node name="LoginPanel" type="MarginContainer" parent="HBoxContainer/MarginContainer2/AspectRatioContainer" unique_id=166680820]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
+size_flags_vertical = 8
 
-[node name="ColorRect" type="Panel" parent="HBoxContainer/MarginContainer" unique_id=1716656068]
+[node name="ColorRect" type="Panel" parent="HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel" unique_id=1716656068]
+modulate = Color(1, 1, 1, 0.3882353)
 layout_mode = 2
 
-[node name="VBoxContainer2" type="VBoxContainer" parent="HBoxContainer/MarginContainer" unique_id=1738221681]
+[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel" unique_id=1009247582]
 layout_mode = 2
 alignment = 1
 
-[node name="Spacer2" type="Control" parent="HBoxContainer/MarginContainer/VBoxContainer2" unique_id=74989138]
+[node name="SignInBox" type="VBoxContainer" parent="HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer" unique_id=1738221681]
+layout_mode = 2
+alignment = 1
+
+[node name="Spacer2" type="Control" parent="HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/SignInBox" unique_id=74989138]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/MarginContainer/VBoxContainer2" unique_id=101640224]
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/SignInBox" unique_id=101640224]
 custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 alignment = 1
 
-[node name="Title" type="Label" parent="HBoxContainer/MarginContainer/VBoxContainer2/VBoxContainer" unique_id=760004715]
+[node name="Title" type="Label" parent="HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/SignInBox/VBoxContainer" unique_id=760004715]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "The Mountain"
 horizontal_alignment = 1
 
-[node name="EmailField" type="LineEdit" parent="HBoxContainer/MarginContainer/VBoxContainer2/VBoxContainer" unique_id=1521309159]
+[node name="EmailField" type="LineEdit" parent="HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/SignInBox/VBoxContainer" unique_id=1521309159]
 layout_mode = 2
 placeholder_text = "Email"
 
-[node name="UsernameField" type="LineEdit" parent="HBoxContainer/MarginContainer/VBoxContainer2/VBoxContainer" unique_id=119918398]
+[node name="UsernameField" type="LineEdit" parent="HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/SignInBox/VBoxContainer" unique_id=119918398]
 layout_mode = 2
 placeholder_text = "Username"
 
-[node name="PasswordField" type="LineEdit" parent="HBoxContainer/MarginContainer/VBoxContainer2/VBoxContainer" unique_id=245912937]
+[node name="PasswordField" type="LineEdit" parent="HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/SignInBox/VBoxContainer" unique_id=245912937]
 layout_mode = 2
 placeholder_text = "Password"
 secret = true
 
-[node name="LoginButton" type="Button" parent="HBoxContainer/MarginContainer/VBoxContainer2/VBoxContainer" unique_id=1109665968]
+[node name="LoginButton" type="Button" parent="HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/SignInBox/VBoxContainer" unique_id=1109665968]
 layout_mode = 2
-text = "Login"
+text = "Se Connecter"
 
-[node name="SignUpButton" type="Button" parent="HBoxContainer/MarginContainer/VBoxContainer2/VBoxContainer" unique_id=1806046937]
+[node name="SignUpButton" type="Button" parent="HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/SignInBox/VBoxContainer" unique_id=1806046937]
 layout_mode = 2
-text = "Sign Up"
+text = "S'inscrire"
 
-[node name="ErrorLabel" type="Label" parent="HBoxContainer/MarginContainer/VBoxContainer2/VBoxContainer" unique_id=1574762756]
+[node name="ErrorLabel" type="Label" parent="HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/SignInBox/VBoxContainer" unique_id=1574762756]
+custom_minimum_size = Vector2(0, 52.985)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="Spacer" type="Control" parent="HBoxContainer/MarginContainer/VBoxContainer2" unique_id=1425600478]
+[node name="Spacer" type="Control" parent="HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/SignInBox" unique_id=1425600478]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Label" type="Label" parent="HBoxContainer/MarginContainer/VBoxContainer2" unique_id=312037465]
+[node name="GuestBox" type="VBoxContainer" parent="HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer" unique_id=279933685]
 layout_mode = 2
-text = "   ALPHA BUILD - 0.00.03"
 
-[node name="MarginContainer2" type="CenterContainer" parent="HBoxContainer" unique_id=1317067799]
-custom_minimum_size = Vector2(800, 500)
+[node name="Label" type="Label" parent="HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/GuestBox" unique_id=56889276]
+custom_minimum_size = Vector2(0, 44.655)
 layout_mode = 2
-size_flags_horizontal = 3
+text = "Vous ne voulez pas vous connecter?"
+vertical_alignment = 1
 
-[node name="AspectRatioContainer" type="AspectRatioContainer" parent="HBoxContainer/MarginContainer2" unique_id=1892434716]
-custom_minimum_size = Vector2(600, 380)
+[node name="LineEdit" type="LineEdit" parent="HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/GuestBox" unique_id=46894782]
 layout_mode = 2
-ratio = 1.6
-stretch_mode = 0
+placeholder_text = "nom d'invité"
 
-[node name="RichTextLabel" type="RichTextLabel" parent="HBoxContainer/MarginContainer2/AspectRatioContainer" unique_id=873521803]
+[node name="Button" type="Button" parent="HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/GuestBox" unique_id=2114057749]
 layout_mode = 2
-theme_override_colors/default_color = Color(0.013702319, 0.2717592, 0.37882054, 1)
-theme_override_font_sizes/normal_font_size = 35
-bbcode_enabled = true
-text = "[center] \"I know of no better life purpose than to perish in attempting the great and the impossible\" [/center]
-- Friedrich Nietzsche"
+text = "Commencer en invité"
+
+[node name="Label2" type="Label" parent="HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/GuestBox" unique_id=312037465]
+layout_mode = 2
+text = "BUILD BETA - 0.1"
+
+[node name="Label3" type="Label" parent="HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/GuestBox" unique_id=449567562]
+layout_mode = 2
+size_flags_vertical = 6
+text = "Note: Pour la connection, il suffit d'y
+entrer son courriel et mot de passe"
+vertical_alignment = 2
