@@ -58,6 +58,7 @@ public sealed partial class WinningSlide2 : MarginContainer
     /// </summary>
     public void Populate(IReadOnlyList<SubEntry> InEntries)
     {
+        GD.Print($"[WinningDiag] Slide2.Populate entries={InEntries?.Count ?? -1} panels={(_panels is null ? "NULL" : _panels.Length.ToString())} continueBtn={(_continueButton is null ? "NULL" : "ok")}");
         if (_panels is null) return;
         for (int i = 0; i < _panels.Length; i++)
         {
@@ -76,16 +77,23 @@ public sealed partial class WinningSlide2 : MarginContainer
 			if (_usrLabels[i] is not null) _usrLabels[i].Text = e.Username ?? "";
 			if (_amtLabels[i] is not null) _amtLabels[i].Text = e.Detail ?? "";
 			var slot = _winnerDisplays?[i];
+			GD.Print($"[WinningDiag] Slide2.Populate[{i}] peer={e.PeerId} slot={(slot is null ? "NULL" : "ok")}");
 			if (slot is null) continue;
-			slot.Show(e.PeerId);
-			slot.BindNetwork(e.PeerId);
-			if (_previewContainers?[i] is not null) slot.BindMouseInput(_previewContainers[i]);
+			try { slot.Show(e.PeerId); }
+			catch (System.Exception ex) { GD.PrintErr($"[WinningDiag] Slide2[{i}].Show threw: {ex}"); continue; }
+			try { slot.BindNetwork(e.PeerId); }
+			catch (System.Exception ex) { GD.PrintErr($"[WinningDiag] Slide2[{i}].BindNetwork threw: {ex}"); continue; }
+			if (_previewContainers?[i] is not null)
+			{
+				try { slot.BindMouseInput(_previewContainers[i]); }
+				catch (System.Exception ex) { GD.PrintErr($"[WinningDiag] Slide2[{i}].BindMouseInput threw: {ex}"); }
+			}
 		}
 	}
 
 	public override void _Ready()
 	{
-		_continueButton ??= GetNodeOrNull<Button>("SubWinController/SubWinPanel3/ContinueBar/ContinueButton");
+		_continueButton ??= GetNodeOrNull<Button>("SubwinController/SubWinPanel3/ContinueBar/ContinueButton");
 		if (_continueButton is not null)
 		{
 			_continueButton.Visible = false;
@@ -98,36 +106,36 @@ public sealed partial class WinningSlide2 : MarginContainer
 		_amtLabels = new Label[3];
 
 		// Panel 1 (le plus important — gagnant principal des sous-conditions).
-		_panels[0] = GetNodeOrNull<Panel>("SubWinController/SubWinPanel1");
-		_titleLabels[0] = GetNodeOrNull<Label>("SubWinController/SubWinPanel1/VBoxContainer/Title");
-		_usrLabels[0] = GetNodeOrNull<Label>("SubWinController/SubWinPanel1/VBoxContainer/usr_label");
-		_amtLabels[0] = GetNodeOrNull<Label>("SubWinController/SubWinPanel1/VBoxContainer/amt_label");
+		_panels[0] = GetNodeOrNull<Panel>("SubwinController/SubWinPanel1");
+		_titleLabels[0] = GetNodeOrNull<Label>("SubwinController/SubWinPanel1/VBoxContainer/Title");
+		_usrLabels[0] = GetNodeOrNull<Label>("SubwinController/SubWinPanel1/VBoxContainer/usr_label");
+		_amtLabels[0] = GetNodeOrNull<Label>("SubwinController/SubWinPanel1/VBoxContainer/amt_label");
 
-		_panels[1] = GetNodeOrNull<Panel>("SubWinController/SubWinPanel2");
-		_titleLabels[1] = GetNodeOrNull<Label>("SubWinController/SubWinPanel2/VBoxContainer2/Title2");
-		_usrLabels[1] = GetNodeOrNull<Label>("SubWinController/SubWinPanel2/VBoxContainer2/usr_label");
-		_amtLabels[1] = GetNodeOrNull<Label>("SubWinController/SubWinPanel2/VBoxContainer2/amt_label");
+		_panels[1] = GetNodeOrNull<Panel>("SubwinController/SubWinPanel2");
+		_titleLabels[1] = GetNodeOrNull<Label>("SubwinController/SubWinPanel2/VBoxContainer2/Title2");
+		_usrLabels[1] = GetNodeOrNull<Label>("SubwinController/SubWinPanel2/VBoxContainer2/usr_label");
+		_amtLabels[1] = GetNodeOrNull<Label>("SubwinController/SubWinPanel2/VBoxContainer2/amt_label");
 
-		_panels[2] = GetNodeOrNull<Panel>("SubWinController/SubWinPanel3");
-		_titleLabels[2] = GetNodeOrNull<Label>("SubWinController/SubWinPanel3/VBoxContainer3/Title3");
-		_usrLabels[2] = GetNodeOrNull<Label>("SubWinController/SubWinPanel3/VBoxContainer3/usr_label");
-		_amtLabels[2] = GetNodeOrNull<Label>("SubWinController/SubWinPanel3/VBoxContainer3/amt_label");
+		_panels[2] = GetNodeOrNull<Panel>("SubwinController/SubWinPanel3");
+		_titleLabels[2] = GetNodeOrNull<Label>("SubwinController/SubWinPanel3/VBoxContainer3/Title3");
+		_usrLabels[2] = GetNodeOrNull<Label>("SubwinController/SubWinPanel3/VBoxContainer3/usr_label");
+		_amtLabels[2] = GetNodeOrNull<Label>("SubwinController/SubWinPanel3/VBoxContainer3/amt_label");
 
 		_winnerDisplays = new Preview[3];
 		_winnerDisplays[0] = GetNodeOrNull<Preview>(
-			"SubWinController/SubWinPanel1/VBoxContainer/SubViewportContainer/Winner1Viewport/Preview");
+			"SubwinController/SubWinPanel1/VBoxContainer/SubViewportContainer/Winner1Viewport/WinnerDisplay");
 		_winnerDisplays[1] = GetNodeOrNull<Preview>(
-			"SubWinController/SubWinPanel2/VBoxContainer2/SubViewportContainer/Winner2Viewport/Preview");
+			"SubwinController/SubWinPanel2/VBoxContainer2/SubViewportContainer/Winner2Viewport/WinnerDisplay");
 		_winnerDisplays[2] = GetNodeOrNull<Preview>(
-			"SubWinController/SubWinPanel3/VBoxContainer3/SubViewportContainer/Winner3Viewport/Preview");
+			"SubwinController/SubWinPanel3/VBoxContainer3/SubViewportContainer/Winner3Viewport/WinnerDisplay");
 
 		_previewContainers = new SubViewportContainer[3];
 		_previewContainers[0] = GetNodeOrNull<SubViewportContainer>(
-			"SubWinController/SubWinPanel1/VBoxContainer/SubViewportContainer");
+			"SubwinController/SubWinPanel1/VBoxContainer/SubViewportContainer");
 		_previewContainers[1] = GetNodeOrNull<SubViewportContainer>(
-			"SubWinController/SubWinPanel2/VBoxContainer2/SubViewportContainer");
+			"SubwinController/SubWinPanel2/VBoxContainer2/SubViewportContainer");
 		_previewContainers[2] = GetNodeOrNull<SubViewportContainer>(
-			"SubWinController/SubWinPanel3/VBoxContainer3/SubViewportContainer");
+			"SubwinController/SubWinPanel3/VBoxContainer3/SubViewportContainer");
 
 		// État initial&#160;: les panneaux restent visibles avec leur texte de scène
 		// (placeholders) jusqu'à ce que Populate() les remplace ou les masque.
