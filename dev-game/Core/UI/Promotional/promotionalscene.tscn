@@ -1,0 +1,297 @@
+[gd_scene format=3 uid="uid://dkh67ecpapmom"]
+
+[ext_resource type="PackedScene" uid="uid://da16y5obcuijk" path="res://Assets/Models/map.glb" id="1_o5rlq"]
+[ext_resource type="PackedScene" uid="uid://blxnhy8a0mxon" path="res://Core/World/Terrain/endless_water.tscn" id="2_tu4x8"]
+[ext_resource type="PackedScene" uid="uid://bvmigfks33r4g" path="res://Core/World/MapAssets/world_environment_base.tscn" id="3_o1kay"]
+[ext_resource type="PackedScene" uid="uid://i7k20gcwfda6" path="res://Core/World/MapAssets/MainAssets/WindTurbine/eolienne.tscn" id="4_o1kay"]
+[ext_resource type="Script" uid="uid://dds81g3nsewph" path="res://Core/World/MapAssets/MainAssets/SnowballSpawner.cs" id="5_3llyf"]
+[ext_resource type="Texture2D" uid="uid://bu7fsw23jtsu3" path="res://Assets/Textures/Particles/dingbats-518.png" id="6_rto2j"]
+[ext_resource type="Shader" uid="uid://mhdltx1fsr48" path="res://Core/Shaders/smoke.gdshader" id="7_v4due"]
+[ext_resource type="Script" uid="uid://dahhv8n06y01i" path="res://Core/UI/Promotional/Camera3d.cs" id="8_ncdfa"]
+[ext_resource type="Script" uid="uid://bt2ha3jskupir" path="res://Core/World/MapAssets/DecorAssets/RagdollSpawner.cs" id="8_o1kay"]
+[ext_resource type="PackedScene" uid="uid://pyyf2q46j574" path="res://Core/World/CharacterModel/Player/Player.tscn" id="9_ncdfa"]
+[ext_resource type="PackedScene" uid="uid://3lj7a0stmiiv" path="res://Core/World/MapAssets/MainAssets/RotatingThing/rotating_thing_animatable.tscn" id="11_v4due"]
+[ext_resource type="PackedScene" uid="uid://c336gjjdjalff" path="res://Core/World/MapAssets/DecorAssets/icebarg_wall.tscn" id="12_xv064"]
+[ext_resource type="Texture2D" uid="uid://c68nes7tsf7dj" path="res://Assets/Textures/Snow/snow-2/textures/snow_02_diff_1k.jpg" id="13_x61wy"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_xv064"]
+radius = 1.0
+height = 2.0
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_x61wy"]
+radius = 1.0
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_njupw"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_4wys0"]
+emission_shape = 1
+emission_sphere_radius = 1.0
+gravity = Vector3(0, 20, 0)
+linear_accel_min = -2.2351742e-06
+linear_accel_max = 14.629997
+radial_accel_min = -4.880002
+radial_accel_max = 3.2499976
+tangential_accel_min = -2.2351742e-06
+tangential_accel_max = 39.019997
+damping_max = 6.504
+turbulence_enabled = true
+turbulence_noise_scale = 8.512
+turbulence_noise_speed_random = 1.06
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2qcbw"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.15, 0.15, 0.15, 0.5294118)
+albedo_texture = ExtResource("6_rto2j")
+
+[sub_resource type="QuadMesh" id="QuadMesh_q5ic1"]
+material = SubResource("StandardMaterial3D_2qcbw")
+size = Vector2(5, 5)
+
+[sub_resource type="Skin" id="Skin_7sttt"]
+bind_count = 1
+bind/0/name = &""
+bind/0/bone = -1
+bind/0/pose = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_t7i38"]
+render_priority = 0
+shader = ExtResource("7_v4due")
+shader_parameter/scale = 1.0
+shader_parameter/tex_speed = Vector3(0, -2.2, 0.5)
+shader_parameter/mokomoko = Vector2(9.72, 10.335)
+shader_parameter/smoke_volume = 1.146000054435
+shader_parameter/smoke_aperture = 0.890000042275
+shader_parameter/smoke_color = Color(0.18, 0.18, 0.18, 0.3529412)
+
+[sub_resource type="TorusMesh" id="TorusMesh_1bkjd"]
+material = SubResource("ShaderMaterial_t7i38")
+inner_radius = 0.218
+outer_radius = 4.281
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yk3oh"]
+albedo_texture = ExtResource("13_x61wy")
+uv1_scale = Vector3(0.345, 0.345, 0.345)
+uv1_triplanar = true
+uv1_world_triplanar = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_njupw"]
+material = SubResource("StandardMaterial3D_yk3oh")
+size = Vector3(1, 0.785, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_4wys0"]
+size = Vector3(1, 0.785, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_q5ic1"]
+size = Vector3(1, 0.785, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_7sttt"]
+size = Vector3(1, 0.785, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1bkjd"]
+size = Vector3(1, 0.785, 1)
+
+[node name="Promotionalscene" type="Control" unique_id=776785506]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="." unique_id=1078550191]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="SubViewportContainer" unique_id=427866830]
+handle_input_locally = false
+size = Vector2i(1920, 1080)
+render_target_update_mode = 4
+
+[node name="map" parent="SubViewportContainer/SubViewport" unique_id=344878200 instance=ExtResource("1_o5rlq")]
+transform = Transform3D(-8.742279e-07, 0, -20, 0, 19.999998, 0, 20.000004, 0, -8.742278e-07, -53.816673, -33.614147, -490.2893)
+
+[node name="Water" parent="SubViewportContainer/SubViewport" unique_id=2121387950 instance=ExtResource("2_tu4x8")]
+
+[node name="WorldEnvironment" parent="SubViewportContainer/SubViewport" unique_id=1478789142 instance=ExtResource("3_o1kay")]
+
+[node name="ouioui2" parent="SubViewportContainer/SubViewport" unique_id=1412030690 instance=ExtResource("4_o1kay")]
+transform = Transform3D(-0.25000003, 0.25881907, -0.9330128, 0.0669873, 0.9659258, 0.25, 0.96592593, 0, -0.25881907, 0, -41.01851, -198)
+VitesseRotation = 4.09
+
+[node name="Volcano Balls" type="Node3D" parent="SubViewportContainer/SubViewport" unique_id=1349827485]
+transform = Transform3D(20.000004, 0, 0, 0, 19.999998, 0, 0, 0, 20, -83.00339, 36.59892, -591.1256)
+script = ExtResource("5_3llyf")
+SpawnInterval = 0.1
+MaxBalls = 94
+BallMass = 199.97
+ThrowForce = 35.0
+ThrowDirection = Vector3(1, 0, 0.1)
+Spread = 0.329
+BallMesh = SubResource("SphereMesh_xv064")
+CollisionShape = SubResource("SphereShape3D_x61wy")
+PhysicsMaterial = SubResource("PhysicsMaterial_njupw")
+CollisionLayer = 2
+CollisionMask = 7
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="SubViewportContainer/SubViewport/Volcano Balls" unique_id=1199722132]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.1611567, -1.2769191, -3.6721401)
+amount = 50000
+lifetime = 25.0
+speed_scale = 5.39
+transform_align = 1
+process_material = SubResource("ParticleProcessMaterial_4wys0")
+draw_pass_1 = SubResource("QuadMesh_q5ic1")
+draw_skin = SubResource("Skin_7sttt")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/Volcano Balls" unique_id=1854045830]
+transform = Transform3D(-0.087155774, 0, 0.9961948, 0, 1, 0, -0.9961948, 0, -0.08715577, 0, 2.1737971, 0)
+mesh = SubResource("TorusMesh_1bkjd")
+
+[node name="Camera3D" type="Camera3D" parent="SubViewportContainer/SubViewport" unique_id=496853272]
+transform = Transform3D(0.9659259, 0, 0.25881907, 0, 1, 0, -0.25881907, 0, 0.9659258, 30.97866, 4.8639984, -171.3483)
+script = ExtResource("8_ncdfa")
+
+[node name="Node3D" type="Node3D" parent="SubViewportContainer/SubViewport" unique_id=514874970 node_paths=PackedStringArray("ThrowDirection")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26.57637, 20.854797, -244.04901)
+script = ExtResource("8_o1kay")
+RagdollScene = ExtResource("9_ncdfa")
+ThrowDirection = NodePath("Marker3D")
+SpawnInterval = 0.5
+LateralSpread = 2.0
+
+[node name="Marker3D" type="Marker3D" parent="SubViewportContainer/SubViewport/Node3D" unique_id=1562350126]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.994257, 6.333954)
+
+[node name="Node3D2" type="Node3D" parent="SubViewportContainer/SubViewport" unique_id=2019595198 node_paths=PackedStringArray("ThrowDirection")]
+transform = Transform3D(0.49999997, 0, -0.86602545, 0, 1, 0, 0.86602545, 0, 0.49999997, 78.796524, 20.854797, -197.73372)
+script = ExtResource("8_o1kay")
+RagdollScene = ExtResource("9_ncdfa")
+ThrowDirection = NodePath("Marker3D")
+SpawnInterval = 0.5
+LateralSpread = 0.2
+
+[node name="Marker3D" type="Marker3D" parent="SubViewportContainer/SubViewport/Node3D2" unique_id=1949364424]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.994257, 6.333954)
+
+[node name="RotatingThing" parent="SubViewportContainer/SubViewport" unique_id=903562714 instance=ExtResource("11_v4due")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 49.586624, 3.1585732, -247.33853)
+
+[node name="Sketchfab_Scene" parent="SubViewportContainer/SubViewport" unique_id=2077724548 instance=ExtResource("12_xv064")]
+transform = Transform3D(0.61464316, 0, -0.78880525, 0, 1, 0, 0.7888052, 0, 0.6146432, 21.889692, -0.6723232, -374.63638)
+metadata/_edit_group_ = true
+
+[node name="Sketchfab_Scene2" parent="SubViewportContainer/SubViewport" unique_id=326373302 instance=ExtResource("12_xv064")]
+transform = Transform3D(0.61464316, 0, -0.78880525, 0, 1, 0, 0.7888052, 0, 0.6146432, 25.393158, -0.6723232, -370.14017)
+metadata/_edit_group_ = true
+
+[node name="Sketchfab_Scene3" parent="SubViewportContainer/SubViewport" unique_id=1227705162 instance=ExtResource("12_xv064")]
+transform = Transform3D(0.61464316, 0, -0.78880525, 0, 1, 0, 0.7888052, 0, 0.6146432, 29.265411, -0.6723232, -365.17072)
+metadata/_edit_group_ = true
+
+[node name="Sketchfab_Scene4" parent="SubViewportContainer/SubViewport" unique_id=422189898 instance=ExtResource("12_xv064")]
+transform = Transform3D(0.61464316, 0, -0.78880525, 0, 1, 0, 0.7888052, 0, 0.6146432, 33.00608, -0.6723232, -360.3701)
+metadata/_edit_group_ = true
+
+[node name="Sketchfab_Scene5" parent="SubViewportContainer/SubViewport" unique_id=720244835 instance=ExtResource("12_xv064")]
+transform = Transform3D(0.61464316, 0, -0.78880525, 0, 1, 0, 0.7888052, 0, 0.6146432, 36.68541, -0.6723232, -355.64822)
+metadata/_edit_group_ = true
+
+[node name="Sketchfab_Scene13" parent="SubViewportContainer/SubViewport" unique_id=1988286644 instance=ExtResource("12_xv064")]
+transform = Transform3D(0.46583068, 0, -0.88487387, 0, 1, 0, 0.8848738, 0, 0.4658307, 15.99865, -12.38829, -393.56784)
+metadata/_edit_group_ = true
+
+[node name="Sketchfab_Scene14" parent="SubViewportContainer/SubViewport" unique_id=1791030300 instance=ExtResource("12_xv064")]
+transform = Transform3D(-0.017696768, 0, -0.9998434, 0, 1, 0, 0.99984336, 0, -0.017696768, 16.667948, -12.38829, -391.02438)
+metadata/_edit_group_ = true
+
+[node name="Sketchfab_Scene15" parent="SubViewportContainer/SubViewport" unique_id=1269523722 instance=ExtResource("12_xv064")]
+transform = Transform3D(-0.6002248, 0, -0.79983133, 0, 1, 0, 0.7998313, 0, -0.60022485, 15.50733, -12.38829, -387.9626)
+metadata/_edit_group_ = true
+
+[node name="Sketchfab_Scene6" parent="SubViewportContainer/SubViewport" unique_id=1725487382 instance=ExtResource("12_xv064")]
+transform = Transform3D(-0.99999994, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -8.073395, -12.38829, -386.0614)
+metadata/_edit_group_ = true
+
+[node name="Sketchfab_Scene11" parent="SubViewportContainer/SubViewport" unique_id=2092017566 instance=ExtResource("12_xv064")]
+transform = Transform3D(1.1175871e-07, 0, -1, 0, 1, 0, 1, 0, 1.1920929e-07, -11.958522, -16.667233, -389.3128)
+metadata/_edit_group_ = true
+
+[node name="Sketchfab_Scene12" parent="SubViewportContainer/SubViewport" unique_id=67149049 instance=ExtResource("12_xv064")]
+transform = Transform3D(1.1175871e-07, 0, -1, 0, 1, 0, 1, 0, 1.1920929e-07, -11.958523, -16.667233, -393.5527)
+metadata/_edit_group_ = true
+
+[node name="Sketchfab_Scene7" parent="SubViewportContainer/SubViewport" unique_id=1196217824 instance=ExtResource("12_xv064")]
+transform = Transform3D(-0.99999994, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -2.3733945, -12.38829, -386.0614)
+metadata/_edit_group_ = true
+
+[node name="Sketchfab_Scene8" parent="SubViewportContainer/SubViewport" unique_id=1845515721 instance=ExtResource("12_xv064")]
+transform = Transform3D(-0.99999994, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 3.9266052, -12.38829, -386.0614)
+metadata/_edit_group_ = true
+
+[node name="Sketchfab_Scene9" parent="SubViewportContainer/SubViewport" unique_id=49944606 instance=ExtResource("12_xv064")]
+transform = Transform3D(-0.99999994, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 10.012526, -12.38829, -386.0614)
+metadata/_edit_group_ = true
+
+[node name="Sketchfab_Scene10" parent="SubViewportContainer/SubViewport" unique_id=186405049 instance=ExtResource("12_xv064")]
+transform = Transform3D(-0.99999994, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 15.99865, -12.38829, -386.0614)
+metadata/_edit_group_ = true
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport" unique_id=2147008632]
+transform = Transform3D(30.155, 0, 0, 0, 2.575, 0, 0, 0, 30.155, -5.4439163, -10.588704, -380.8936)
+mesh = SubResource("BoxMesh_njupw")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/MeshInstance3D" unique_id=4096895]
+collision_layer = 2
+collision_mask = 5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/MeshInstance3D/StaticBody3D" unique_id=629576881]
+shape = SubResource("BoxShape3D_4wys0")
+
+[node name="MeshInstance3D4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport" unique_id=877712235]
+transform = Transform3D(30.155, 0, 0, 0, 2.575, 0, 0, 0, 4.975575, 46.924908, 0.41321087, -249.29099)
+mesh = SubResource("BoxMesh_njupw")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/MeshInstance3D4" unique_id=208693176]
+collision_layer = 2
+collision_mask = 5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/MeshInstance3D4/StaticBody3D" unique_id=1431658542]
+shape = SubResource("BoxShape3D_q5ic1")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="SubViewportContainer/SubViewport" unique_id=512508275]
+transform = Transform3D(30.155, 0, 0, 0, 2.575, 0, 0, 0, 30.155, 24.711082, -10.588704, -380.8936)
+mesh = SubResource("BoxMesh_njupw")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/MeshInstance3D2" unique_id=1930410236]
+collision_layer = 2
+collision_mask = 5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/MeshInstance3D2/StaticBody3D" unique_id=655659030]
+shape = SubResource("BoxShape3D_7sttt")
+
+[node name="MeshInstance3D3" type="MeshInstance3D" parent="SubViewportContainer/SubViewport" unique_id=1285422145]
+transform = Transform3D(30.155, 0, 0, 0, 2.575, 0, 0, 0, 30.155, 54.86608, -10.588704, -380.8936)
+mesh = SubResource("BoxMesh_njupw")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/MeshInstance3D3" unique_id=612554383]
+collision_layer = 2
+collision_mask = 5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/MeshInstance3D3/StaticBody3D" unique_id=1286954372]
+shape = SubResource("BoxShape3D_1bkjd")
+
+[node name="RotatingThing2" parent="SubViewportContainer/SubViewport" unique_id=2105130857 instance=ExtResource("11_v4due")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.6352915, -8.073395, -12.38829, -396.29358)
+RotationSpeed = 3.0
+RagdollForceThreshold = 0.0
+
+[node name="RotatingThing3" parent="SubViewportContainer/SubViewport" unique_id=146878129 instance=ExtResource("11_v4due")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.6352915, -23.665058, -12.38829, -413.35638)
+RotationSpeed = 3.0
+RagdollForceThreshold = 0.0

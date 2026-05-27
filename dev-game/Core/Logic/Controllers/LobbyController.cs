@@ -263,10 +263,15 @@ public sealed partial class LobbyController : Node3D, IPhase
 
 		// Handshake d'identité&#160;: dire au serveur quel userId est associé à
         // notre peerId. Le serveur enregistre, broadcast aux autres clients,
-        // et back-fill les identités existantes vers nous.
-        string localUserId = Core.Auth.AuthServiceProvider.Instance.CurrentUser?.Id ?? "";
-        if (!string.IsNullOrEmpty(localUserId))
-            RpcId(1, MethodName.ServerReceiveIdentity, localUserId);
+        // et back-fill les identités existantes vers nous. On joint le flag
+        // <c>isGuest</c> pour que le serveur puisse appliquer une règle
+		// d'unicité ciblée sur les comptes invités (cf.
+		// <see cref="ServerReceiveIdentity"/>).
+		var currentUser = Core.Auth.AuthServiceProvider.Instance.CurrentUser;
+		string localUserId = currentUser?.Id ?? "";
+		bool isGuest = currentUser?.IsGuest ?? false;
+		if (!string.IsNullOrEmpty(localUserId))
+			RpcId(1, MethodName.ServerReceiveIdentity, localUserId, isGuest);
 
 		// Si l'utilisateur avait déjà cliqué Start (cas&#160;: il a cliqué
 		// pendant que la connexion était encore en cours), avance la FSM
@@ -293,7 +298,7 @@ public sealed partial class LobbyController : Node3D, IPhase
         }
         else
         {
-            GD.PrintErr($"[LobbyController] Background connect failed (non-fatal during browse): {InMessage}");
+			GD.PrintErr($"[LobbyController] Background connect failed (non-fatal during browse): {InMessage}");
         }
     }
 
@@ -313,21 +318,55 @@ public sealed partial class LobbyController : Node3D, IPhase
 	/// autres clients, puis back-fill les identités déjà connues vers nous.
 	/// </summary>
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-	private void ServerReceiveIdentity(string userId)
+	private void ServerReceiveIdentity(string userId, bool isGuest)
 	{
 		if (!Multiplayer.IsServer()) return;
 		int senderId = Multiplayer.GetRemoteSenderId();
 		if (string.IsNullOrEmpty(userId) || senderId <= 1) return;
 
+		// Unicité de session pour les invités&#160;: Firebase accepte le même
+		// "invite{N}@outilsenligne.ca" depuis plusieurs clients (cf. Login.cs),
+		// donc c'est ici qu'on garde la porte. Si le userId est déjà mappé à
+		// un autre peer encore connecté, on refuse&#160;: on signale au sender
+		// pour qu'il affiche un message, puis on coupe son lien ENet.
+		// PeerDisconnected nettoiera LobbyPresence côté serveur (cf.
+		// NetworkManager._Ready). Cette règle ne s'applique PAS aux comptes
+		// utilisateurs normaux — eux peuvent rester multi-sessions.
+		if (isGuest
+			&& LobbyPresence.TryGetPeerId(userId, out int existingPeer)
+			&& existingPeer != senderId
+			&& IsPeerStillConnected(existingPeer))
+		{
+			RpcId(senderId, MethodName.ClientReceiveIdentityRejected,
+				"Cette session invité est déjà utilisée. Réessayez pour obtenir un autre invité.");
+			// Disconnect non-forcé&#160;: laisse ENet flusher le paquet RPC
+			// ci-dessus avant de fermer le lien, pour que le client ait une
+			// chance de lire la raison du rejet plutôt qu'un simple
+			// "ServerDisconnected".
+			Multiplayer.MultiplayerPeer?.DisconnectPeer(senderId);
+			return;
+		}
+
 		LobbyPresence.Set(senderId, userId);
 		// Broadcast aux autres clients pour qu'ils peuplent leur map.
         Rpc(MethodName.ClientReceiveIdentity, senderId, userId);
         // Back-fill&#160;: envoyer au sender toutes les identités déjà connues.
-        foreach (var (existingPeer, existingUser) in LobbyPresence.Snapshot())
+        foreach (var (existingPeerSnap, existingUser) in LobbyPresence.Snapshot())
         {
-            if (existingPeer == senderId) continue;
-            RpcId(senderId, MethodName.ClientReceiveIdentity, existingPeer, existingUser);
+            if (existingPeerSnap == senderId) continue;
+            RpcId(senderId, MethodName.ClientReceiveIdentity, existingPeerSnap, existingUser);
         }
+    }
+
+    // Vérifie via la liste des peers ENet que l'entrée LobbyPresence n'est pas
+    // un fantôme (cas&#160;: PeerDisconnected programmé mais pas encore traité).
+    // Sans ça, un retry légitime juste après un disconnect pourrait être
+    // refusé à tort.
+    private bool IsPeerStillConnected(int peerId)
+    {
+        foreach (int p in Multiplayer.GetPeers())
+            if (p == peerId) return true;
+        return false;
     }
 
     /// <summary>Serveur → Clients&#160;: enregistre une identité (sender + back-fill).</summary>
@@ -335,6 +374,21 @@ public sealed partial class LobbyController : Node3D, IPhase
     private void ClientReceiveIdentity(int peerId, string userId)
     {
         LobbyPresence.Set(peerId, userId);
+    }
+
+    /// <summary>
+    /// Serveur → Client refusé&#160;: le userId invité que le sender a annoncé
+    /// est déjà détenu par un autre peer connecté. Le serveur va couper le
+    /// lien ENet juste après ce RPC&#160;; on enregistre le message pour que la
+	/// FSM remonte un dialog d'erreur explicite plutôt qu'un "Lost connection
+	/// to server" générique.
+    /// </summary>
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ClientReceiveIdentityRejected(string reason)
+    {
+		GD.PrintErr($"[LobbyController] Identity rejected by server: {reason}");
+        _failureMessage = reason;
+        _connectionFailed = true;
     }
 
     /// <summary>
@@ -422,14 +476,14 @@ public sealed partial class LobbyController : Node3D, IPhase
 	private void GoToMainMenu()
 	{
 		// Retire l'entrée joueur de Firestore avant de vider LobbyState (sinon
-        // le snapshot référencé par le cleanup est déjà null). Sans cet appel,
-        // un quitteur via ErrorDialog reste listé pour les autres clients.
-        LobbyCleanup.LeaveRoomFireAndForget();
-        NetworkManager.Instance?.Disconnect();
-        LobbyState.Clear();
-        Input.MouseMode = Input.MouseModeEnum.Visible;
-        GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
-    }
+		// le snapshot référencé par le cleanup est déjà null). Sans cet appel,
+		// un quitteur via ErrorDialog reste listé pour les autres clients.
+		LobbyCleanup.LeaveRoomFireAndForget();
+		NetworkManager.Instance?.Disconnect();
+		LobbyState.Clear();
+		Input.MouseMode = Input.MouseModeEnum.Visible;
+		GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
+	}
 
-    public override void _Ready() { }
+	public override void _Ready() { }
 }
