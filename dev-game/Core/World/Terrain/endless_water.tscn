@@ -21,15 +21,15 @@ shader_parameter/wave_noise_scale_a = 24.0
 shader_parameter/wave_noise_scale_b = 24.0
 shader_parameter/wave_time_scale_a = 0.15
 shader_parameter/wave_time_scale_b = 0.15
-shader_parameter/wave_height_scale = 0.815
+shader_parameter/wave_height_scale = 4.555
 shader_parameter/wave_normal_flatness = 100.0
 shader_parameter/surface_normals_a = ExtResource("2_w1jjf")
 shader_parameter/surface_normals_b = ExtResource("2_w1jjf")
 shader_parameter/surface_normals_move_direction_a = Vector2(-1, -2.775)
 shader_parameter/surface_normals_move_direction_b = Vector2(0.2, 1)
 shader_parameter/surface_texture_roughness = 0.32999999262384
-shader_parameter/surface_texture_scale = 0.1
-shader_parameter/surface_texture_time_scale = 0.12400000589
+shader_parameter/surface_texture_scale = 0.020000000950000003
+shader_parameter/surface_texture_time_scale = 0.050000002375
 shader_parameter/ssr_resolution = 1.91000002808876
 shader_parameter/ssr_max_travel = 44.5000006631034
 shader_parameter/ssr_max_diff = 7.500000111758999
@@ -45,9 +45,9 @@ shader_parameter/cut_out_z = 0.0
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_xhr76"]
 material = SubResource("ShaderMaterial_d6caa")
-size = Vector2(2000, 2000)
-subdivide_width = 500
-subdivide_depth = 500
+size = Vector2(500, 500)
+subdivide_width = 1000
+subdivide_depth = 1000
 
 [sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_ujdaq"]
 
@@ -56,6 +56,72 @@ transform = Transform3D(0.86942166, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 mesh = SubResource("PlaneMesh_xhr76")
 script = ExtResource("3_w1jjf")
 WaterArea = NodePath("WaterArea")
+
+[node name="Water2" type="MeshInstance3D" parent="." unique_id=1719832963 node_paths=PackedStringArray("WaterArea")]
+transform = Transform3D(0.86942166, 0, 0, 0, 1, 0, 0, 0, 1, -464.21664, 0.4, 0)
+mesh = SubResource("PlaneMesh_xhr76")
+script = ExtResource("3_w1jjf")
+WaterArea = NodePath("../WaterArea")
+
+[node name="Water3" type="MeshInstance3D" parent="." unique_id=1644340167 node_paths=PackedStringArray("WaterArea")]
+transform = Transform3D(0.86942166, 0, 0, 0, 1, 0, 0, 0, 1, -464.21664, 0.4, -498)
+mesh = SubResource("PlaneMesh_xhr76")
+script = ExtResource("3_w1jjf")
+WaterArea = NodePath("../WaterArea")
+
+[node name="Water4" type="MeshInstance3D" parent="." unique_id=3805438 node_paths=PackedStringArray("WaterArea")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.3127851, 0.4, -498)
+mesh = SubResource("PlaneMesh_xhr76")
+script = ExtResource("3_w1jjf")
+WaterArea = NodePath("../WaterArea")
+
+[node name="Water5" type="MeshInstance3D" parent="." unique_id=514092729 node_paths=PackedStringArray("WaterArea")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 491.62344, 0.4, -498)
+mesh = SubResource("PlaneMesh_xhr76")
+script = ExtResource("3_w1jjf")
+WaterArea = NodePath("../WaterArea")
+
+[node name="Water6" type="MeshInstance3D" parent="." unique_id=1786775160 node_paths=PackedStringArray("WaterArea")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 491.62344, 0.4, 0.3999939)
+mesh = SubResource("PlaneMesh_xhr76")
+script = ExtResource("3_w1jjf")
+WaterArea = NodePath("../WaterArea")
+
+[node name="Water7" type="MeshInstance3D" parent="." unique_id=401939940 node_paths=PackedStringArray("WaterArea")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 977.2336, 0.4, -498)
+mesh = SubResource("PlaneMesh_xhr76")
+script = ExtResource("3_w1jjf")
+WaterArea = NodePath("../WaterArea")
+
+[node name="Water8" type="MeshInstance3D" parent="." unique_id=96714612 node_paths=PackedStringArray("WaterArea")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 977.2336, 0.4, 0.3999939)
+mesh = SubResource("PlaneMesh_xhr76")
+script = ExtResource("3_w1jjf")
+WaterArea = NodePath("../WaterArea")
+
+[node name="Water9" type="MeshInstance3D" parent="." unique_id=581360523 node_paths=PackedStringArray("WaterArea")]
+transform = Transform3D(0.86942166, 0, 0, 0, 1, 0, 0, 0, 1, -464.21664, 0.4, 494.96762)
+mesh = SubResource("PlaneMesh_xhr76")
+script = ExtResource("3_w1jjf")
+WaterArea = NodePath("../WaterArea")
+
+[node name="Water10" type="MeshInstance3D" parent="." unique_id=1522129085 node_paths=PackedStringArray("WaterArea")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 491.62344, 0.4, 495.3676)
+mesh = SubResource("PlaneMesh_xhr76")
+script = ExtResource("3_w1jjf")
+WaterArea = NodePath("../WaterArea")
+
+[node name="Water12" type="MeshInstance3D" parent="." unique_id=879267019 node_paths=PackedStringArray("WaterArea")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.6834927, 0.4, 495.3676)
+mesh = SubResource("PlaneMesh_xhr76")
+script = ExtResource("3_w1jjf")
+WaterArea = NodePath("../WaterArea")
+
+[node name="Water11" type="MeshInstance3D" parent="." unique_id=219538976 node_paths=PackedStringArray("WaterArea")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 977.2336, 0.4, 495.3676)
+mesh = SubResource("PlaneMesh_xhr76")
+script = ExtResource("3_w1jjf")
+WaterArea = NodePath("../WaterArea")
 
 [node name="WaterArea" type="Area3D" parent="." unique_id=63806210]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)

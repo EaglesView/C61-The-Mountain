@@ -26,11 +26,17 @@ public sealed partial class WinningSlide1 : MarginContainer
 	/// </summary>
 	public void SetWinnerPeer(int InPeerId)
 	{
+		GD.Print($"[WinningDiag] Slide1.SetWinnerPeer peer={InPeerId} display={(_winnerDisplay is null ? "NULL" : "ok")} container={(_previewContainer is null ? "NULL" : "ok")}");
 		if (_winnerDisplay is null) return;
-		_winnerDisplay.Show(InPeerId);
-		_winnerDisplay.BindNetwork(InPeerId);
+		try { _winnerDisplay.Show(InPeerId); GD.Print("[WinningDiag] Slide1.Show ok"); }
+		catch (System.Exception ex) { GD.PrintErr($"[WinningDiag] Slide1.Show threw: {ex}"); return; }
+		try { _winnerDisplay.BindNetwork(InPeerId); GD.Print("[WinningDiag] Slide1.BindNetwork ok"); }
+		catch (System.Exception ex) { GD.PrintErr($"[WinningDiag] Slide1.BindNetwork threw: {ex}"); return; }
 		if (_previewContainer is not null)
-			_winnerDisplay.BindMouseInput(_previewContainer);
+		{
+			try { _winnerDisplay.BindMouseInput(_previewContainer); GD.Print("[WinningDiag] Slide1.BindMouseInput ok"); }
+			catch (System.Exception ex) { GD.PrintErr($"[WinningDiag] Slide1.BindMouseInput threw: {ex}"); }
+		}
 	}
 
 	public override void _Ready()
@@ -38,6 +44,6 @@ public sealed partial class WinningSlide1 : MarginContainer
 		_titleLabel       = GetNodeOrNull<Label>("Panel/VBoxContainer/Label");
 		_previewContainer = GetNodeOrNull<SubViewportContainer>("Panel/VBoxContainer/SubViewportContainer");
 		_winnerDisplay    = GetNodeOrNull<Preview>(
-			"Panel/VBoxContainer/SubViewportContainer/SubViewport/Preview");
+			"Panel/VBoxContainer/SubViewportContainer/SubViewport/WinnerDisplay");
 	}
 }

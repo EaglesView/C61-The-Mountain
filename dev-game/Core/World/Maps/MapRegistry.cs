@@ -16,65 +16,61 @@ public static class MapRegistry
 		/// <summary>
 		/// Chemin vers la scène du niveau. Le root de cette scène doit porter un
 		/// script qui implémente <c>IPhase</c> + <c>IGameMode</c> — c'est lui qui
-        /// sera consommé par le <c>GameController</c> comme mode de jeu actif.
-        /// </summary>
-        public string ScenePath { get; init; } = "";
+		/// sera consommé par le <c>GameController</c> comme mode de jeu actif.
+		/// </summary>
+		public string ScenePath { get; init; } = "";
 
-        /// <summary>
+		/// <summary>
 		/// Chemin vers une <c>Texture2D</c> d'aperçu de la map, utilisée par
 		/// l'écran de vote (<c>MapGridItem</c>). Par défaut, le placeholder
 		/// partagé : laisser tel quel jusqu'à ce qu'un asset propre soit
-        /// disponible.
-        /// </summary>
-        public string ImagePath { get; init; } = PlaceholderImagePath;
-    }
+		/// disponible.
+		/// </summary>
+		public string ImagePath { get; init; } = PlaceholderImagePath;
+	}
 
-    public static readonly MapDefinition[] All =
+	public static readonly MapDefinition[] All =
 
-    [
-        new MapDefinition
-        {
-            Id = "dev",
-            DisplayName = "Dev - Crash to Winning",
-            ScenePath = "res://Core/Dev/map_jm.tscn"
-        },
-        new MapDefinition
-        {
-            Id = "Jump The Barrel",
-            DisplayName = "Rotating Thing Contest",
-            ScenePath = "res://Core/World/Maps/rotating_barrel.tscn"
-        },
-        new MapDefinition
-        {
-            Id = "Falling Tiles",
-            DisplayName = "Falling Tiles",
-            ScenePath = "res://Core/World/Maps/falling_tiles.tscn"
-        },
-        new MapDefinition
-        {
-            Id = "Soccer Dev",
-            DisplayName = "Soccer Dev",
-            ScenePath = "res://Core/Dev/soccer_dev.tscn"
-        },
-        new MapDefinition
-        {
-            Id = "obby",
-            DisplayName = "Obby Race!",
-            ScenePath = "res://Core/World/Maps/racing.tscn"
-        },    
-    ];
+	[
 
-    public static MapDefinition? Get(string id)
-    {
-        foreach (var map in All)
-            if (map.Id == id) return map;
-        return null;
-    }
+		new MapDefinition
+		{
+			Id = "Jump The Barrel",
+			DisplayName = "Sauter la barre!",
+			ScenePath = "res://Core/World/Maps/rotating_barrel.tscn",
+			ImagePath = "res://Assets/Textures/Ice/Ice002.png"
+		},
+		new MapDefinition
+		{
+			Id = "Falling Tiles",
+			DisplayName = "Survie en hauteur!",
+			ScenePath = "res://Core/World/Maps/falling_tiles.tscn"
+		},
+		new MapDefinition
+		{
+			Id = "Soccer Dev",
+			DisplayName = "Match de Soccer!",
+			ScenePath = "res://Core/Dev/soccer_dev.tscn"
+		},
+		new MapDefinition
+		{
+			Id = "obby",
+			DisplayName = "Course Ultime!",
+			ScenePath = "res://Core/World/Maps/racing.tscn"
+		},
+	];
 
-    public static int IndexOf(string id)
-    {
-        for (int i = 0; i < All.Length; i++)
-            if (All[i].Id == id) return i;
-        return 0;
-    }
+	public static MapDefinition? Get(string id)
+	{
+		foreach (var map in All)
+			if (map.Id == id) return map;
+		return null;
+	}
+
+	public static int IndexOf(string id)
+	{
+		for (int i = 0; i < All.Length; i++)
+			if (All[i].Id == id) return i;
+		return 0;
+	}
 }

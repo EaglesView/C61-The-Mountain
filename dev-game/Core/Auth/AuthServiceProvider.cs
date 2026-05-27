@@ -32,5 +32,12 @@ public static class AuthServiceProvider
         Reset();
     }
 
-    public static void Reset() => _instance = null;
+    public static void Reset()
+    {
+        _instance = null;
+        // Le slot invité local est tenu pour la durée de la session auth&#160;:
+        // sign-out / Reset l'invalide pour qu'un re-login parte d'une ardoise
+        // propre côté GuestSession.LocalSlotIndex.
+        GuestSession.Clear();
+    }
 }
