@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://c16cwu4br0che" path="res://Core/Dev/SoccerBall.cs" id="2_socdev"]
 [ext_resource type="Script" uid="uid://dmq53218nqd7c" path="res://Core/Dev/GoalZone.cs" id="4_socdev"]
 [ext_resource type="Script" uid="uid://cnj0e7n01romt" path="res://Core/Dev/AutoSceneCollisions.cs" id="5_socdev"]
-[ext_resource type="Script" uid="uid://du8mp3v1ucxqb" path="res://Core/Dev/SoccerModeController.cs" id="6_socdev"]
+[ext_resource type="Script" uid="uid://oer0bbrt2vwj" path="res://Core/Dev/SoccerModeController.cs" id="6_socdev"]
 [ext_resource type="Script" uid="uid://c07lylcrncmf6" path="res://Core/World/MapAssets/MainAssets/PlayerSpawner/PlayerSpawner.cs" id="7_socdev"]
 [ext_resource type="PackedScene" uid="uid://bvmigfks33r4g" path="res://Core/World/MapAssets/world_environment_base.tscn" id="8_30emy"]
 [ext_resource type="PackedScene" uid="uid://blxnhy8a0mxon" path="res://Core/World/Terrain/endless_water.tscn" id="9_n77yk"]
