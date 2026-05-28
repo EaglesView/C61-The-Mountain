@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://jkkf34tk07o"]
 
-[ext_resource type="PackedScene" uid="uid://c8l1otcese8c3" path="res://Core/World/Maps/menu_decor_map_2.tscn" id="1_awgob"]
+[ext_resource type="PackedScene" uid="uid://but3467304q27" path="res://Core/World/Maps/menu_decor_map.tscn" id="1_awgob"]
 
 [node name="SubViewportContainer" type="SubViewportContainer" unique_id=1476608370]
 anchors_preset = 15
@@ -15,4 +15,5 @@ handle_input_locally = false
 size = Vector2i(1920, 1080)
 render_target_update_mode = 4
 
-[node name="MenuDecorMap2" parent="SubViewport" unique_id=1870671043 instance=ExtResource("1_awgob")]
+[node name="MenuDecorMap" parent="SubViewport" unique_id=1870671043 instance=ExtResource("1_awgob")]
+SnowballSpeed = 36.0

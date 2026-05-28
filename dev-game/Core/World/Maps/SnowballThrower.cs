@@ -5,7 +5,7 @@ public partial class SnowballThrower : Node3D
 {
 	[Export] public PackedScene SnowballScene;
 	[Export(PropertyHint.Range, "5,200,1")] public float SnowballSpeed = 55f;
-	[Export(PropertyHint.Range, "0.5,10,0.1")] public float SnowballLifetime = 4f;
+	[Export(PropertyHint.Range, "0.5,10,0.1")] public float SnowballLifetime = 8f;
 	[Export(PropertyHint.Range, "0.5,10,0.1")] public float RagdollRecoverTime = 2f;
 	[Export(PropertyHint.Range, "10,500,5")] public float HitImpulseStrength = 90f;
 	[Export(PropertyHint.Range, "0.0,5.0,0.05")] public float SpawnOffset = 1.0f;
@@ -70,7 +70,7 @@ public partial class SnowballThrower : Node3D
 		{
 			HitCharacter(target, body as PhysicalBone3D, hitDir);
 		}
-		if (IsInstanceValid(ball)) ball.QueueFree();
+		//if (IsInstanceValid(ball)) ball.QueueFree();
 	}
 
 	private static Character FindCharacterAncestor(Node node)

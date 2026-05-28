@@ -92,7 +92,7 @@ SnowballScene = ExtResource("2_muwdo")
 SnowballSpeed = 23.0
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=745082803]
-transform = Transform3D(-0.97345924, 0.06525266, -0.21936098, 2.492595e-08, 0.9584919, 0.28511965, 0.22886054, 0.27755234, -0.93305284, 2.6749218, 8.008547, 17.042995)
+transform = Transform3D(-0.9971299, 0.021586325, -0.072567046, 1.7673113e-08, 0.9584919, 0.28511965, 0.07570961, 0.28430128, -0.955741, 2.6749218, 8.008547, 17.042995)
 fov = 70.0
 
 [node name="GPUParticles3D2" type="GPUParticles3D" parent="." unique_id=1337821342]
@@ -113,13 +113,13 @@ visible = false
 environment = SubResource("Environment_psi4g")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1736263861]
-transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0.0039057732, 5.946391, -46.32395)
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0.0039057732, 5.946391, 96.8906)
 mesh = SubResource("PlaneMesh_l3ipp")
 
 [node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=1173478780]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.540123, 6.2576084, 29.42002)
 collision_layer = 2
-collision_mask = 5
+collision_mask = 69
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=285914699]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.013399601, 0)
