@@ -312,6 +312,7 @@ public partial class Preview : Node3D
 		hatNode.Position = HatRegistry.GlobalOffset + hatDef.Offset;
 		hatNode.Scale = HatRegistry.GlobalScale * hatDef.Scale;
 		attachment.AddChild(hatNode);
+		TryPlayHatAnimation(hatNode);
 		return attachment;
 	}
 }

@@ -251,6 +251,7 @@ public partial class Player : Character
 		hatNode.Scale = HatRegistry.GlobalScale * hatDef.Scale;
 		attachment.AddChild(hatNode);
 		_hatInstance = hatNode;
+		TryPlayHatAnimation(hatNode);
 	}
 
 	public void SetTeam(int InTeamId)

@@ -119,6 +119,12 @@ public static class HatRegistry
         },
         new HatDefinition
         {
+            Id = "helice",
+            DisplayName = "Helice",
+            ScenePath = "res://Assets/Models/hats/model_helice/model_helice.glb"
+        },
+        new HatDefinition
+        {
             Id = "lunette",
             DisplayName = "Lunettes",
             ScenePath = "res://Assets/Models/hats/model_lunette/model_lunette.gltf"
@@ -146,6 +152,12 @@ public static class HatRegistry
             Id = "pingouino",
             DisplayName = "Pingouino",
             ScenePath = "res://Assets/Models/hats/model_pingouino/model_pingouino.gltf"
+        },
+        new HatDefinition
+        {
+            Id = "poisson",
+            DisplayName = "Poisson",
+            ScenePath = "res://Assets/Models/hats/model_poisson/model_poisson.glb"
         },
         new HatDefinition
         {
