@@ -15,6 +15,7 @@ public partial class Player : Character
 	[Export(PropertyHint.Range, "0.1f,1000.0f,0.1f")] public float SpeedRagdollThreshold = 10.0f;
 	[Export(PropertyHint.Range, "0.0f,360.0f,1.0f,suffix:deg")] public float FloorAngleRagdollThreshold = 60.0f;
 	[Export(PropertyHint.Range, "0.0f,50.0f,0.1f")] public float RecoveryVelocityThreshold = 3.0f;
+	[Export(PropertyHint.Range, "0.0f,50.0f,1.0f")] public float RagdollMoveForceMultiplier = 1.0f;
 
 	[ExportGroup("Controller Settings")]
 	[Export(PropertyHint.Range, "0.0f,0.1f,0.001f")] private float _mouseSensitivity = 0.002f;
@@ -364,7 +365,7 @@ public partial class Player : Character
 		if (@event is InputEventMouseMotion mm && _cameraMan?.CamType == CameraType.ThirdPerson)
 		{
 			_cameraMan.RotateCameraTP(mm.Relative.X, -mm.Relative.Y, _mouseSensitivity);
-			
+
 			// If frozen, we stop here to avoid rotating the head/body
 			if (_inputFrozen) return;
 		}
@@ -389,7 +390,7 @@ public partial class Player : Character
 			{
 				RotateY(-mouseMotion.Relative.X * _mouseSensitivity);
 			}
-			
+
 			float newAngle = headAngle + mouseMotion.Relative.Y * _mouseSensitivity;
 			RotateHead(Mathf.Clamp(newAngle, Mathf.DegToRad(-80), Mathf.DegToRad(80)));
 		}
@@ -428,143 +429,144 @@ public partial class Player : Character
 			// On délègue uniquement pour que le hot-path FallLimit reste évalué
 			// si jamais (mais le corps est ragdoll et FallLimit ne change pas
 			// l'état Spectating de toute façon).
-            moveVec = Vector3.Zero;
-            aimVec = Vector3.Zero;
-            base._PhysicsProcess(delta);
-            return;
-        }
+			moveVec = Vector3.Zero;
+			aimVec = Vector3.Zero;
+			base._PhysicsProcess(delta);
+			return;
+		}
 
-        if (_characterState == CharacterState.Dead)
-        {
-            // Mort permanente: le corps est livré au ragdoll, on délègue à Character
-            // (qui short-circuit le switch et laisse PhysicsSkeleton piloter la simulation).
-            base._PhysicsProcess(delta);
-            return;
-        }
+		if (_characterState == CharacterState.Dead)
+		{
+			// Mort permanente: le corps est livré au ragdoll, on délègue à Character
+			// (qui short-circuit le switch et laisse PhysicsSkeleton piloter la simulation).
+			base._PhysicsProcess(delta);
+			return;
+		}
 
-        if (_characterState == CharacterState.Ragdoll)
-        {
-            base._PhysicsProcess(delta);
-            return;
-        }
-        if (_characterState != CharacterState.Ragdoll &&
-            _characterState != CharacterState.Recovering &&
-            Velocity.Length() > SpeedRagdollThreshold)
-        {
-            //GD.Print($"[speed-ragdoll] V={Velocity.Length():F2}  Y={GlobalPosition.Y:F2}");
-            TransitionTo(CharacterState.Ragdoll);
-        }
 
-        if (_characterState == CharacterState.Paused)
-        {
-            moveVec = Vector3.Zero;
-            aimVec = Vector3.Zero;
-            base._PhysicsProcess(delta);
-            return;
-        }
+		if (_characterState != CharacterState.Ragdoll &&
+			_characterState != CharacterState.Recovering &&
+			Velocity.Length() > SpeedRagdollThreshold)
+		{
+			//GD.Print($"[speed-ragdoll] V={Velocity.Length():F2}  Y={GlobalPosition.Y:F2}");
+			TransitionTo(CharacterState.Ragdoll);
+		}
 
-        if (IsOnFloor() && GetFloorAngle() > Mathf.DegToRad(FloorAngleRagdollThreshold))
-        {
-            TransitionTo(CharacterState.Ragdoll);
-            return;
-        }
+		if (_characterState == CharacterState.Paused)
+		{
+			moveVec = Vector3.Zero;
+			aimVec = Vector3.Zero;
+			base._PhysicsProcess(delta);
+			return;
+		}
+		if (_characterState == CharacterState.Ragdoll)
+		{
+			base._PhysicsProcess(delta);
+			return;
+		}
+		if (IsOnFloor() && GetFloorAngle() > Mathf.DegToRad(FloorAngleRagdollThreshold))
+		{
+			TransitionTo(CharacterState.Ragdoll);
+			return;
+		}
 
-        if (Input.IsActionJustPressed("jump") && IsOnFloor()
-            && (_characterState == CharacterState.Idle || _characterState == CharacterState.Moving))
-        {
-            velocity.Y = JumpVelocity;
-            _stats.PeerId = PeerId;
-            _stats.JumpCount++;
-            TransitionTo(CharacterState.Airborne);
-        }
-        if (Input.IsActionJustPressed("run"))
-        {
-            speed *= RunMultiplier;
-            AnimPlayer.SpeedScale *= RunMultiplier;
-        }
-        if (Input.IsActionJustReleased("run"))
-        {
-            speed = WalkSpeed;
-            AnimPlayer.SpeedScale = 1.0f;
-        }
-        if (Input.IsActionJustPressed("interact"))
-        {
-            GetObjectTypeFromRaycast(Raycaster);
-            PhysicsSkelton.Aiming = false;
-            currentEmoteState = EmoteState.None;
-            var interactable = GetInteractableFromRaycast(Raycaster);
-            interactable?.Interact(this);
-        }
+		if (Input.IsActionJustPressed("jump") && IsOnFloor()
+			&& (_characterState == CharacterState.Idle || _characterState == CharacterState.Moving))
+		{
+			velocity.Y = JumpVelocity;
+			_stats.PeerId = PeerId;
+			_stats.JumpCount++;
+			TransitionTo(CharacterState.Airborne);
+		}
+		if (Input.IsActionJustPressed("run"))
+		{
+			speed *= RunMultiplier;
+			AnimPlayer.SpeedScale *= RunMultiplier;
+		}
+		if (Input.IsActionJustReleased("run"))
+		{
+			speed = WalkSpeed;
+			AnimPlayer.SpeedScale = 1.0f;
+		}
+		if (Input.IsActionJustPressed("interact"))
+		{
+			GetObjectTypeFromRaycast(Raycaster);
+			PhysicsSkelton.Aiming = false;
+			currentEmoteState = EmoteState.None;
+			var interactable = GetInteractableFromRaycast(Raycaster);
+			interactable?.Interact(this);
+		}
 
-        if (Input.IsActionJustPressed("show_sign")) PhysicsSkelton.ArmsUp = true;
-        if (Input.IsActionJustReleased("show_sign")) PhysicsSkelton.ArmsUp = false;
+		if (Input.IsActionJustPressed("show_sign")) PhysicsSkelton.ArmsUp = true;
+		if (Input.IsActionJustReleased("show_sign")) PhysicsSkelton.ArmsUp = false;
 
-        // Camera switching disabled
+		// Camera switching disabled
 
-        Vector2 aimDir = Input.GetVector("aim_left", "aim_right", "aim_up", "aim_down");
-        Vector2 inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");
-        Vector3 direction;
+		Vector2 aimDir = Input.GetVector("aim_left", "aim_right", "aim_up", "aim_down");
+		Vector2 inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");
+		Vector3 direction;
 
-        if (_cameraMan?.CamType == CameraType.ThirdPerson)
-        {
-            Vector3 camForward = _cameraMan.GetCameraForwardFlat();
-            Vector3 camRight = _cameraMan.GetCameraRightFlat();
-            direction = (camForward * -inputDir.Y + camRight * -inputDir.X).Normalized();
-            if (direction != Vector3.Zero)
-                Rotation = new Vector3(Rotation.X, Mathf.LerpAngle(Rotation.Y, Mathf.Atan2(-direction.X, -direction.Z), 0.15f), Rotation.Z);
-        }
-        else
-        {
-            direction = -(Transform.Basis * new Vector3(-inputDir.X, 0, -inputDir.Y)).Normalized();
-        }
+		if (_cameraMan?.CamType == CameraType.ThirdPerson)
+		{
+			Vector3 camForward = _cameraMan.GetCameraForwardFlat();
+			Vector3 camRight = _cameraMan.GetCameraRightFlat();
+			direction = (camForward * -inputDir.Y + camRight * -inputDir.X).Normalized();
+			if (direction != Vector3.Zero)
+				Rotation = new Vector3(Rotation.X, Mathf.LerpAngle(Rotation.Y, Mathf.Atan2(-direction.X, -direction.Z), 0.15f), Rotation.Z);
+		}
+		else
+		{
+			direction = -(Transform.Basis * new Vector3(-inputDir.X, 0, -inputDir.Y)).Normalized();
+		}
+		
+		moveVec = direction;
+		aimVec = direction;
 
-        moveVec = direction;
-        aimVec = direction;
-        base._PhysicsProcess(delta);
-        if (currentEmoteState == EmoteState.Pointing)
-            pointVec = _cameraMan.GetRaycastPointingVector();
-    }
+		base._PhysicsProcess(delta);
+		if (currentEmoteState == EmoteState.Pointing)
+			pointVec = _cameraMan.GetRaycastPointingVector();
+	}
 
-    public override void _Process(double delta)
-    {
-        if (!IsMultiplayerAuthority())
-        {
-            if (_nameLabel != null)
-            {
-                _nameLabel.GlobalPosition = currentMovementState == MovementState.Ragdolling
-                    ? PhysicsSkelton.GetSpinePhysicsWorldPosition() + Vector3.Up * 1.5f
-                    : GlobalPosition + new Vector3(0f, 2.2f, 0f);
-            }
-            if (_lastAnimatedState == currentMovementState) return;
-            _lastAnimatedState = currentMovementState;
-            PlayAnimationFromMovement(currentMovementState, AnimPlayer);
-            return;
-        }
+	public override void _Process(double delta)
+	{
+		if (!IsMultiplayerAuthority())
+		{
+			if (_nameLabel != null)
+			{
+				_nameLabel.GlobalPosition = currentMovementState == MovementState.Ragdolling
+					? PhysicsSkelton.GetSpinePhysicsWorldPosition() + Vector3.Up * 1.5f
+					: GlobalPosition + new Vector3(0f, 2.2f, 0f);
+			}
+			if (_lastAnimatedState == currentMovementState) return;
+			_lastAnimatedState = currentMovementState;
+			PlayAnimationFromMovement(currentMovementState, AnimPlayer);
+			return;
+		}
 
-        base._Process(delta);
-        int boneIdx = PhysicsSkelton.FindBone("Head.001");
-        Transform3D headWorld = PhysicsSkelton.GlobalTransform * PhysicsSkelton.GetBoneGlobalPose(boneIdx);
+		base._Process(delta);
+		int boneIdx = PhysicsSkelton.FindBone("Head.001");
+		Transform3D headWorld = PhysicsSkelton.GlobalTransform * PhysicsSkelton.GetBoneGlobalPose(boneIdx);
 
-        if (_hatInstance != null && _cameraMan != null && _cameraMan.CamType != _lastCamTypeForHat)
-        {
-            _lastCamTypeForHat = _cameraMan.CamType;
-            _hatInstance.Visible = _cameraMan.CamType != CameraType.FirstPerson;
-        }
+		if (_hatInstance != null && _cameraMan != null && _cameraMan.CamType != _lastCamTypeForHat)
+		{
+			_lastCamTypeForHat = _cameraMan.CamType;
+			_hatInstance.Visible = _cameraMan.CamType != CameraType.FirstPerson;
+		}
 
-        var interactable = GetInteractableFromRaycast(Raycaster);
-        if (interactable != _highlightedInteractable)
-        {
-            _highlightedInteractable?.OnUnhighlight();
-            _highlightedInteractable = interactable;
-            _highlightedInteractable?.OnHighlight();
-        }
-    }
+		var interactable = GetInteractableFromRaycast(Raycaster);
+		if (interactable != _highlightedInteractable)
+		{
+			_highlightedInteractable?.OnUnhighlight();
+			_highlightedInteractable = interactable;
+			_highlightedInteractable?.OnHighlight();
+		}
+	}
 
-    // ── Spectator helpers ─────────────────────────────────────────────────────
+	// ── Spectator helpers ─────────────────────────────────────────────────────
 
-    /// <summary>
+	/// <summary>
 	/// Définit la cible courante de l'orbit-cam spectateur. Désabonne l'éventuelle
-    /// cible précédente du signal Died (pour ne pas accumuler de handlers à chaque
+	/// cible précédente du signal Died (pour ne pas accumuler de handlers à chaque
 	/// cycle) et abonne la nouvelle si c'est un Character — auto-avance quand la
 	/// cible meurt. Le pivot null est valide (= orbite autour de Vector3.Zero).
 	/// </summary>
@@ -586,15 +588,15 @@ public partial class Player : Character
 
 	/// <summary>Handler abonné via <see cref="_SetSpectatorTarget"/>&#160;: la cible
 	/// suivie vient de mourir, on avance d'un cran dans la liste.</summary>
-    private void _OnSpectatorTargetDied(int InPeerId, DeathReason InReason)
-    {
-        if (_characterState != CharacterState.Spectating) return;
-        _CycleSpectatorTarget(+1);
-    }
+	private void _OnSpectatorTargetDied(int InPeerId, DeathReason InReason)
+	{
+		if (_characterState != CharacterState.Spectating) return;
+		_CycleSpectatorTarget(+1);
+	}
 
-    /// <summary>
-    /// Construit la liste circulaire [ancre, joueurs vivants triés par PeerId
-    /// (sauf soi-même)] et avance de <paramref name="InDir"/> cran(s). La liste
+	/// <summary>
+	/// Construit la liste circulaire [ancre, joueurs vivants triés par PeerId
+	/// (sauf soi-même)] et avance de <paramref name="InDir"/> cran(s). La liste
 	/// est rebâtie à chaque appel parce qu'elle change quand des joueurs meurent
 	/// — pas de cache à invalider.
 	/// </summary>

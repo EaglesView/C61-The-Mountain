@@ -61,6 +61,18 @@ public partial class Character : CharacterBody3D
     protected CharacterState _stateBeforePause = CharacterState.Idle;
     protected float _graceTime = 0f;
     private CollisionShape3D? _spineCollBox;
+    private uint cross_collisions_enabled_mask = 0b_00000000_00000000_00000000_00001110;
+    private uint cross_collisions_disabled_mask = 0b_00000000_00000000_00000000_00001010;
+    private bool _isTransitCollision = false;
+    private bool crossCollisionsEnabled = true;
+    private void _toggleCrossCollisions()
+    {
+        _isTransitCollision = true;
+        crossCollisionsEnabled = !crossCollisionsEnabled;
+        CollisionMask = crossCollisionsEnabled ? cross_collisions_enabled_mask : cross_collisions_disabled_mask;
+
+        _isTransitCollision = false;
+    }
     public Vector3 SpawnPosition { get; set; } = Vector3.Zero;
 
     /// <summary>
@@ -264,6 +276,7 @@ public partial class Character : CharacterBody3D
             case CharacterState.Ragdoll:
                 if (_capsule != null) _capsule.Disabled = true;
                 PhysicsSkelton.IsRagdoll = true;
+                if (crossCollisionsEnabled) _toggleCrossCollisions();
                 PhysicsSkelton.RagdollTriggered = false;
                 if (IsMultiplayerAuthority())
                 {
@@ -315,6 +328,7 @@ public partial class Character : CharacterBody3D
 		{
 			case CharacterState.Ragdoll:
 				PhysicsSkelton.IsRagdoll = false;
+				if (!crossCollisionsEnabled) _toggleCrossCollisions();
 				if (_capsule != null) _capsule.Disabled = false;
 				if (IsMultiplayerAuthority())
 				{

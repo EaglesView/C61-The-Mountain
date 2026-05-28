@@ -12,11 +12,13 @@ texture_margin_right = 13.3469
 texture_margin_bottom = 11.2935
 region_rect = Rect2(629, 317, 194, 49)
 
-[node name="ChatPanel" type="Panel" unique_id=1396906449 node_paths=PackedStringArray("_textBox", "_openChatButton")]
+[node name="ChatPanel" type="Panel" unique_id=1396906449 node_paths=PackedStringArray("_textBox", "_openChatButton", "_messagesList")]
 custom_minimum_size = Vector2(386, 512)
 script = ExtResource("1_mgcdl")
 _textBox = NodePath("MarginContainer/ChatPanel/Panel/ChatInput")
 _openChatButton = NodePath("MarginContainer/ChatPanelHeader/Button")
+_messagesList = NodePath("MarginContainer/ChatPanel/Panel/ScrollContainer/VBoxContainer")
+_chatItemScene = ExtResource("2_mgcdl")
 
 [node name="MarginContainer" type="VBoxContainer" parent="." unique_id=1121019976]
 layout_mode = 1
@@ -48,24 +50,18 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxTexture_5trbf")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/ChatPanel/Panel" unique_id=1271709172]
-custom_minimum_size = Vector2(330, 400)
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/ChatPanel/Panel" unique_id=149026202]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -32.0
-offset_top = -11.5
-offset_right = 32.0
-offset_bottom = 11.5
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-size_flags_vertical = 3
 
-[node name="ChatItem" parent="MarginContainer/ChatPanel/Panel/VBoxContainer" unique_id=1202433319 instance=ExtResource("2_mgcdl")]
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/ChatPanel/Panel/ScrollContainer" unique_id=1271709172]
+custom_minimum_size = Vector2(330, 400)
 layout_mode = 2
+size_flags_vertical = 3
 
 [node name="ChatInput" type="LineEdit" parent="MarginContainer/ChatPanel/Panel" unique_id=1184081702]
 layout_mode = 1
@@ -79,5 +75,5 @@ offset_top = -31.0
 offset_right = 165.0
 grow_horizontal = 2
 grow_vertical = 0
-text = "chatter..."
+placeholder_text = "chatter..."
 context_menu_enabled = false
