@@ -17,6 +17,13 @@ public partial class GoalZone : Area3D
 		if (body.Name != "SoccerBall")
 			return;
 
+		// Authority-only: en multi, le synchronizer de la balle réplique sa
+		// position sur tous les pairs, donc BodyEntered fire aussi côté clients.
+		// On laisse uniquement le serveur valider et propager le but via RPC.
+		// IsServer() est true en offline, donc le flow standalone passe aussi.
+		if (!Multiplayer.IsServer())
+			return;
+
 		int scoringTeamId = 3 - defending_team_id;
 
 		Node controller = GetParent();
