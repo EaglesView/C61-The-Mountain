@@ -1,0 +1,24 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://b1j8ya84x2yt1"]
+
+[ext_resource type="Texture2D" uid="uid://c07dxubmets26" path="res://Assets/Textures/Snow/snow03/Textures/T_ugspafgdy_2K_B.png" id="1_npdt4"]
+[ext_resource type="Texture2D" uid="uid://crenv0suhr0h0" path="res://Assets/Textures/Snow/snow03/Textures/T_ugspafgdy_2K_ORM.png" id="2_4wsfs"]
+[ext_resource type="Texture2D" uid="uid://bka5ck88mo2ho" path="res://Assets/Textures/Snow/snow03/Textures/T_ugspafgdy_2K_N.png" id="3_xhl5d"]
+
+[resource]
+resource_name = "MI_ugspafgdy"
+albedo_texture = ExtResource("1_npdt4")
+metallic = 1.0
+metallic_texture = ExtResource("2_4wsfs")
+metallic_texture_channel = 2
+roughness_texture = ExtResource("2_4wsfs")
+roughness_texture_channel = 1
+normal_enabled = true
+normal_texture = ExtResource("3_xhl5d")
+ao_enabled = true
+ao_texture = ExtResource("2_4wsfs")
+uv1_scale = Vector3(0.11, 0.11, 0.11)
+uv1_triplanar = true
+uv1_world_triplanar = true
+metadata/extras = {
+"type": "transmission"
+}
