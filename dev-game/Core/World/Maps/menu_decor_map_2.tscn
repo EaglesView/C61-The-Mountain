@@ -1,0 +1,305 @@
+[gd_scene format=3 uid="uid://c8l1otcese8c3"]
+
+[ext_resource type="Script" uid="uid://dr1lgyefyqly8" path="res://Core/World/Maps/SnowballThrower.cs" id="1_ktxpn"]
+[ext_resource type="Texture2D" uid="uid://bu7fsw23jtsu3" path="res://Assets/Textures/Particles/dingbats-518.png" id="1_op07e"]
+[ext_resource type="PackedScene" uid="uid://blxnhy8a0mxon" path="res://Core/World/Terrain/endless_water.tscn" id="2_8niol"]
+[ext_resource type="PackedScene" uid="uid://b42i18x6cicat" path="res://Core/World/MapAssets/DecorAssets/snowball.tscn" id="2_muwdo"]
+[ext_resource type="PackedScene" uid="uid://bvmigfks33r4g" path="res://Core/World/MapAssets/world_environment_base.tscn" id="3_muwdo"]
+[ext_resource type="Material" uid="uid://b1j8ya84x2yt1" path="res://Assets/Textures/Snow/snow03/MI_ugspafgdy.tres" id="5_8niol"]
+[ext_resource type="Script" uid="uid://bxxa2mxhswa5i" path="res://Core/World/MapAssets/DecorAssets/CharacterFollowers.cs" id="5_ktxpn"]
+[ext_resource type="PackedScene" uid="uid://cue46vlh7h8q8" path="res://Core/World/CharacterModel/Character/Character.tscn" id="6_2ibpd"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_iew4k"]
+lifetime_randomness = 0.1
+emission_shape = 3
+emission_box_extents = Vector3(2.17, 1.015, 2.275)
+initial_velocity_max = 0.099999994
+gravity = Vector3(0, -0.2, 0)
+linear_accel_min = -2.2351742e-06
+linear_accel_max = 0.49999776
+radial_accel_min = -1.0800022
+radial_accel_max = 1.0799978
+tangential_accel_min = -4.300002
+tangential_accel_max = 4.3099976
+damping_max = 2.6880002
+turbulence_enabled = true
+turbulence_noise_strength = 4.74
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s4n5g"]
+transparency = 1
+shading_mode = 0
+albedo_texture = ExtResource("1_op07e")
+
+[sub_resource type="QuadMesh" id="QuadMesh_7t6q3"]
+material = SubResource("StandardMaterial3D_s4n5g")
+size = Vector2(0.1, 0.1)
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_1ddx8"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_ft"]
+
+[sub_resource type="Sky" id="Sky_ft"]
+sky_material = SubResource("ProceduralSkyMaterial_ft")
+
+[sub_resource type="Environment" id="Environment_psi4g"]
+background_mode = 2
+sky = SubResource("Sky_ft")
+ambient_light_source = 3
+ambient_light_energy = 1.5
+tonemap_white = 3.65
+tonemap_agx_white = 16.5
+tonemap_agx_contrast = 1.69
+ssr_enabled = true
+ssao_enabled = true
+ssao_radius = 3.92
+ssao_intensity = 4.47
+ssao_power = 1.448905
+ssao_detail = 0.91
+ssao_horizon = 0.3
+ssao_sharpness = 0.53
+ssil_enabled = true
+ssil_radius = 6.15
+sdfgi_enabled = true
+sdfgi_use_occlusion = true
+sdfgi_y_scale = 0
+glow_enabled = true
+glow_normalized = true
+glow_intensity = 0.35
+glow_strength = 0.34
+glow_bloom = 1.0
+glow_blend_mode = 0
+glow_map = SubResource("NoiseTexture2D_1ddx8")
+fog_enabled = true
+fog_light_color = Color(1, 1, 1, 1)
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.005
+volumetric_fog_emission = Color(0.9623857, 0.9834201, 0.9969602, 1)
+volumetric_fog_length = 799.85
+volumetric_fog_detail_spread = 3.2490087
+adjustment_enabled = true
+adjustment_contrast = 1.045
+adjustment_saturation = 1.52
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_l3ipp"]
+material = ExtResource("5_8niol")
+size = Vector2(80, 80)
+
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_l1hwa"]
+
+[node name="MenuDecorMap" type="Node3D" unique_id=1870671043]
+script = ExtResource("1_ktxpn")
+SnowballScene = ExtResource("2_muwdo")
+SnowballSpeed = 23.0
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=745082803]
+transform = Transform3D(-0.97345924, 0.06525266, -0.21936098, 2.492595e-08, 0.9584919, 0.28511965, 0.22886054, 0.27755234, -0.93305284, 2.6749218, 8.008547, 17.042995)
+fov = 70.0
+
+[node name="GPUParticles3D2" type="GPUParticles3D" parent="." unique_id=1337821342]
+transform = Transform3D(16.185404, 0, 0, 0, 9.420224, -7.8788238, 0, 10.403281, 7.1343145, -0.17871761, 15.57415, 29.070778)
+cast_shadow = 0
+ignore_occlusion_culling = true
+amount = 20000
+lifetime = 5.0
+transform_align = 1
+process_material = SubResource("ParticleProcessMaterial_iew4k")
+draw_pass_1 = SubResource("QuadMesh_7t6q3")
+
+[node name="Water" parent="." unique_id=2121387950 instance=ExtResource("2_8niol")]
+transform = Transform3D(0.86942166, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.997551, 0)
+visible = false
+
+[node name="WorldEnvironment" parent="." unique_id=1478789142 instance=ExtResource("3_muwdo")]
+environment = SubResource("Environment_psi4g")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1736263861]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0.0039057732, 5.946391, -46.32395)
+mesh = SubResource("PlaneMesh_l3ipp")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=1173478780]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.540123, 6.2576084, 29.42002)
+collision_layer = 2
+collision_mask = 5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=285914699]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.013399601, 0)
+shape = SubResource("WorldBoundaryShape3D_l1hwa")
+debug_color = Color(0.99, 0, 0.18150006, 1)
+
+[node name="CharacterFollowers" type="Node3D" parent="." unique_id=619913088]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2096252, -0.32637787)
+script = ExtResource("5_ktxpn")
+CharacterScene = ExtResource("6_2ibpd")
+AimDistance = 3.2
+HeadFollowSpeed = 30.0
+
+[node name="Spawn1" type="Marker3D" parent="CharacterFollowers" unique_id=530434328]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.19048297, 4.785487, 21.994577)
+
+[node name="Spawn7" type="Marker3D" parent="CharacterFollowers" unique_id=306886612]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.056501, 4.785487, 22.322674)
+
+[node name="Spawn9" type="Marker3D" parent="CharacterFollowers" unique_id=468308973]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.970657, 4.785487, 24.298435)
+
+[node name="Spawn13" type="Marker3D" parent="CharacterFollowers" unique_id=672003352]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5149999, 4.785488, 24.399778)
+
+[node name="Spawn15" type="Marker3D" parent="CharacterFollowers" unique_id=2074069773]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.999061, 4.785487, 22.433437)
+
+[node name="Spawn17" type="Marker3D" parent="CharacterFollowers" unique_id=1498844374]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.0543075, 4.785487, 19.529642)
+
+[node name="Spawn10" type="Marker3D" parent="CharacterFollowers" unique_id=1795898503]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.4225056, 4.7854877, 20.265806)
+
+[node name="Spawn11" type="Marker3D" parent="CharacterFollowers" unique_id=838224507]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.4058483, 4.785487, 25.22582)
+
+[node name="Spawn3" type="Marker3D" parent="CharacterFollowers" unique_id=1126747445]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0699774, 4.785487, 24.205996)
+
+[node name="Spawn4" type="Marker3D" parent="CharacterFollowers" unique_id=1035297526]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6181177, 4.785487, 24.887873)
+
+[node name="Spawn5" type="Marker3D" parent="CharacterFollowers" unique_id=2048344827]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.7570145, 4.785487, 24.282583)
+
+[node name="Spawn6" type="Marker3D" parent="CharacterFollowers" unique_id=21509748]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.9816792, 4.785487, 24.387634)
+
+[node name="Spawn20" type="Marker3D" parent="CharacterFollowers" unique_id=671640122]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.70798874, 4.785487, 24.443817)
+
+[node name="Spawn22" type="Marker3D" parent="CharacterFollowers" unique_id=1982845406]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5498161, 4.785487, 25.19494)
+
+[node name="Spawn24" type="Marker3D" parent="CharacterFollowers" unique_id=2122806825]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3265772, 4.785487, 25.284313)
+
+[node name="Spawn26" type="Marker3D" parent="CharacterFollowers" unique_id=966652763]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.3925874, 4.785487, 26.007675)
+
+[node name="Spawn28" type="Marker3D" parent="CharacterFollowers" unique_id=1673707685]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.6176443, 4.7854877, 20.513554)
+
+[node name="Spawn30" type="Marker3D" parent="CharacterFollowers" unique_id=2120650978]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.99997, 4.785487, 20.944649)
+
+[node name="Spawn33" type="Marker3D" parent="CharacterFollowers" unique_id=1871257485]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.8035989, 4.7854877, 24.323687)
+
+[node name="Spawn35" type="Marker3D" parent="CharacterFollowers" unique_id=2134984561]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2498536, 4.785487, 19.599056)
+
+[node name="Spawn37" type="Marker3D" parent="CharacterFollowers" unique_id=1401033903]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.469311, 4.785487, 25.461931)
+
+[node name="Spawn39" type="Marker3D" parent="CharacterFollowers" unique_id=1768562559]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1714122, 4.785487, 25.610027)
+
+[node name="Spawn41" type="Marker3D" parent="CharacterFollowers" unique_id=490659673]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5864253, 4.785487, 25.442308)
+
+[node name="Spawn43" type="Marker3D" parent="CharacterFollowers" unique_id=545985357]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.4742403, 4.785487, 25.607244)
+
+[node name="Spawn45" type="Marker3D" parent="CharacterFollowers" unique_id=1298853632]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5098195, 4.785487, 25.7882)
+
+[node name="Spawn47" type="Marker3D" parent="CharacterFollowers" unique_id=715231148]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, -1.3268125, 4.785487, 23.676245)
+
+[node name="Spawn49" type="Marker3D" parent="CharacterFollowers" unique_id=1412024705]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, -0.763003, 4.785487, 22.666056)
+
+[node name="Spawn51" type="Marker3D" parent="CharacterFollowers" unique_id=1683928412]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0.9557698, 4.785487, 23.280312)
+
+[node name="Spawn53" type="Marker3D" parent="CharacterFollowers" unique_id=1179144005]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 2.2525287, 4.785487, 23.241451)
+
+[node name="Spawn55" type="Marker3D" parent="CharacterFollowers" unique_id=1769309862]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 4.742929, 4.785487, 22.016659)
+
+[node name="Spawn57" type="Marker3D" parent="CharacterFollowers" unique_id=1725141544]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 7.203493, 4.785487, 22.037409)
+
+[node name="Spawn59" type="Marker3D" parent="CharacterFollowers" unique_id=1337103159]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0.21169662, 4.785487, 23.520622)
+
+[node name="Spawn60" type="Marker3D" parent="CharacterFollowers" unique_id=746262035]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 3.9093494, 4.785487, 22.845709)
+
+[node name="Spawn62" type="Marker3D" parent="CharacterFollowers" unique_id=1090564656]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 5.159123, 4.785487, 23.214054)
+
+[node name="Spawn64" type="Marker3D" parent="CharacterFollowers" unique_id=56801855]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0.638567, 4.785487, 19.858374)
+
+[node name="Spawn61" type="Marker3D" parent="CharacterFollowers" unique_id=1508805116]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, -2.3177404, 4.785487, 23.638546)
+
+[node name="Spawn63" type="Marker3D" parent="CharacterFollowers" unique_id=104467659]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 6.6356807, 4.7854877, 24.768875)
+
+[node name="Spawn65" type="Marker3D" parent="CharacterFollowers" unique_id=971144073]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 6.9095354, 4.785487, 23.830587)
+
+[node name="Spawn67" type="Marker3D" parent="CharacterFollowers" unique_id=1126327080]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, -2.5558608, 4.785487, 26.23029)
+
+[node name="Spawn69" type="Marker3D" parent="CharacterFollowers" unique_id=989361227]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, -1.8652592, 4.785487, 19.588306)
+
+[node name="Spawn71" type="Marker3D" parent="CharacterFollowers" unique_id=1714752589]
+transform = Transform3D(1, 0, -1.7484555e-07, 0, 1, 0, 1.7484555e-07, 0, 1, -0.6747148, 4.785487, 21.334057)
+
+[node name="Spawn73" type="Marker3D" parent="CharacterFollowers" unique_id=1748280365]
+transform = Transform3D(1, 0, -1.7484555e-07, 0, 1, 0, 1.7484555e-07, 0, 1, -3.0108395, 4.785487, 21.144388)
+
+[node name="Spawn75" type="Marker3D" parent="CharacterFollowers" unique_id=920661952]
+transform = Transform3D(1, 0, -1.7484555e-07, 0, 1, 0, 1.7484555e-07, 0, 1, 5.80816, 4.785487, 25.014584)
+
+[node name="Spawn77" type="Marker3D" parent="CharacterFollowers" unique_id=1084336384]
+transform = Transform3D(1, 0, -1.7484555e-07, 0, 1, 0, 1.7484555e-07, 0, 1, 6.1183295, 4.785487, 22.081171)
+
+[node name="Spawn79" type="Marker3D" parent="CharacterFollowers" unique_id=1065710638]
+transform = Transform3D(1, 0, -1.7484555e-07, 0, 1, 0, 1.7484555e-07, 0, 1, 6.7798705, 4.785487, 22.940962)
+
+[node name="Spawn81" type="Marker3D" parent="CharacterFollowers" unique_id=969350677]
+transform = Transform3D(1, 0, -1.7484555e-07, 0, 1, 0, 1.7484555e-07, 0, 1, 4.5302672, 4.785487, 20.219616)
+
+[node name="Spawn83" type="Marker3D" parent="CharacterFollowers" unique_id=1886751030]
+transform = Transform3D(1, 0, -1.7484555e-07, 0, 1, 0, 1.7484555e-07, 0, 1, 0.14834106, 4.785487, 20.857037)
+
+[node name="Spawn85" type="Marker3D" parent="CharacterFollowers" unique_id=16437451]
+transform = Transform3D(1, 0, -1.7484555e-07, 0, 1, 0, 1.7484555e-07, 0, 1, 1.1714125, 4.785487, 21.334503)
+
+[node name="Spawn87" type="Marker3D" parent="CharacterFollowers" unique_id=2058343334]
+transform = Transform3D(1, 0, -1.7484555e-07, 0, 1, 0, 1.7484555e-07, 0, 1, 2.5864258, 4.785487, 21.166784)
+
+[node name="Spawn89" type="Marker3D" parent="CharacterFollowers" unique_id=1688510842]
+transform = Transform3D(1, 0, -1.7484555e-07, 0, 1, 0, 1.7484555e-07, 0, 1, 3.4742405, 4.785487, 21.33172)
+
+[node name="Spawn91" type="Marker3D" parent="CharacterFollowers" unique_id=1891581156]
+transform = Transform3D(1, 0, -1.7484555e-07, 0, 1, 0, 1.7484555e-07, 0, 1, 6.152522, 4.785487, 23.970152)
+
+[node name="SpotLight3D" type="SpotLight3D" parent="." unique_id=1486640128]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.536743e-07, 7.0965643, 29.783316)
+light_color = Color(1, 0, 0, 1)
+light_size = 0.742
+spot_range = 14.0
+
+[node name="SpotLight3D2" type="SpotLight3D" parent="." unique_id=123973823]
+transform = Transform3D(0.36730337, -0.22389658, 0.9027505, 0.08438011, 0.97461295, 0.20738772, -0.9262657, -2.0703654e-08, 0.376871, 8.790464, 7.0965643, 25.36556)
+light_color = Color(0, 1, 0, 1)
+light_size = 0.742
+spot_range = 14.0
+
+[node name="SpotLight3D3" type="SpotLight3D" parent="." unique_id=1869112645]
+transform = Transform3D(0.8016782, 0.057204742, -0.59501225, 0.08438013, 0.97461295, 0.20738773, 0.5917701, -0.21646544, 0.7764991, -4.682024, 7.0965643, 25.36556)
+light_color = Color(0, 0, 1, 1)
+light_size = 0.742
+spot_range = 14.0

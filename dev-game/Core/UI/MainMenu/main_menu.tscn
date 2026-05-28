@@ -35,7 +35,8 @@ _exit = NodePath("Panel/CenterContainer/VBoxContainer/ExitButton")
 _status = NodePath("Panel/CenterContainer/VBoxContainer/StatusLabel")
 
 [node name="SubViewportContainer" parent="." unique_id=1476608370 instance=ExtResource("3_77frg")]
-layout_mode = 0
+layout_mode = 1
+stretch = false
 
 [node name="Panel" type="Panel" parent="." unique_id=264993288]
 custom_minimum_size = Vector2(550, 0)
