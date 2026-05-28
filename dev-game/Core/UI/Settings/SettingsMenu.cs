@@ -6,7 +6,16 @@ public partial class SettingsMenu : Control
 	[Export] private TabContainer _tabs;
 	[Export] private VBoxContainer _audioContainer;
 	[Export] private VBoxContainer _controlsContainer;
+	[Export] private VBoxContainer _graphicsContainer;
 	[Export] private Button _backButton;
+	[Export] private Button _applyButton;
+
+	private const float DesignHeight = 1080f;
+
+	// Staged graphics changes — only committed on Apply. Sentinel values mean "no pending change".
+	private int _pendingWindowMode = -1;
+	private Vector2I _pendingResolution = Vector2I.Zero;
+	private float _pendingUiScale = float.NaN;
 
 	private static readonly string[] RebindableActions =
 	{
@@ -14,7 +23,15 @@ public partial class SettingsMenu : Control
 		"jump", "run", "interact", "show_sign", "change_view",
 		"create_sign", "pause_menu"
 	};
-
+	private static readonly Vector2I[] Resolutions =
+	{
+	  new(1280, 720),   // Steam Deck
+	  new(1366, 768),
+	  new(1600, 900),
+	  new(1920, 1080),
+	  new(2560, 1440),
+	  new(3840, 2160),  // ecole
+	};
 	private static readonly Dictionary<string, string> ActionLabels = new()
 	{
 		{ "move_up",     "Avancer" },
@@ -44,8 +61,11 @@ public partial class SettingsMenu : Control
 	{
 		_config.Load(ConfigPath);
 		_backButton.Pressed += () => QueueFree();
+		_applyButton.Pressed += _OnApplyPressed;
+		_applyButton.Disabled = true;
 		_BuildAudioTab();
 		_BuildControlsTab();
+		_BuildGraphicsTab();
 	}
 
 	// ── Audio ─────────────────────────────────────────────────────────────────
@@ -257,9 +277,166 @@ public partial class SettingsMenu : Control
 		_config.Save(ConfigPath);
 	}
 
+	// -- Graphics --
+	private void _BuildGraphicsTab()
+	{
+		// Display mode
+		var modeRow = new HBoxContainer();
+		modeRow.AddChild(new Label { Text = "Affichage", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
+		var modeOpt = new OptionButton();
+		modeOpt.AddItem("Fenêtre", 0);
+		modeOpt.AddItem("Plein écran borderless", 1);
+		modeOpt.AddItem("Plein écran", 2);
+		modeOpt.Selected = (int)_config.GetValue("graphics", "window_mode", 0);
+		modeOpt.ItemSelected += idx =>
+		{
+			_pendingWindowMode = (int)idx;
+			_MarkDirty();
+		};
+		modeRow.AddChild(modeOpt);
+		_graphicsContainer.AddChild(modeRow);
+
+		// Resolution
+		var resRow = new HBoxContainer();
+		resRow.AddChild(new Label { Text = "Résolution", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
+		var resOpt = new OptionButton();
+		var saved = (Vector2I)_config.GetValue("graphics", "resolution", new Vector2I(1920, 1080));
+		var screenSize = DisplayServer.ScreenGetSize(DisplayServer.WindowGetCurrentScreen());
+		int visualIdx = 0;
+		int selectedVisual = 0;
+		for (int i = 0; i < Resolutions.Length; i++)
+		{
+			var r = Resolutions[i];
+			if (r.X > screenSize.X || r.Y > screenSize.Y) continue;
+			resOpt.AddItem($"{r.X} × {r.Y}", i);   // id = Resolutions index
+			if (r == saved) selectedVisual = visualIdx;
+			visualIdx++;
+		}
+		resOpt.Selected = selectedVisual;
+		resOpt.ItemSelected += idx =>
+		{
+			int id = resOpt.GetItemId((int)idx);
+			_pendingResolution = Resolutions[id];
+			_MarkDirty();
+		};
+		resRow.AddChild(resOpt);
+		_graphicsContainer.AddChild(resRow);
+
+		// VSync
+		var vsRow = new HBoxContainer();
+		vsRow.AddChild(new Label { Text = "VSync", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
+		var vsCheck = new CheckButton { ButtonPressed = (bool)_config.GetValue("graphics", "vsync", true) };
+		vsCheck.Toggled += on =>
+		{
+			DisplayServer.WindowSetVsyncMode(on ? DisplayServer.VSyncMode.Enabled : DisplayServer.VSyncMode.Disabled);
+			_config.SetValue("graphics", "vsync", on);
+			_config.Save(ConfigPath);
+		};
+		vsRow.AddChild(vsCheck);
+		_graphicsContainer.AddChild(vsRow);
+
+		// UI scale — multiplies the visual size of every UI element (accessibility).
+		// Layout adaptivity is already handled by stretch=canvas_items+aspect=expand;
+		// this slider is for users who want the HUD physically bigger or smaller.
+		var scaleRow = new HBoxContainer();
+		scaleRow.AddChild(new Label { Text = "Échelle UI", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
+		var scaleSlider = new HSlider
+		{
+			MinValue = 0.75, MaxValue = 1.5, Step = 0.05,
+			Value = (float)_config.GetValue("graphics", "ui_scale", 1.0f),
+			SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+			CustomMinimumSize = new Vector2(160, 0),
+		};
+		var scalePct = new Label
+		{
+			Text = $"{(int)(scaleSlider.Value * 100)}%",
+			CustomMinimumSize = new Vector2(48, 0),
+			HorizontalAlignment = HorizontalAlignment.Right,
+		};
+		scaleSlider.ValueChanged += val =>
+		{
+			_pendingUiScale = (float)val;
+			scalePct.Text = $"{(int)(val * 100)}%";
+			_MarkDirty();
+		};
+		scaleRow.AddChild(scaleSlider);
+		scaleRow.AddChild(scalePct);
+		_graphicsContainer.AddChild(scaleRow);
+	}
+
+	private void _ApplyContentScale(float factor)
+	{
+		GetTree().Root.ContentScaleFactor = factor;
+	}
+
+	private void _MarkDirty()
+	{
+		_applyButton.Disabled = false;
+	}
+
+	private void _OnApplyPressed()
+	{
+		bool needsRestart = false;
+
+		// Window mode stays live (no restart). Apply before any other graphics
+		// change in case the user combines it with a resolution swap on relaunch.
+		if (_pendingWindowMode >= 0)
+		{
+			_ApplyWindowMode(_pendingWindowMode);
+			_config.SetValue("graphics", "window_mode", _pendingWindowMode);
+			_pendingWindowMode = -1;
+		}
+
+		// Resolution and UI scale are launch-locked: persist now, take effect
+		// on next launch via SettingsMenu.ApplySettings.
+		if (_pendingResolution != Vector2I.Zero)
+		{
+			var current = (Vector2I)_config.GetValue("graphics", "resolution", new Vector2I(1920, 1080));
+			if (current != _pendingResolution) needsRestart = true;
+			_config.SetValue("graphics", "resolution", _pendingResolution);
+			_pendingResolution = Vector2I.Zero;
+		}
+
+		if (!float.IsNaN(_pendingUiScale))
+		{
+			var current = (float)_config.GetValue("graphics", "ui_scale", 1.0f);
+			if (!Mathf.IsEqualApprox(current, _pendingUiScale)) needsRestart = true;
+			_config.SetValue("graphics", "ui_scale", _pendingUiScale);
+			_pendingUiScale = float.NaN;
+		}
+
+		_config.Save(ConfigPath);
+		_applyButton.Disabled = true;
+
+		if (needsRestart)
+		{
+			ErrorDialog.Show(
+				GetTree(),
+				"Le changement de résolution et/ou d'échelle UI sera appliqué au prochain démarrage du jeu.",
+				"Redémarrage requis",
+				"OK");
+		}
+	}
+	private static void _ApplyWindowMode(int mode)
+	{
+		DisplayServer.WindowSetMode(mode switch
+		{
+			1 => DisplayServer.WindowMode.Fullscreen,            // borderless fullscreen
+			2 => DisplayServer.WindowMode.ExclusiveFullscreen,
+			_ => DisplayServer.WindowMode.Windowed,
+		});
+	}
+
+	private static void _ApplyResolution(Vector2I size)
+	{
+		if (DisplayServer.WindowGetMode() != DisplayServer.WindowMode.Windowed) return;
+		DisplayServer.WindowSetSize(size);
+		var screen = DisplayServer.ScreenGetSize();
+		DisplayServer.WindowSetPosition((screen - size) / 2);
+	}
 	// ── Static helpers ────────────────────────────────────────────────────────
 
-	public static void ApplySettings()
+	public static void ApplySettings(SceneTree tree)
 	{
 		var cfg = new ConfigFile();
 		if (cfg.Load(ConfigPath) != Error.Ok) return;
@@ -281,5 +458,22 @@ public partial class SettingsMenu : Control
 			InputMap.ActionEraseEvents(action);
 			InputMap.ActionAddEvent(action, ev);
 		}
+
+		// Graphics — order matters: set window mode first (fullscreen ignores
+		// size requests), then resolution if windowed, then vsync, then ui scale.
+		int windowMode = (int)cfg.GetValue("graphics", "window_mode", 0);
+		_ApplyWindowMode(windowMode);
+
+		if (windowMode == 0 && cfg.HasSectionKey("graphics", "resolution"))
+		{
+			var res = (Vector2I)cfg.GetValue("graphics", "resolution", new Vector2I(1920, 1080));
+			_ApplyResolution(res);
+		}
+
+		bool vsync = (bool)cfg.GetValue("graphics", "vsync", true);
+		DisplayServer.WindowSetVsyncMode(vsync ? DisplayServer.VSyncMode.Enabled : DisplayServer.VSyncMode.Disabled);
+
+		float uiScale = (float)cfg.GetValue("graphics", "ui_scale", 1.0f);
+		tree.Root.ContentScaleFactor = uiScale;
 	}
 }

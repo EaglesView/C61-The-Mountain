@@ -3,8 +3,11 @@
 [ext_resource type="PackedScene" uid="uid://ldqbjt0uha64" path="res://Core/World/Maps/login_decor_map.tscn" id="1_jqmui"]
 
 [node name="SubViewportContainer" type="SubViewportContainer" unique_id=1476608370]
-offset_right = 1920.0
-offset_bottom = 1080.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 stretch = true
 
 [node name="SubViewport" type="SubViewport" parent="." unique_id=783759301]

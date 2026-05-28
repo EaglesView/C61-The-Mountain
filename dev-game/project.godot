@@ -17,6 +17,7 @@ config/features=PackedStringArray("4.6", "C#", "Forward Plus")
 [autoload]
 
 NetworkManager="*res://Core/Network/NetworkManager.cs"
+ViewportScaler="*res://Core/UI/ViewportScaler.cs"
 
 [display]
 
@@ -162,6 +163,7 @@ send_chat={
 3d_physics/layer_2="Boundaries"
 3d_physics/layer_3="Bones"
 3d_physics/layer_6="Water"
+3d_physics/layer_7="Snowball"
 
 [physics]
 

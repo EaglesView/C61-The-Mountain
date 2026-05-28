@@ -23,7 +23,8 @@ GuestName = NodePath("HBoxContainer/MarginContainer2/AspectRatioContainer/LoginP
 GuestStart = NodePath("HBoxContainer/MarginContainer2/AspectRatioContainer/LoginPanel/HBoxContainer/GuestBox/Button")
 
 [node name="SubViewportContainer2" parent="." unique_id=1476608370 instance=ExtResource("3_0e8m3")]
-layout_mode = 0
+layout_mode = 1
+stretch = false
 
 [node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1311498569]
 layout_mode = 1

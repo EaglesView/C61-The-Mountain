@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://b42i18x6cicat"]
+
+[ext_resource type="Material" uid="uid://b1j8ya84x2yt1" path="res://Assets/Textures/Snow/snow03/MI_ugspafgdy.tres" id="1_lw8ob"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_o3nxg"]
+material = ExtResource("1_lw8ob")
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_lw8ob"]
+
+[node name="Snowball" type="RigidBody3D" unique_id=579544353]
+collision_layer = 64
+collision_mask = 7
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1699063678]
+mesh = SubResource("SphereMesh_o3nxg")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=220374639]
+shape = SubResource("SphereShape3D_lw8ob")

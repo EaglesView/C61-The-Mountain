@@ -190,6 +190,8 @@ public partial class NetworkManager : Node
     {
         Instance = this;
 
+        SettingsMenu.ApplySettings(GetTree());
+
         var enet = new GodotENetProvider();
         AddChild(enet);
         _provider = enet;
