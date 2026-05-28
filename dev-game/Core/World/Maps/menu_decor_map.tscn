@@ -1,6 +1,8 @@
 [gd_scene format=3 uid="uid://but3467304q27"]
 
+[ext_resource type="Script" uid="uid://dr1lgyefyqly8" path="res://Core/World/Maps/SnowballThrower.cs" id="1_svcmn"]
 [ext_resource type="Texture2D" uid="uid://bu7fsw23jtsu3" path="res://Assets/Textures/Particles/dingbats-518.png" id="2_8wbjl"]
+[ext_resource type="PackedScene" uid="uid://b42i18x6cicat" path="res://Core/World/MapAssets/DecorAssets/snowball.tscn" id="2_ubq75"]
 [ext_resource type="PackedScene" uid="uid://c336gjjdjalff" path="res://Core/World/MapAssets/DecorAssets/icebarg_wall.tscn" id="4_bk26c"]
 [ext_resource type="PackedScene" uid="uid://blxnhy8a0mxon" path="res://Core/World/Terrain/endless_water.tscn" id="5_bk26c"]
 [ext_resource type="PackedScene" uid="uid://cue46vlh7h8q8" path="res://Core/World/CharacterModel/Character/Character.tscn" id="5_i43sa"]
@@ -35,6 +37,8 @@ size = Vector2(0.1, 0.1)
 [sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_l1hwa"]
 
 [node name="MenuDecorMap" type="Node3D" unique_id=1870671043]
+script = ExtResource("1_svcmn")
+SnowballScene = ExtResource("2_ubq75")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=745082803]
 transform = Transform3D(1, 0, 0, 0, 0.25839752, -0.9660387, 0, 0.9660387, 0.25839752, -7.6293945e-06, 9.098304, 28.305126)

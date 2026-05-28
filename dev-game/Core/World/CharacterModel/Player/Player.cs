@@ -2,7 +2,9 @@ using Godot;
 using static Utils.RayCastUtils;
 using static Utils.CharacterUtils;
 using static Utils.CameraUtils;
+using Core.Auth;
 using Core.Network;
+using Core.Network.Rooms;
 
 public partial class Player : Character
 {
@@ -173,7 +175,6 @@ public partial class Player : Character
 				GlobalPosition = SpawnPosition;
 
 			_nameLabel = new Label3D();
-			_nameLabel.Text = $"P{PeerId}";
 			_nameLabel.Billboard = BaseMaterial3D.BillboardModeEnum.FixedY;
 			_nameLabel.PixelSize = 0.005f;
 			_nameLabel.FontSize = 48;
@@ -181,6 +182,9 @@ public partial class Player : Character
 			_nameLabel.Position = new Vector3(0f, 2.2f, 0f);
 			_nameLabel.NoDepthTest = true;
 			AddChild(_nameLabel);
+			// Si le handshake d'identité du peer arrive après le spawn (RPC en
+			// retard), on rafraîchit le label dès que la map peer→userId change.
+			LobbyPresence.IdentityMapChanged += ApplyTeamVisual;
 			ApplyTeamVisual();
 			_SpawnHat();
 			return;
@@ -268,21 +272,56 @@ public partial class Player : Character
 	private void ApplyTeamVisual()
 	{
 		if (_nameLabel is null) return;
+		string label = _ResolvePlayerLabel();
 		switch (TeamId)
 		{
 			case TeamKind.Blue:
 				_nameLabel.Modulate = TeamBlueColor;
-				_nameLabel.Text = $"P{PeerId} [BLEU]";
+				_nameLabel.Text = $"{label} [BLEU]";
 				break;
 			case TeamKind.Red:
 				_nameLabel.Modulate = TeamRedColor;
-				_nameLabel.Text = $"P{PeerId} [ROUGE]";
+				_nameLabel.Text = $"{label} [ROUGE]";
 				break;
 			default:
 				_nameLabel.Modulate = Colors.White;
-				_nameLabel.Text = $"P{PeerId}";
+				_nameLabel.Text = label;
 				break;
 		}
+	}
+
+	/// <summary>
+	/// Résout le nom à afficher au-dessus de la tête. Pour le joueur local on
+	/// utilise le username Firebase courant&#160;; pour un distant on passe par
+	/// <see cref="LobbyPresence"/> (peer→userId) puis par <see cref="LobbyState.Current"/>
+	/// (userId→Username). Fallback sur <c>P{PeerId}</c> tant que le handshake
+	/// d'identité n'est pas arrivé — cf. abonnement à
+	/// <see cref="LobbyPresence.IdentityMapChanged"/> dans <see cref="_Ready"/>.
+	/// </summary>
+	private string _ResolvePlayerLabel()
+	{
+		int localPeer = NetworkManager.Instance?.LocalPeerId ?? 1;
+		bool isLocal = PeerId == localPeer
+			|| (PeerId == 1 && (NetworkManager.Instance is null || !NetworkManager.Instance.IsRunning));
+		if (isLocal)
+		{
+			var u = AuthServiceProvider.Instance.CurrentUser?.Username;
+			if (!string.IsNullOrEmpty(u)) return u;
+		}
+		if (LobbyPresence.TryGetUserId(PeerId, out var userId)
+			&& LobbyState.Current is { } snapshot
+			&& snapshot.Players.TryGetValue(userId, out var entry)
+			&& !string.IsNullOrEmpty(entry.Username))
+		{
+			return entry.Username;
+		}
+		return $"P{PeerId}";
+	}
+
+	public override void _ExitTree()
+	{
+		LobbyPresence.IdentityMapChanged -= ApplyTeamVisual;
+		base._ExitTree();
 	}
 
 	/// <summary>
@@ -429,143 +468,143 @@ public partial class Player : Character
 			// On délègue uniquement pour que le hot-path FallLimit reste évalué
 			// si jamais (mais le corps est ragdoll et FallLimit ne change pas
 			// l'état Spectating de toute façon).
-            moveVec = Vector3.Zero;
-            aimVec = Vector3.Zero;
-            base._PhysicsProcess(delta);
-            return;
-        }
+			moveVec = Vector3.Zero;
+			aimVec = Vector3.Zero;
+			base._PhysicsProcess(delta);
+			return;
+		}
 
-        if (_characterState == CharacterState.Dead)
-        {
-            // Mort permanente: le corps est livré au ragdoll, on délègue à Character
-            // (qui short-circuit le switch et laisse PhysicsSkeleton piloter la simulation).
-            base._PhysicsProcess(delta);
-            return;
-        }
+		if (_characterState == CharacterState.Dead)
+		{
+			// Mort permanente: le corps est livré au ragdoll, on délègue à Character
+			// (qui short-circuit le switch et laisse PhysicsSkeleton piloter la simulation).
+			base._PhysicsProcess(delta);
+			return;
+		}
 
-        if (_characterState == CharacterState.Ragdoll)
-        {
-            base._PhysicsProcess(delta);
-            return;
-        }
-        if (_characterState != CharacterState.Ragdoll &&
-            _characterState != CharacterState.Recovering &&
-            Velocity.Length() > SpeedRagdollThreshold)
-        {
-            //GD.Print($"[speed-ragdoll] V={Velocity.Length():F2}  Y={GlobalPosition.Y:F2}");
-            TransitionTo(CharacterState.Ragdoll);
-        }
+		if (_characterState == CharacterState.Ragdoll)
+		{
+			base._PhysicsProcess(delta);
+			return;
+		}
+		if (_characterState != CharacterState.Ragdoll &&
+			_characterState != CharacterState.Recovering &&
+			Velocity.Length() > SpeedRagdollThreshold)
+		{
+			//GD.Print($"[speed-ragdoll] V={Velocity.Length():F2}  Y={GlobalPosition.Y:F2}");
+			TransitionTo(CharacterState.Ragdoll);
+		}
 
-        if (_characterState == CharacterState.Paused)
-        {
-            moveVec = Vector3.Zero;
-            aimVec = Vector3.Zero;
-            base._PhysicsProcess(delta);
-            return;
-        }
+		if (_characterState == CharacterState.Paused)
+		{
+			moveVec = Vector3.Zero;
+			aimVec = Vector3.Zero;
+			base._PhysicsProcess(delta);
+			return;
+		}
 
-        if (IsOnFloor() && GetFloorAngle() > Mathf.DegToRad(FloorAngleRagdollThreshold))
-        {
-            TransitionTo(CharacterState.Ragdoll);
-            return;
-        }
+		if (IsOnFloor() && GetFloorAngle() > Mathf.DegToRad(FloorAngleRagdollThreshold))
+		{
+			TransitionTo(CharacterState.Ragdoll);
+			return;
+		}
 
-        if (Input.IsActionJustPressed("jump") && IsOnFloor()
-            && (_characterState == CharacterState.Idle || _characterState == CharacterState.Moving))
-        {
-            velocity.Y = JumpVelocity;
-            _stats.PeerId = PeerId;
-            _stats.JumpCount++;
-            TransitionTo(CharacterState.Airborne);
-        }
-        if (Input.IsActionJustPressed("run"))
-        {
-            speed *= RunMultiplier;
-            AnimPlayer.SpeedScale *= RunMultiplier;
-        }
-        if (Input.IsActionJustReleased("run"))
-        {
-            speed = WalkSpeed;
-            AnimPlayer.SpeedScale = 1.0f;
-        }
-        if (Input.IsActionJustPressed("interact"))
-        {
-            GetObjectTypeFromRaycast(Raycaster);
-            PhysicsSkelton.Aiming = false;
-            currentEmoteState = EmoteState.None;
-            var interactable = GetInteractableFromRaycast(Raycaster);
-            interactable?.Interact(this);
-        }
+		if (Input.IsActionJustPressed("jump") && IsOnFloor()
+			&& (_characterState == CharacterState.Idle || _characterState == CharacterState.Moving))
+		{
+			velocity.Y = JumpVelocity;
+			_stats.PeerId = PeerId;
+			_stats.JumpCount++;
+			TransitionTo(CharacterState.Airborne);
+		}
+		if (Input.IsActionJustPressed("run"))
+		{
+			speed *= RunMultiplier;
+			AnimPlayer.SpeedScale *= RunMultiplier;
+		}
+		if (Input.IsActionJustReleased("run"))
+		{
+			speed = WalkSpeed;
+			AnimPlayer.SpeedScale = 1.0f;
+		}
+		if (Input.IsActionJustPressed("interact"))
+		{
+			GetObjectTypeFromRaycast(Raycaster);
+			PhysicsSkelton.Aiming = false;
+			currentEmoteState = EmoteState.None;
+			var interactable = GetInteractableFromRaycast(Raycaster);
+			interactable?.Interact(this);
+		}
 
-        if (Input.IsActionJustPressed("show_sign")) PhysicsSkelton.ArmsUp = true;
-        if (Input.IsActionJustReleased("show_sign")) PhysicsSkelton.ArmsUp = false;
+		if (Input.IsActionJustPressed("show_sign")) PhysicsSkelton.ArmsUp = true;
+		if (Input.IsActionJustReleased("show_sign")) PhysicsSkelton.ArmsUp = false;
 
-        // Camera switching disabled
+		// Camera switching disabled
 
-        Vector2 aimDir = Input.GetVector("aim_left", "aim_right", "aim_up", "aim_down");
-        Vector2 inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");
-        Vector3 direction;
+		Vector2 aimDir = Input.GetVector("aim_left", "aim_right", "aim_up", "aim_down");
+		Vector2 inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");
+		Vector3 direction;
 
-        if (_cameraMan?.CamType == CameraType.ThirdPerson)
-        {
-            Vector3 camForward = _cameraMan.GetCameraForwardFlat();
-            Vector3 camRight = _cameraMan.GetCameraRightFlat();
-            direction = (camForward * -inputDir.Y + camRight * -inputDir.X).Normalized();
-            if (direction != Vector3.Zero)
-                Rotation = new Vector3(Rotation.X, Mathf.LerpAngle(Rotation.Y, Mathf.Atan2(-direction.X, -direction.Z), 0.15f), Rotation.Z);
-        }
-        else
-        {
-            direction = -(Transform.Basis * new Vector3(-inputDir.X, 0, -inputDir.Y)).Normalized();
-        }
+		if (_cameraMan?.CamType == CameraType.ThirdPerson)
+		{
+			Vector3 camForward = _cameraMan.GetCameraForwardFlat();
+			Vector3 camRight = _cameraMan.GetCameraRightFlat();
+			direction = (camForward * -inputDir.Y + camRight * -inputDir.X).Normalized();
+			if (direction != Vector3.Zero)
+				Rotation = new Vector3(Rotation.X, Mathf.LerpAngle(Rotation.Y, Mathf.Atan2(-direction.X, -direction.Z), 0.15f), Rotation.Z);
+		}
+		else
+		{
+			direction = -(Transform.Basis * new Vector3(-inputDir.X, 0, -inputDir.Y)).Normalized();
+		}
 
-        moveVec = direction;
-        aimVec = direction;
-        base._PhysicsProcess(delta);
-        if (currentEmoteState == EmoteState.Pointing)
-            pointVec = _cameraMan.GetRaycastPointingVector();
-    }
+		moveVec = direction;
+		aimVec = direction;
+		base._PhysicsProcess(delta);
+		if (currentEmoteState == EmoteState.Pointing)
+			pointVec = _cameraMan.GetRaycastPointingVector();
+	}
 
-    public override void _Process(double delta)
-    {
-        if (!IsMultiplayerAuthority())
-        {
-            if (_nameLabel != null)
-            {
-                _nameLabel.GlobalPosition = currentMovementState == MovementState.Ragdolling
-                    ? PhysicsSkelton.GetSpinePhysicsWorldPosition() + Vector3.Up * 1.5f
-                    : GlobalPosition + new Vector3(0f, 2.2f, 0f);
-            }
-            if (_lastAnimatedState == currentMovementState) return;
-            _lastAnimatedState = currentMovementState;
-            PlayAnimationFromMovement(currentMovementState, AnimPlayer);
-            return;
-        }
+	public override void _Process(double delta)
+	{
+		if (!IsMultiplayerAuthority())
+		{
+			if (_nameLabel != null)
+			{
+				_nameLabel.GlobalPosition = currentMovementState == MovementState.Ragdolling
+					? PhysicsSkelton.GetSpinePhysicsWorldPosition() + Vector3.Up * 1.5f
+					: GlobalPosition + new Vector3(0f, 2.2f, 0f);
+			}
+			if (_lastAnimatedState == currentMovementState) return;
+			_lastAnimatedState = currentMovementState;
+			PlayAnimationFromMovement(currentMovementState, AnimPlayer);
+			return;
+		}
 
-        base._Process(delta);
-        int boneIdx = PhysicsSkelton.FindBone("Head.001");
-        Transform3D headWorld = PhysicsSkelton.GlobalTransform * PhysicsSkelton.GetBoneGlobalPose(boneIdx);
+		base._Process(delta);
+		int boneIdx = PhysicsSkelton.FindBone("Head.001");
+		Transform3D headWorld = PhysicsSkelton.GlobalTransform * PhysicsSkelton.GetBoneGlobalPose(boneIdx);
 
-        if (_hatInstance != null && _cameraMan != null && _cameraMan.CamType != _lastCamTypeForHat)
-        {
-            _lastCamTypeForHat = _cameraMan.CamType;
-            _hatInstance.Visible = _cameraMan.CamType != CameraType.FirstPerson;
-        }
+		if (_hatInstance != null && _cameraMan != null && _cameraMan.CamType != _lastCamTypeForHat)
+		{
+			_lastCamTypeForHat = _cameraMan.CamType;
+			_hatInstance.Visible = _cameraMan.CamType != CameraType.FirstPerson;
+		}
 
-        var interactable = GetInteractableFromRaycast(Raycaster);
-        if (interactable != _highlightedInteractable)
-        {
-            _highlightedInteractable?.OnUnhighlight();
-            _highlightedInteractable = interactable;
-            _highlightedInteractable?.OnHighlight();
-        }
-    }
+		var interactable = GetInteractableFromRaycast(Raycaster);
+		if (interactable != _highlightedInteractable)
+		{
+			_highlightedInteractable?.OnUnhighlight();
+			_highlightedInteractable = interactable;
+			_highlightedInteractable?.OnHighlight();
+		}
+	}
 
-    // ── Spectator helpers ─────────────────────────────────────────────────────
+	// ── Spectator helpers ─────────────────────────────────────────────────────
 
-    /// <summary>
+	/// <summary>
 	/// Définit la cible courante de l'orbit-cam spectateur. Désabonne l'éventuelle
-    /// cible précédente du signal Died (pour ne pas accumuler de handlers à chaque
+	/// cible précédente du signal Died (pour ne pas accumuler de handlers à chaque
 	/// cycle) et abonne la nouvelle si c'est un Character — auto-avance quand la
 	/// cible meurt. Le pivot null est valide (= orbite autour de Vector3.Zero).
 	/// </summary>
@@ -587,15 +626,15 @@ public partial class Player : Character
 
 	/// <summary>Handler abonné via <see cref="_SetSpectatorTarget"/>&#160;: la cible
 	/// suivie vient de mourir, on avance d'un cran dans la liste.</summary>
-    private void _OnSpectatorTargetDied(int InPeerId, DeathReason InReason)
-    {
-        if (_characterState != CharacterState.Spectating) return;
-        _CycleSpectatorTarget(+1);
-    }
+	private void _OnSpectatorTargetDied(int InPeerId, DeathReason InReason)
+	{
+		if (_characterState != CharacterState.Spectating) return;
+		_CycleSpectatorTarget(+1);
+	}
 
-    /// <summary>
-    /// Construit la liste circulaire [ancre, joueurs vivants triés par PeerId
-    /// (sauf soi-même)] et avance de <paramref name="InDir"/> cran(s). La liste
+	/// <summary>
+	/// Construit la liste circulaire [ancre, joueurs vivants triés par PeerId
+	/// (sauf soi-même)] et avance de <paramref name="InDir"/> cran(s). La liste
 	/// est rebâtie à chaque appel parce qu'elle change quand des joueurs meurent
 	/// — pas de cache à invalider.
 	/// </summary>
