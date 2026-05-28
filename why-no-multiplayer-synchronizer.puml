@@ -1,0 +1,139 @@
+@startuml why-no-multiplayer-synchronizer
+title C61 — The Mountain : pourquoi on n'a pas eu besoin de MultiplayerSynchronizer
+
+skinparam defaultFontName "Inter, sans-serif"
+skinparam roundCorner 8
+skinparam shadowing false
+skinparam ArrowColor #2E4A6B
+skinparam componentStyle rectangle
+
+' ============================================================
+' Ce que MultiplayerSynchronizer aurait fait pour nous
+' ============================================================
+package "Approche Godot \"standard\"\n(MultiplayerSynchronizer)" as STD #FFF6E5 {
+  node "Player (authoritaire)" as STD_AUTH
+  component "MultiplayerSynchronizer\n(replication config:\nposition, velocity, yaw, pitch,\nstate, flags, ...)" as STD_SYNC #FFD27A
+  node "Player (remote replica)" as STD_REPL
+
+  STD_AUTH --> STD_SYNC : écrit les propriétés exportées
+  STD_SYNC --> STD_REPL : delta auto à\nchaque tick réseau
+}
+
+note bottom of STD #FFE9B3
+  Limites pour **notre** jeu :
+  * **Bande passante non bornée** — un delta par propriété
+    modifiée, taille variable selon le changement.
+  * **Pas de hook serveur** entre la réception et le rebroadcast
+    → impossible d'insérer la **validation anti-téléportation**
+    (>20 u/tick) ni d'émettre la **correction PositionCorrect**.
+  * **Une propriété = un sens unique** — on ne peut pas
+    réutiliser `Position` pour transporter la position de l'os
+    `Spine.001` quand le joueur est en **ragdoll**.
+  * Tick-rate du synchronizer **couplé au MultiplayerAPI**,
+    pas à notre cadence applicative (20 Hz fixe).
+  * Pas de transport **par paquet** : on ne choisit pas
+    UnreliableOrdered pour les snapshots vs Reliable pour
+    le rattrapage à la connexion.
+end note
+
+' ============================================================
+' Ce qu'on a fait à la place
+' ============================================================
+package "Notre approche\n(snapshot binaire custom)" as OURS #E8F4FF {
+
+  node "Player local\n(IsMultiplayerAuthority == true)" as P_LOCAL
+  component "Character.SnapshotState()\n+ PlayerNetState.Serialize()" as SNAP #B7DCFF
+  component "NetworkManager\n(autoload)\n→ GodotENetProvider" as NM_C #B7DCFF
+  cloud "ENet\nUDP 7777" as NET
+  component "NetworkManager (serveur)\n+ validation + rebroadcast" as NM_S #B7DCFF
+  component "World.OnStateReceived()\n→ Player.PushSnapshot()" as APPLY #B7DCFF
+  node "Player remote\n(IsMultiplayerAuthority == false)\n→ RemotePhysicsProcess()" as P_REMOTE
+
+  P_LOCAL -down-> SNAP    : 20 Hz\n(50 ms)
+  SNAP    -down-> NM_C    : 52 octets\n(StateUpdate 0x01)
+  NM_C    -down-> NET     : SendUnreliable(peerId=1)\n**UnreliableOrdered**
+  NET     -down-> NM_S    : paquet brut
+  NM_S    -down-> APPLY   : StateReceived (event C#)
+  APPLY   -down-> P_REMOTE: interpolation /\nancrage ragdoll
+}
+
+STD .[#888,dashed].> OURS : remplacé par
+
+' ============================================================
+' Détail du paquet 52 octets — la clef du "pourquoi pas de Synchronizer"
+' ============================================================
+package "PlayerNetState — 52 octets fixes" as PKT #F0FFE8 {
+  rectangle "PacketType (1)\nPeerId (4)\nPosition (12)\nVelocity (12)\nBodyYaw (4)\nHeadPitch (4)\nArmPointDir (12)\nMoveState (1)\nEmoteState (1)\nFlags (1)" as LAYOUT #CDEFB1
+
+  note right of LAYOUT #DFF5C8
+    **Réutilisation de champs en mode ragdoll**
+    (MoveState == Ragdolling && !Recovering)
+    ──────────────────────────────────────────
+    Position    → position monde de l'os Spine.001
+    Velocity    → vélocité linéaire de Spine.001
+    BodyYaw     → yaw monde de l'os Head.001
+    HeadPitch   → pitch monde de l'os Head.001
+
+    Même 52 octets, sémantique différente.
+    **Impossible à exprimer avec MultiplayerSynchronizer**
+    (1 propriété = 1 sens).
+  end note
+
+  note left of LAYOUT #DFF5C8
+    **Flags packés (1 octet)**
+    bit 0 : Aiming
+    bit 1 : ArmsUp
+    bit 2 : Recovering
+  end note
+}
+
+SNAP ..> PKT : produit
+APPLY ..> PKT : consomme
+
+' ============================================================
+' Trois flux distincts — chacun avec son transport
+' ============================================================
+package "Trois flux serveur, trois transports" as FLOWS #F7E8FF {
+  rectangle "1. Rebroadcast snapshot\n0x01 — 52 o — **UnreliableOrdered**\n→ tous les pairs sauf l'émetteur" as F1 #E3C8F7
+  rectangle "2. Rattrapage à la connexion\n0x01 — 52 o — **Reliable**\n→ nouveau pair uniquement\n(itération sur _lastKnownState)" as F2 #E3C8F7
+  rectangle "3. Correction anti-téléportation\n0x04 PositionCorrect — 17 o — **Reliable**\n→ pair fautif si delta > 20 u/tick" as F3 #E3C8F7
+}
+
+NM_S --> F1
+NM_S --> F2
+NM_S --> F3
+
+note bottom of FLOWS #EFD7FF
+  MultiplayerSynchronizer **ne nous laisse pas** :
+  * changer le transport selon le contexte,
+  * envoyer un snapshot ciblé sur `peer_connected`,
+  * émettre une correction unilatérale sur violation serveur.
+end note
+
+' ============================================================
+' Conclusion
+' ============================================================
+note as CONCLUSION #FFFFCC
+  **Pourquoi ça marche sans MultiplayerSynchronizer**
+
+  1. **Taille fixe & prévisible** — 52 o × 20 Hz × (N−1) = budget bande
+     passante calculable d'avance, pas de surprise de delta.
+  2. **Serveur autoritaire avec hook** — `OnPacketReceived` valide chaque
+     paquet AVANT le rebroadcast (anti-téléportation, anti-spoof via
+     `GetRemoteSenderId()`).
+  3. **Polymorphisme du paquet** — le même layout sert au mode normal
+     ET au mode ragdoll, économisant un second message dédié.
+  4. **Découplage tick réseau / physique** — 20 Hz applicatif quel que
+     soit le `_PhysicsProcess` (60 Hz) du client.
+  5. **MultiplayerSpawner est conservé** uniquement pour le spawn
+     (création de nœud répliquée), pas pour la synchronisation d'état.
+
+  Bilan : **MultiplayerSynchronizer = 0 nœud dans la scène**,
+  remplacé par ~250 lignes de C# qui nous donnent le contrôle
+  exact dont le gameplay (ragdoll + active recovery + anti-cheat
+  léger) avait besoin.
+end note
+
+FLOWS .down.> CONCLUSION
+
+@enduml
