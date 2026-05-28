@@ -18,7 +18,7 @@ public sealed partial class SoccerModeController : Node3D, IPhase, IGameMode
 	[Export] private NodePath CountdownLabelPath = "HUD/CountdownLabel";
 
 	private bool _entered;
-	private Phase _phase = Phase.Idle;
+	private StateMachine<Phase>? _fsm;
 	private Node? _playersContainer;
 	private PlayerSpawner? _playerSpawner;
 	private RigidBody3D? _ball;
@@ -28,10 +28,12 @@ public sealed partial class SoccerModeController : Node3D, IPhase, IGameMode
 
 	private int _scoreBlue;
 	private int _scoreRed;
-	private bool _finalGoalReached;
 	private float _postGoalTimer;
 	private const float PostGoalDelay = 3.0f;
 
+	// Mirror serveur→clients de l'attribution d'équipe. Toujours mis à jour via
+	// NetSetPlayerTeam pour que tous les pairs aient le même dict, condition
+	// nécessaire au respawn cohérent et à la balance d'équipes côté serveur.
 	private readonly Dictionary<int, int> _teamsByPeer = new();
 
 	private static readonly IReadOnlyList<WeightedCondition> _subwinningConditions = new[]
@@ -41,7 +43,7 @@ public sealed partial class SoccerModeController : Node3D, IPhase, IGameMode
 
 	public string DisplayName => "Soccer Dev";
 	public PackedScene Level => CurrentLevel ?? ResourceLoader.Load<PackedScene>("res://Core/Dev/soccer_dev.tscn");
-	public bool IsDone => _phase == Phase.Done;
+	public bool IsDone => _fsm is not null && _fsm.Is(Phase.Done);
 	public float RemainingSeconds => 0f;
 	public IReadOnlyList<WeightedCondition> SubwinningConditions => _subwinningConditions;
 
@@ -69,20 +71,25 @@ public sealed partial class SoccerModeController : Node3D, IPhase, IGameMode
 		_entered = true;
 		_scoreBlue = 0;
 		_scoreRed = 0;
-		_finalGoalReached = false;
-		_phase = Phase.Idle;
 		_teamsByPeer.Clear();
 
 		_playerSpawner = GetNodeOrNull<PlayerSpawner>(PlayerSpawnerPath);
 		BindPlayersContainer();
 		UpdateScoreUI();
+
+		_fsm = new StateMachine<Phase>(Phase.Idle, OnPhaseEnter, null);
+		// La FSM n'invoque pas OnEnter pour l'état initial (cf. StateMachine.cs:44-47),
+		// donc on déclenche manuellement le setup de Idle — même pattern qu'ObbyController:124.
+		OnPhaseEnter(Phase.Idle);
 	}
 
 	public void Tick(float InDelta)
 	{
-		if (!_entered) return;
+		if (!_entered || _fsm is null) return;
 
-		if (_phase == Phase.PostGoal)
+		_fsm.Tick(InDelta);
+
+		if (_fsm.Is(Phase.PostGoal))
 		{
 			_postGoalTimer -= InDelta;
 			int secs = Mathf.CeilToInt(Mathf.Max(0f, _postGoalTimer));
@@ -91,10 +98,14 @@ public sealed partial class SoccerModeController : Node3D, IPhase, IGameMode
 
 			if (_postGoalTimer <= 0.0f)
 			{
-				ResetBall();
 				if (_countdownLabel is not null)
 					_countdownLabel.Visible = false;
-				_phase = _finalGoalReached ? Phase.Done : Phase.Idle;
+
+				// Le compteur a été armé sur tous les pairs par NetSyncGoal (CallLocal=true),
+				// donc la transition locale ici reste synchrone à la frame près sur tous
+				// les pairs. ResetBall() est gardé serveur-seul à l'intérieur de OnPhaseEnter.
+				bool finalReached = _scoreBlue >= GoalsToWin || _scoreRed >= GoalsToWin;
+				_fsm.TransitionTo(finalReached ? Phase.Done : Phase.Idle);
 			}
 		}
 	}
@@ -106,14 +117,34 @@ public sealed partial class SoccerModeController : Node3D, IPhase, IGameMode
 		ClearTeamsOnPlayers();
 		UnbindPlayersContainer();
 		_teamsByPeer.Clear();
+		_fsm = null;
 	}
 
 	public void LoadLevel() { }
 
-  // claude qui a gerer ici. Tres simple quand meme mais viens de claude a 80%
+	private void OnPhaseEnter(Phase InPhase)
+	{
+		if (InPhase == Phase.Idle)
+			ResetBall();
+	}
+
+	// Appelé par GoalZone (serveur-seul, cf. GoalZone.cs). Le serveur broadcast
+	// ensuite via NetSyncGoal pour appliquer le score+phase de façon cohérente
+	// sur tous les pairs.
 	public void OnGoalScored(int InScoringTeamId)
 	{
-		if (_phase == Phase.PostGoal || _phase == Phase.Done) return;
+		if (_fsm is null) return;
+		if (_fsm.Is(Phase.PostGoal) || _fsm.Is(Phase.Done)) return;
+		if (!Multiplayer.IsServer()) return;
+
+		Rpc(MethodName.NetSyncGoal, InScoringTeamId);
+	}
+
+	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void NetSyncGoal(int InScoringTeamId)
+	{
+		if (_fsm is null) return;
+		if (_fsm.Is(Phase.PostGoal) || _fsm.Is(Phase.Done)) return;
 
 		if (InScoringTeamId == 1)
 			_scoreBlue++;
@@ -122,28 +153,24 @@ public sealed partial class SoccerModeController : Node3D, IPhase, IGameMode
 
 		UpdateScoreUI();
 
-		if (_scoreBlue >= GoalsToWin || _scoreRed >= GoalsToWin)
-		{
-			_finalGoalReached = true;
-			string winner = _scoreBlue >= GoalsToWin ? "BLEU" : "ROUGE";
-			if (_countdownLabel is not null)
-			{
-				_countdownLabel.Visible = true;
-				_countdownLabel.Text = $"VICTOIRE ÉQUIPE {winner} !";
-			}
-			_phase = Phase.PostGoal;
-			_postGoalTimer = PostGoalDelay;
-			return;
-		}
-
-		string scorer = InScoringTeamId == 1 ? "BLEU" : "ROUGE";
+		bool finalReached = _scoreBlue >= GoalsToWin || _scoreRed >= GoalsToWin;
 		if (_countdownLabel is not null)
 		{
 			_countdownLabel.Visible = true;
-			_countdownLabel.Text = $"BUT ! Équipe {scorer} !";
+			if (finalReached)
+			{
+				string winner = _scoreBlue >= GoalsToWin ? "BLEU" : "ROUGE";
+				_countdownLabel.Text = $"VICTOIRE ÉQUIPE {winner} !";
+			}
+			else
+			{
+				string scorer = InScoringTeamId == 1 ? "BLEU" : "ROUGE";
+				_countdownLabel.Text = $"BUT ! Équipe {scorer} !";
+			}
 		}
-		_phase = Phase.PostGoal;
+
 		_postGoalTimer = PostGoalDelay;
+		_fsm.TransitionTo(Phase.PostGoal);
 	}
 
 	private void UpdateScoreUI()
@@ -154,7 +181,11 @@ public sealed partial class SoccerModeController : Node3D, IPhase, IGameMode
 
 	private void ResetBall()
 	{
+		// Seul le serveur écrit l'état physique : le MultiplayerSynchronizer
+		// de la balle propage ensuite position/rotation/vélocités aux clients.
+		if (!Multiplayer.IsServer()) return;
 		if (_ball is null) return;
+
 		var targetPos = _ballInitialPos;
 		var ballRid = _ball.GetRid();
 		Callable.From(() =>
@@ -216,12 +247,22 @@ public sealed partial class SoccerModeController : Node3D, IPhase, IGameMode
 	private void TryRegisterPlayer(Node InNode)
 	{
 		if (InNode is not Player player) return;
+
+		// Si on a déjà reçu l'équipe pour ce peer (cas typique : NetSetPlayerTeam
+		// arrivé avant le spawn local du Player), on applique et on rend la main.
 		if (_teamsByPeer.TryGetValue(player.PeerId, out int existingTeamId))
 		{
-			player.SetTeam(existingTeamId);
-			player.SetMeta("team_id", existingTeamId);
+			ApplyTeamToPlayer(player, existingTeamId);
 			return;
 		}
+
+		// Hors-serveur : on attend que le serveur diffuse l'attribution via
+		// NetSetPlayerTeam. Note : si un client rejoint après que le serveur a
+		// déjà assigné des équipes, il ne recevra pas les NetSetPlayerTeam
+		// passés — pas un problème immédiat (cf. _allPlayersReady gate dans
+		// GameController). Si ça devient un, ajouter un ClientRequestTeamTable
+		// AnyPeer RPC qui rejoue chaque entrée vers le sender.
+		if (!Multiplayer.IsServer()) return;
 
 		int suggestedTeamId = ResolveTeamFromSpawn(player.GlobalPosition);
 		int blueCount = 0;
@@ -240,9 +281,29 @@ public sealed partial class SoccerModeController : Node3D, IPhase, IGameMode
 		else
 			teamId = suggestedTeamId;
 
-		_teamsByPeer[player.PeerId] = teamId;
-		player.SetTeam(teamId);
-		player.SetMeta("team_id", teamId);
+		// CallLocal=true : le serveur applique l'équipe via le même chemin que
+		// les clients, ce qui supprime le besoin d'une branche locale ici.
+		Rpc(MethodName.NetSetPlayerTeam, player.PeerId, teamId);
+	}
+
+	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = true, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void NetSetPlayerTeam(int InPeerId, int InTeamId)
+	{
+		_teamsByPeer[InPeerId] = InTeamId;
+		foreach (var p in GetAllPlayers())
+		{
+			if (p.PeerId == InPeerId)
+			{
+				ApplyTeamToPlayer(p, InTeamId);
+				break;
+			}
+		}
+	}
+
+	private void ApplyTeamToPlayer(Player InPlayer, int InTeamId)
+	{
+		InPlayer.SetTeam(InTeamId);
+		InPlayer.SetMeta("team_id", InTeamId);
 	}
 
 	private int ResolveTeamFromSpawn(Vector3 InPos)
