@@ -37,7 +37,7 @@ size = Vector2(0.1, 0.1)
 [node name="MenuDecorMap" type="Node3D" unique_id=1870671043]
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=745082803]
-transform = Transform3D(1, 0, 0, 0, 0.80732095, -0.5901127, 0, 0.5901127, 0.80732095, -7.6293945e-06, 7.398424, 31.385895)
+transform = Transform3D(1, 0, 0, 0, 0.25839752, -0.9660387, 0, 0.9660387, 0.25839752, -7.6293945e-06, 9.098304, 28.305126)
 
 [node name="GPUParticles3D2" type="GPUParticles3D" parent="." unique_id=1337821342]
 transform = Transform3D(16.185404, 0, 0, 0, 9.420224, -7.8788238, 0, 10.403281, 7.1343145, -0.17871761, 15.57415, 29.070778)
@@ -75,21 +75,81 @@ shape = SubResource("WorldBoundaryShape3D_l1hwa")
 debug_color = Color(0.99, 0, 0.18150006, 1)
 
 [node name="CharacterFollowers" type="Node3D" parent="." unique_id=619913088]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.46218204, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2096252, -0.32637787)
 script = ExtResource("5_svcmn")
 CharacterScene = ExtResource("5_i43sa")
-AimDistance = 0.2
+AimDistance = 4.0
 HeadFollowSpeed = 30.0
 MaxPitchDegrees = 90.0
 
 [node name="Spawn1" type="Marker3D" parent="CharacterFollowers" unique_id=530434328]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.769182, 30.751148)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 13.066859, 24.617418)
 
 [node name="Spawn2" type="Marker3D" parent="CharacterFollowers" unique_id=724499376]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.674713, 6.769182, 30.751148)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.674713, 13.066859, 24.773525)
+
+[node name="Spawn7" type="Marker3D" parent="CharacterFollowers" unique_id=306886612]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.0524235, 13.066859, 25.035154)
+
+[node name="Spawn8" type="Marker3D" parent="CharacterFollowers" unique_id=1289617308]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.7654196, 13.066859, 25.250946)
+
+[node name="Spawn9" type="Marker3D" parent="CharacterFollowers" unique_id=468308973]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2825823, 13.066859, 25.013351)
+
+[node name="Spawn12" type="Marker3D" parent="CharacterFollowers" unique_id=1857895202]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.900376, 13.066859, 25.005756)
+
+[node name="Spawn13" type="Marker3D" parent="CharacterFollowers" unique_id=672003352]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5793414, 13.066859, 25.052212)
+
+[node name="Spawn14" type="Marker3D" parent="CharacterFollowers" unique_id=730158741]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.228336, 13.066859, 25.065388)
+
+[node name="Spawn15" type="Marker3D" parent="CharacterFollowers" unique_id=2074069773]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.9042745, 13.066859, 24.969723)
+
+[node name="Spawn16" type="Marker3D" parent="CharacterFollowers" unique_id=367950930]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5398192, 13.066859, 24.878956)
+
+[node name="Spawn17" type="Marker3D" parent="CharacterFollowers" unique_id=1498844374]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.031571, 13.066859, 24.752138)
+
+[node name="Spawn18" type="Marker3D" parent="CharacterFollowers" unique_id=831522851]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.6320243, 13.066859, 24.912745)
+
+[node name="Spawn10" type="Marker3D" parent="CharacterFollowers" unique_id=1795898503]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5385091, 13.066859, 24.77304)
+
+[node name="Spawn11" type="Marker3D" parent="CharacterFollowers" unique_id=838224507]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4693091, 13.066859, 24.625875)
 
 [node name="Spawn3" type="Marker3D" parent="CharacterFollowers" unique_id=1126747445]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6115638, 6.769182, 30.751148)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6115638, 13.066859, 24.773525)
+
+[node name="Spawn4" type="Marker3D" parent="CharacterFollowers" unique_id=1035297526]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1714141, 13.066859, 24.773972)
+
+[node name="Spawn5" type="Marker3D" parent="CharacterFollowers" unique_id=2048344827]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.950203, 13.066859, 24.82976)
+
+[node name="Spawn6" type="Marker3D" parent="CharacterFollowers" unique_id=21509748]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5864272, 13.066859, 24.606253)
+
+[node name="Spawn19" type="Marker3D" parent="CharacterFollowers" unique_id=1108068605]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.1303406, 13.066859, 24.626373)
+
+[node name="Spawn20" type="Marker3D" parent="CharacterFollowers" unique_id=671640122]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.4742422, 13.066859, 24.771189)
+
+[node name="Spawn21" type="Marker3D" parent="CharacterFollowers" unique_id=1900794577]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.8372383, 13.066859, 24.933403)
+
+[node name="Spawn22" type="Marker3D" parent="CharacterFollowers" unique_id=1982845406]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5098214, 13.066859, 24.952145)
+
+[node name="Spawn23" type="Marker3D" parent="CharacterFollowers" unique_id=937882576]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.069122, 13.066859, 24.938145)
 
 [node name="SpotLight3D" type="SpotLight3D" parent="." unique_id=1486640128]
 transform = Transform3D(1, 0, 0, 0, 0.49999997, -0.86602545, 0, 0.86602545, 0.49999997, -9.536743e-07, 6.0965643, 31.783316)

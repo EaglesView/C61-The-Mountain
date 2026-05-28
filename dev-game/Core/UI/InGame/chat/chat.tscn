@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://xd8nimsr0780"]
 
+[ext_resource type="Script" uid="uid://ciqi6xmmslhaq" path="res://Core/UI/InGame/ChatContainer.cs" id="1_mgcdl"]
 [ext_resource type="Texture2D" uid="uid://d00ws7wljnit4" path="res://Assets/ui/UIpack_vector.svg" id="1_mh0ws"]
 [ext_resource type="PackedScene" uid="uid://bvqx4iq65m68x" path="res://Core/UI/InGame/chat/chat_item.tscn" id="2_mgcdl"]
 
@@ -11,8 +12,11 @@ texture_margin_right = 13.3469
 texture_margin_bottom = 11.2935
 region_rect = Rect2(629, 317, 194, 49)
 
-[node name="ChatPanel" type="Panel" unique_id=1396906449]
+[node name="ChatPanel" type="Panel" unique_id=1396906449 node_paths=PackedStringArray("_textBox", "_openChatButton")]
 custom_minimum_size = Vector2(386, 512)
+script = ExtResource("1_mgcdl")
+_textBox = NodePath("MarginContainer/ChatPanel/Panel/ChatInput")
+_openChatButton = NodePath("MarginContainer/ChatPanelHeader/Button")
 
 [node name="MarginContainer" type="VBoxContainer" parent="." unique_id=1121019976]
 layout_mode = 1
@@ -28,9 +32,9 @@ size_flags_vertical = 8
 alignment = 2
 
 [node name="Button" type="Button" parent="MarginContainer/ChatPanelHeader" unique_id=97364643]
-custom_minimum_size = Vector2(128, 0)
+custom_minimum_size = Vector2(128, 48)
 layout_mode = 2
-text = "Close Chat"
+text = "Ouvrir le chat [T]"
 icon_alignment = 1
 
 [node name="ChatPanel" type="MarginContainer" parent="MarginContainer" unique_id=272718105]
@@ -62,3 +66,18 @@ size_flags_vertical = 3
 
 [node name="ChatItem" parent="MarginContainer/ChatPanel/Panel/VBoxContainer" unique_id=1202433319 instance=ExtResource("2_mgcdl")]
 layout_mode = 2
+
+[node name="ChatInput" type="LineEdit" parent="MarginContainer/ChatPanel/Panel" unique_id=1184081702]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -165.0
+offset_top = -31.0
+offset_right = 165.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "chatter..."
+context_menu_enabled = false
