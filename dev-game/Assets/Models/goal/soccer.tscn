@@ -189,6 +189,8 @@ transform = Transform3D(0.22248334, 0, 0, 0, 0.22248334, 0, 0, 0, 0.22248334, -0
 mesh = SubResource("ArrayMesh_qc8jg")
 
 [node name="StaticBody3D" type="StaticBody3D" parent="red_goal" unique_id=1147603323]
+collision_layer = 2
+collision_mask = 69
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="red_goal/StaticBody3D" unique_id=1904868968]
 shape = SubResource("ConcavePolygonShape3D_82v3d")
@@ -198,6 +200,8 @@ transform = Transform3D(-0.22248334, 0, -7.2494274e-08, 0, 0.22248334, 0, 7.2494
 mesh = SubResource("ArrayMesh_laooj")
 
 [node name="StaticBody3D" type="StaticBody3D" parent="blue_goal" unique_id=440291808]
+collision_layer = 2
+collision_mask = 69
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="blue_goal/StaticBody3D" unique_id=1564360530]
 shape = SubResource("ConcavePolygonShape3D_ug1hg")
@@ -207,6 +211,8 @@ transform = Transform3D(14.045253, 0, 0, 0, 0.11600268, 0, 0, 0, 18.671515, 0, -
 mesh = SubResource("ArrayMesh_hxj1d")
 
 [node name="StaticBody3D" type="StaticBody3D" parent="ground" unique_id=831719832]
+collision_layer = 2
+collision_mask = 69
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="ground/StaticBody3D" unique_id=389566216]
 shape = SubResource("ConcavePolygonShape3D_gri78")
