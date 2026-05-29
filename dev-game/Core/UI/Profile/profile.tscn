@@ -2,6 +2,7 @@
 
 [ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="1_glnub"]
 [ext_resource type="Script" uid="uid://uy587x0u7pkh" path="res://Core/UI/Profile/ProfileScene.cs" id="1_profile"]
+[ext_resource type="FontFile" uid="uid://d3iekdubpmgvd" path="res://Assets/fonts/Gorditas/Gorditas-Bold.ttf" id="3_bold"]
 
 [node name="ProfileScene" type="Control" unique_id=712269286]
 layout_mode = 3
@@ -13,38 +14,98 @@ grow_vertical = 2
 theme = ExtResource("1_glnub")
 script = ExtResource("1_profile")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=101640225]
+[node name="HBoxContainer" type="MarginContainer" parent="." unique_id=1866482446]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -150.0
-offset_top = -80.0
-offset_right = 150.0
-offset_bottom = 80.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Title" type="Label" parent="VBoxContainer" unique_id=760004716]
+[node name="SubViewportContainer" type="SubViewportContainer" parent="HBoxContainer" unique_id=200000012]
 layout_mode = 2
-text = "Profile"
+size_flags_horizontal = 3
+size_flags_vertical = 3
+stretch = true
+
+[node name="PreviewViewport" type="SubViewport" parent="HBoxContainer/SubViewportContainer" unique_id=200000013]
+handle_input_locally = false
+size = Vector2i(1920, 1080)
+render_target_update_mode = 4
+
+[node name="PanelContainer" type="PanelContainer" parent="HBoxContainer" unique_id=200000001]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 3
+
+[node name="InnerMargin" type="MarginContainer" parent="HBoxContainer/PanelContainer" unique_id=200000002]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/PanelContainer/InnerMargin" unique_id=200000003]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="HBoxContainer/PanelContainer/InnerMargin/VBoxContainer" unique_id=760004716]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_bold")
+theme_override_font_sizes/font_size = 28
+text = "Profil"
 horizontal_alignment = 1
 
-[node name="UsernameField" type="LineEdit" parent="VBoxContainer" unique_id=1521309160]
+[node name="HSep1" type="HSeparator" parent="HBoxContainer/PanelContainer/InnerMargin/VBoxContainer" unique_id=200000004]
+layout_mode = 2
+
+[node name="UsernameField" type="LineEdit" parent="HBoxContainer/PanelContainer/InnerMargin/VBoxContainer" unique_id=1521309160]
 layout_mode = 2
 placeholder_text = "Username"
 
-[node name="SaveButton" type="Button" parent="VBoxContainer" unique_id=1109665974]
+[node name="HSep2" type="HSeparator" parent="HBoxContainer/PanelContainer/InnerMargin/VBoxContainer" unique_id=200000005]
+layout_mode = 2
+
+[node name="CustomizeLabel" type="Label" parent="HBoxContainer/PanelContainer/InnerMargin/VBoxContainer" unique_id=200000006]
+layout_mode = 2
+text = "Customize your penguin"
+horizontal_alignment = 1
+
+[node name="HatBox" type="HBoxContainer" parent="HBoxContainer/PanelContainer/InnerMargin/VBoxContainer" unique_id=200000007]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HatPrev" type="Button" parent="HBoxContainer/PanelContainer/InnerMargin/VBoxContainer/HatBox" unique_id=200000008]
+custom_minimum_size = Vector2(32, 0)
+layout_mode = 2
+text = "<"
+
+[node name="HatValue" type="Label" parent="HBoxContainer/PanelContainer/InnerMargin/VBoxContainer/HatBox" unique_id=200000009]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.6, 0.85, 1, 1)
+text = "Aucun"
+horizontal_alignment = 1
+
+[node name="HatNext" type="Button" parent="HBoxContainer/PanelContainer/InnerMargin/VBoxContainer/HatBox" unique_id=200000010]
+custom_minimum_size = Vector2(32, 0)
+layout_mode = 2
+text = ">"
+
+[node name="Spacer" type="Control" parent="HBoxContainer/PanelContainer/InnerMargin/VBoxContainer" unique_id=200000011]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SaveButton" type="Button" parent="HBoxContainer/PanelContainer/InnerMargin/VBoxContainer" unique_id=1109665974]
 layout_mode = 2
 text = "Save"
 
-[node name="BackButton" type="Button" parent="VBoxContainer" unique_id=1109665975]
+[node name="BackButton" type="Button" parent="HBoxContainer/PanelContainer/InnerMargin/VBoxContainer" unique_id=1109665975]
 layout_mode = 2
 text = "Back"
 
-[node name="StatusLabel" type="Label" parent="VBoxContainer" unique_id=1574762757]
+[node name="StatusLabel" type="Label" parent="HBoxContainer/PanelContainer/InnerMargin/VBoxContainer" unique_id=1574762757]
 visible = false
 layout_mode = 2
 horizontal_alignment = 1

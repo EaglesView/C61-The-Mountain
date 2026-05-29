@@ -37,6 +37,17 @@ public partial class Character : CharacterBody3D
     [ExportGroup("Fall Recovery")]
     [Export] public float FallLimit = -50.0f;
 
+    /// <summary>
+    /// Marque cette instance comme rendu UI (SubViewport Lobby/Profile/Winning).
+    /// Doit être assigné <b>avant</b> AddChild() pour que <see cref="_Ready"/> y
+	/// réagisse&#160;: skip l'inscription au groupe <c>players_alive</c> (sinon le
+	/// spectateur cible des pengouins de preview) et bloque la FSM en
+	/// <see cref="CharacterState.Preview"/> dès le départ. L'anim Idle est jouée
+    /// une fois manuellement&#160;; <see cref="PhysicsSkeleton"/> continue de
+    /// tourner pour le jiggle des springs.
+    /// </summary>
+    [Export] public bool IsPreview = false;
+
     protected float speed;
     protected float jumpVelocity = 5.0f;
     protected Vector3 velocity = Vector3.Zero;
@@ -52,40 +63,72 @@ public partial class Character : CharacterBody3D
     private CollisionShape3D? _spineCollBox;
     public Vector3 SpawnPosition { get; set; } = Vector3.Zero;
 
-
-    public void RotateHead(float InXAngle)
-    {
-        prevHeadAngle = headAngle;
-        headAngle = InXAngle;
-    }
-    public void PointAt(Vector3 InDirection)
-    {
-        PhysicsSkelton.ArmPointDir = InDirection;
-    }
-    public Vector3 GetHeadBonePosition()
-    {
-        return PhysicsSkelton.GetPoseTargetSkel().Origin;
-    }
-    public Vector3 GetPhysicsHeadBonePosition()
-    {
-        return PhysicsSkelton.GetPoseTargetSkel(true).Origin;
-    }
-    public float GetHeadAngle() => headAngle;
-    public CharacterState GetCurrentState() => _characterState;
-
-    // ── Network ──────────────────────────────────────────────────────────────
-
-    public int PeerId { get; set; } = 0;
-
-    // ── Stats (authority only) ───────────────────────────────────────────────
-
     /// <summary>
-	/// Compteurs de la partie en cours. Rempli sur l'instance authority uniquement
-	/// (les répliques distantes ne tracent rien&#160;: le serveur agrège la version
-	/// authoritative via le RPC <c>SubmitStats</c> en fin de phase Game).
+    /// Durée (en secondes) pendant laquelle ce personnage est immunisé contre
+    /// les morts «&#160;environnementales&#160;» (Water&#160;: noyade) après son spawn. Couvre
+	/// la fenêtre où les <c>PhysicalBone3D</c> du squelette n'ont pas encore
+	/// rattrapé la transform du <c>CharacterBody3D</c>&#160;: leurs positions
+	/// transitoires au repos peuvent déclencher des <c>body_entered</c> sur
+	/// l'<c>Area3D</c> de l'eau alors que le corps lui-même est sur la
+	/// plateforme. Sert aussi à laisser le filet de sécurité aux téléportations
+	/// (respawn) déclenchées par le serveur.
 	/// </summary>
-	protected PlayerGameStats _stats = new();
-    private float _ragdollEnterSec;
+	[Export(PropertyHint.Range, "0.0f,5.0f,0.05f,suffix:sec")] public float SpawnProtectionDuration = 0.75f;
+
+	private ulong _spawnProtectionUntilMsec = 0UL;
+
+	/// <summary>
+	/// Vrai tant que le personnage est encore dans sa fenêtre de protection
+	/// post-spawn. Consommé par <see cref="Water"/> pour ignorer les morts par
+	/// noyade transitoires.
+	/// </summary>
+	public bool IsSpawnProtected => Time.GetTicksMsec() < _spawnProtectionUntilMsec;
+
+	/// <summary>
+	/// (Re)déclenche la protection post-spawn. Appelé par <see cref="_Ready"/>
+	/// et utilisable par les systèmes de respawn pour réarmer la fenêtre après
+	/// une téléportation forcée.
+	/// </summary>
+	public void ArmSpawnProtection()
+	{
+		float d = MathF.Max(0f, SpawnProtectionDuration);
+		_spawnProtectionUntilMsec = Time.GetTicksMsec() + (ulong)(d * 1000f);
+	}
+
+
+	public void RotateHead(float InXAngle)
+	{
+		prevHeadAngle = headAngle;
+		headAngle = InXAngle;
+	}
+	public void PointAt(Vector3 InDirection)
+	{
+		PhysicsSkelton.ArmPointDir = InDirection;
+	}
+	public Vector3 GetHeadBonePosition()
+	{
+		return PhysicsSkelton.GetPoseTargetSkel().Origin;
+	}
+	public Vector3 GetPhysicsHeadBonePosition()
+	{
+		return PhysicsSkelton.GetPoseTargetSkel(true).Origin;
+	}
+	public float GetHeadAngle() => headAngle;
+	public CharacterState GetCurrentState() => _characterState;
+
+	// ── Network ──────────────────────────────────────────────────────────────
+
+	public int PeerId { get; set; } = 0;
+
+	// ── Stats (authority only) ───────────────────────────────────────────────
+
+	/// <summary>
+	/// Compteurs de la partie en cours. Rempli sur l'instance authority uniquement
+    /// (les répliques distantes ne tracent rien&#160;: le serveur agrège la version
+    /// authoritative via le RPC <c>SubmitStats</c> en fin de phase Game).
+    /// </summary>
+    protected PlayerGameStats _stats = new();
+    protected float _ragdollEnterSec;
 
     /// <summary>Accès lecture aux stats accumulées (authority).</summary>
     public PlayerGameStats Stats => _stats;
@@ -100,47 +143,61 @@ public partial class Character : CharacterBody3D
 
     /// <summary>
     /// Émis lorsque ce personnage entre en état <see cref="CharacterState.Dead"/>.
-    /// Fire-once par mort&#160;: l'événement n'est pas réémis si <see cref="Die"/> est rappelé
-    /// alors qu'on est déjà mort (idempotent). Signature&#160;: <c>(peerId, reason)</c>.
-    /// Hook prévu pour le futur service de stats.
-    /// </summary>
-    public event System.Action<int, DeathReason> Died;
+	/// Fire-once par mort&#160;: l'événement n'est pas réémis si <see cref="Die"/> est rappelé
+	/// alors qu'on est déjà mort (idempotent). Signature&#160;: <c>(peerId, reason)</c>.
+	/// Hook prévu pour le futur service de stats.
+	/// </summary>
+	public event System.Action<int, DeathReason> Died;
 
-    /// <summary>
-    /// Bascule le personnage en mort. Application locale uniquement&#160;: la propagation réseau
-    /// (RPC) est faite par <see cref="Player.RequestDeath"/> côté authority/serveur.
-    /// Idempotent&#160;: ne fait rien si déjà mort.
-    /// </summary>
-    /// <param name="InReason">Cause de la mort, transmise au futur système de stats.</param>
-    public virtual void Die(DeathReason InReason)
-    {
-        if (_characterState == CharacterState.Dead) return;
-        // Diagnostic&#160;: imprime la cause + une stack trace managée pour identifier
-        // quel call site a déclenché la mort. À retirer une fois la cause des
-        // morts spurieuses comprise.
-        GD.Print($"[Character.Die] peer={PeerId} reason={InReason} authority={IsMultiplayerAuthority()} pos={GlobalPosition}\n{System.Environment.StackTrace}");
-        LastDeathReason = InReason;
-        if (IsMultiplayerAuthority())
-        {
-            _stats.PeerId = PeerId;
-            _stats.TimeOfDeathSeconds = GameController.GameElapsedSeconds;
-            _stats.DeathReason = InReason;
-        }
-        TransitionTo(CharacterState.Dead);
-        Died?.Invoke(PeerId, InReason);
-    }
+	/// <summary>
+	/// Bascule le personnage en mort. Application locale uniquement&#160;: la propagation réseau
+	/// (RPC) est faite par <see cref="Player.RequestDeath"/> côté authority/serveur.
+	/// Idempotent&#160;: ne fait rien si déjà mort.
+	/// </summary>
+	/// <param name="InReason">Cause de la mort, transmise au futur système de stats.</param>
+	public virtual void Die(DeathReason InReason)
+	{
+		if (_characterState == CharacterState.Dead) return;
+		// Diagnostic&#160;: imprime la cause + une stack trace managée pour identifier
+		// quel call site a déclenché la mort. À retirer une fois la cause des
+		// morts spurieuses comprise.
+		GD.Print($"[Character.Die] peer={PeerId} reason={InReason} authority={IsMultiplayerAuthority()} pos={GlobalPosition}\n{System.Environment.StackTrace}");
+		LastDeathReason = InReason;
+		if (IsMultiplayerAuthority())
+		{
+			_stats.PeerId = PeerId;
+			_stats.TimeOfDeathSeconds = GameController.GameElapsedSeconds;
+			_stats.DeathReason = InReason;
+		}
+		TransitionTo(CharacterState.Dead);
+		Died?.Invoke(PeerId, InReason);
+	}
 
-    public virtual PlayerNetState SnapshotState()
-    {
-        byte flags = 0;
-        if (PhysicsSkelton.Aiming) flags |= 0x01;
-        if (PhysicsSkelton.ArmsUp) flags |= 0x02;
+	/// <summary>
+	/// Enregistre l'instant où ce personnage a franchi la ligne d'arrivée du
+	/// mode Obby/Racing. Authority-only (les stats sont remplies sur le côté
+	/// authoritative puis transmises via <c>SubmitStats</c>). Idempotent&#160;: ne
+	/// re-écrit pas si une finition a déjà été enregistrée.
+	/// </summary>
+	public void RecordFinish(float InGameElapsedSeconds)
+	{
+		if (!IsMultiplayerAuthority()) return;
+		if (_stats.TimeOfFinishSeconds >= 0f) return;
+		_stats.PeerId = PeerId;
+		_stats.TimeOfFinishSeconds = InGameElapsedSeconds;
+	}
 
-        if (_characterState == CharacterState.Ragdoll || _characterState == CharacterState.Dead)
-        {
-            // Position and Velocity are repurposed: spine physics world position
-            // and velocity so remote players can anchor their local simulation.
-            // BodyYaw and HeadPitch carry the head physical bone's world rotation
+	public virtual PlayerNetState SnapshotState()
+	{
+		byte flags = 0;
+		if (PhysicsSkelton.Aiming) flags |= 0x01;
+		if (PhysicsSkelton.ArmsUp) flags |= 0x02;
+
+		if (_characterState == CharacterState.Ragdoll || _characterState == CharacterState.Dead)
+		{
+			// Position and Velocity are repurposed: spine physics world position
+			// and velocity so remote players can anchor their local simulation.
+			// BodyYaw and HeadPitch carry the head physical bone's world rotation
             // so the remote correction steers head orientation correctly.
             var (headPitch, headYaw) = PhysicsSkelton.GetHeadPhysicsWorldAngles();
             return new PlayerNetState(PeerId,
@@ -233,46 +290,87 @@ public partial class Character : CharacterBody3D
                 Velocity = Vector3.Zero;
                 moveVec = Vector3.Zero;
                 aimVec = Vector3.Zero;
+                if (IsInGroup("players_alive")) RemoveFromGroup("players_alive");
                 break;
-        }
-    }
+            case CharacterState.Spectating:
+				// Le corps doit RESTER ragdoll pendant le spectateur (l'utilisateur a
+				// dit «&#160;keep dead body visible&#160;»). On reproduit les invariants de
+				// Dead côté corps physique parce qu'ExitState(Dead) un-ragdoll le
+                // squelette et réactive la capsule — sans cette ré-application, le
+				// personnage se relèverait visuellement au moment d'entrer en spectateur.
+				if (_capsule != null) _capsule.Disabled = true;
+				PhysicsSkelton.IsRagdoll = true;
+				PhysicsSkelton.RagdollTriggered = false;
+				velocity = Vector3.Zero;
+				Velocity = Vector3.Zero;
+				moveVec = Vector3.Zero;
+				aimVec = Vector3.Zero;
+				break;
+		}
+	}
 
-    protected virtual void ExitState(CharacterState state)
-    {
-        switch (state)
-        {
-            case CharacterState.Ragdoll:
-                PhysicsSkelton.IsRagdoll = false;
-                if (_capsule != null) _capsule.Disabled = false;
-                if (IsMultiplayerAuthority())
-                {
-                    float now = Time.GetTicksMsec() / 1000f;
-                    _stats.TotalRagdollSeconds += now - _ragdollEnterSec;
-                }
-                break;
-            case CharacterState.Dead:
-                PhysicsSkelton.IsRagdoll = false;
-                if (_capsule != null) _capsule.Disabled = false;
-                break;
-        }
-    }
+	protected virtual void ExitState(CharacterState state)
+	{
+		switch (state)
+		{
+			case CharacterState.Ragdoll:
+				PhysicsSkelton.IsRagdoll = false;
+				if (_capsule != null) _capsule.Disabled = false;
+				if (IsMultiplayerAuthority())
+				{
+					float now = Time.GetTicksMsec() / 1000f;
+					_stats.TotalRagdollSeconds += now - _ragdollEnterSec;
+				}
+				break;
+			case CharacterState.Dead:
+				PhysicsSkelton.IsRagdoll = false;
+				if (_capsule != null) _capsule.Disabled = false;
+				break;
+		}
+	}
 
-    /// ···········································
-    /// : _    ___ ___ ___ _____   _____ _    ___ :
-    /// :| |  |_ _| __| __/ __\ \ / / __| |  | __|:
-    /// :| |__ | || _|| _| (__ \ V | (__| |__| _| :
-    /// :|____|___|_| |___\___| |_| \___|____|___|:
-    /// ···········································
+	/// ···········································
+	/// : _    ___ ___ ___ _____   _____ _    ___ :
+	/// :| |  |_ _| __| __/ __\ \ / / __| |  | __|:
+	/// :| |__ | || _|| _| (__ \ V | (__| |__| _| :
+	/// :|____|___|_| |___\___| |_| \___|____|___|:
+	/// ···········································
 
-    public override void _Ready()
-    {
-        _spineCollBox = GetNodeOrNull<CollisionShape3D>(
-            "PhysicsRig/Armature/Skeleton3D/PhysicalBoneSimulator3D/Physical Bone Spine_001/CollisionShape3D");
+	public override void _Ready()
+	{
+		_spineCollBox = GetNodeOrNull<CollisionShape3D>(
+			"PhysicsRig/Armature/Skeleton3D/PhysicalBoneSimulator3D/Physical Bone Spine_001/CollisionShape3D");
+
+		if (IsPreview)
+		{
+			// FSM bloquée dès le _Ready: _PhysicsProcess early-return sur Preview,
+			// _Process mappe vers MovementState.Idle via le default switch.
+			// AnimPlayer reste muet sans ce Play() (currentMovementState=Idle déjà,
+			// donc la garde "if equal return" de _Process ne déclenche jamais Play).
+			_characterState = CharacterState.Preview;
+			PlayAnimationFromMovement(MovementState.Idle, AnimPlayer);
+			return;
+		}
+
+		// Groupe de référence pour la sélection de cibles spectateur. Maintenu
+		// par EnterState(Dead) qui retire l'entrée à la mort. Joindre ici (pas
+        // dans Player._Ready) garantit que toutes les répliques distantes sont
+        // énumérables — le joueur local doit pouvoir cibler les autres peers.
+        AddToGroup("players_alive");
+
+		// Fenêtre d'immunité post-spawn : couvre la frame où les PhysicalBone3D
+		// du squelette n'ont pas encore rattrapé la transform du CharacterBody3D.
+        ArmSpawnProtection();
     }
 
     public override void _PhysicsProcess(double delta)
     {
-        // Respawn local — uniquement quand on n'est pas en réseau. En multi le
+        // Instance UI: pas de MoveAndSlide, pas de FSM, pas de respawn. Le pitch
+		// de tête est piloté de l'extérieur via Preview.cs qui écrit directement
+		// PhysicsSkelton.HeadAngle; le yaw via Rotation sur ce node.
+		if (_characterState == CharacterState.Preview) return;
+
+		// Respawn local — uniquement quand on n'est pas en réseau. En multi le
         // serveur fait autorité (cf. NetworkManager.OnPacketReceived /
         // FallThreshold) et envoie la correction de position ; téléporter ici
         // en plus produirait un fight client/serveur sur la position.
@@ -295,6 +393,9 @@ public partial class Character : CharacterBody3D
                 return;
 
             case CharacterState.Dead:
+                return;
+
+            case CharacterState.Spectating:
                 return;
 
             case CharacterState.Recovering:
@@ -381,7 +482,7 @@ public partial class Character : CharacterBody3D
         return _characterState switch
         {
             CharacterState.Moving => MovementState.Walking,
-            CharacterState.Ragdoll or CharacterState.Recovering or CharacterState.Dead => MovementState.Ragdolling,
+            CharacterState.Ragdoll or CharacterState.Recovering or CharacterState.Dead or CharacterState.Spectating => MovementState.Ragdolling,
             _ => MovementState.Idle
         };
     }
@@ -394,7 +495,18 @@ public partial class Character : CharacterBody3D
         PlayAnimationFromMovement(newMovementState, AnimPlayer);
     }
 
-    public override void _Notification(int what) { if (what == Node.NotificationExitTree) { GD.Print($"[Character] EXIT TREE: {Name}"); } else if (what == Node.NotificationEnterTree) { GD.Print($"[Character] ENTER TREE: {Name}"); } base._Notification(what); }
+    public override void _Notification(int what)
+    {
+        if (what == Node.NotificationExitTree)
+        {
+            //GD.Print($"[Character] EXIT TREE: {Name}");
+        }
+        else if (what == Node.NotificationEnterTree)
+        {
+            //GD.Print($"[Character] ENTER TREE: {Name}");
+        }
+        base._Notification(what);
+    }
     public override void _ExitTree()
     {
         base._ExitTree();

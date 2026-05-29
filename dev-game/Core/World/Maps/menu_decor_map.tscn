@@ -1,10 +1,13 @@
 [gd_scene format=3 uid="uid://but3467304q27"]
 
-[ext_resource type="PackedScene" uid="uid://dhqocpk2vnmod" path="res://Core/World/MapAssets/map.tscn" id="1_x71oi"]
+[ext_resource type="Script" uid="uid://dr1lgyefyqly8" path="res://Core/World/Maps/SnowballThrower.cs" id="1_svcmn"]
 [ext_resource type="Texture2D" uid="uid://bu7fsw23jtsu3" path="res://Assets/Textures/Particles/dingbats-518.png" id="2_8wbjl"]
+[ext_resource type="PackedScene" uid="uid://b42i18x6cicat" path="res://Core/World/MapAssets/DecorAssets/snowball.tscn" id="2_ubq75"]
+[ext_resource type="PackedScene" uid="uid://c336gjjdjalff" path="res://Core/World/MapAssets/DecorAssets/icebarg_wall.tscn" id="4_bk26c"]
 [ext_resource type="PackedScene" uid="uid://blxnhy8a0mxon" path="res://Core/World/Terrain/endless_water.tscn" id="5_bk26c"]
+[ext_resource type="PackedScene" uid="uid://cue46vlh7h8q8" path="res://Core/World/CharacterModel/Character/Character.tscn" id="5_i43sa"]
 [ext_resource type="PackedScene" uid="uid://bvmigfks33r4g" path="res://Core/World/MapAssets/world_environment_base.tscn" id="5_l1hwa"]
-[ext_resource type="PackedScene" uid="uid://i7k20gcwfda6" path="res://Core/World/MapAssets/MainAssets/WindTurbine/eolienne.tscn" id="6_l1hwa"]
+[ext_resource type="Script" uid="uid://bxxa2mxhswa5i" path="res://Core/World/MapAssets/DecorAssets/CharacterFollowers.cs" id="5_svcmn"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_iew4k"]
 lifetime_randomness = 0.1
@@ -31,13 +34,14 @@ albedo_texture = ExtResource("2_8wbjl")
 material = SubResource("StandardMaterial3D_s4n5g")
 size = Vector2(0.1, 0.1)
 
-[node name="MenuDecorMap" type="Node3D" unique_id=1870671043]
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_l1hwa"]
 
-[node name="map" parent="." unique_id=532924581 instance=ExtResource("1_x71oi")]
-transform = Transform3D(-2.4358249e-06, 0, -161.55928, 0, 133.37143, 0, 55.725178, 0, -7.0619803e-06, 0, 0, -1280.9487)
+[node name="MenuDecorMap" type="Node3D" unique_id=1870671043]
+script = ExtResource("1_svcmn")
+SnowballScene = ExtResource("2_ubq75")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=745082803]
-transform = Transform3D(1, 0, 0, 0, 0.8660254, -0.5, 0, 0.5, 0.8660254, -7.6293945e-06, 2.8556025, 33.678616)
+transform = Transform3D(1, 0, 0, 0, 0.25839752, -0.9660387, 0, 0.9660387, 0.25839752, -7.6293945e-06, 9.098304, 28.305126)
 
 [node name="GPUParticles3D2" type="GPUParticles3D" parent="." unique_id=1337821342]
 transform = Transform3D(16.185404, 0, 0, 0, 9.420224, -7.8788238, 0, 10.403281, 7.1343145, -0.17871761, 15.57415, 29.070778)
@@ -51,152 +55,105 @@ draw_pass_1 = SubResource("QuadMesh_7t6q3")
 
 [node name="Water" parent="." unique_id=2121387950 instance=ExtResource("5_bk26c")]
 transform = Transform3D(0.86942166, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.997551, 0)
-
-[node name="WindTurbines" type="Node3D" parent="." unique_id=1346458707]
-transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 0, 0, 0)
-
-[node name="WindTurbine2" parent="WindTurbines" unique_id=1412030690 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -275.82938, -25.839865, 643.44604)
-
-[node name="WindTurbine3" parent="WindTurbines" unique_id=1782962767 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -275.82938, -25.839865, 510.44608)
-
-[node name="WindTurbine4" parent="WindTurbines" unique_id=1718945844 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -275.82938, -25.839865, 746.3166)
-
-[node name="WindTurbine5" parent="WindTurbines" unique_id=1007563783 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -275.82938, -25.839865, 829.3166)
-
-[node name="WindTurbine6" parent="WindTurbines" unique_id=440943206 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(0.71003383, 0.25524327, 0.6562795, -0.18743996, 0.96687686, -0.1732495, -0.67876226, 0, 0.7343581, -275.82938, -37.250404, 198.44608)
-
-[node name="WindTurbine7" parent="WindTurbines" unique_id=81205769 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -275.82938, -25.839865, 65.446075)
-
-[node name="WindTurbine8" parent="WindTurbines" unique_id=1892573331 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -275.82938, -25.839865, 301.31662)
-
-[node name="WindTurbine9" parent="WindTurbines" unique_id=1441717130 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -275.82938, -25.839865, 384.31662)
-
-[node name="WindTurbine10" parent="WindTurbines" unique_id=471344998 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(0.998625, 0.052423105, 0, -0.052423105, 0.998625, 0, 0, 0, 1, -275.82938, -25.839865, -263.69873)
-
-[node name="WindTurbine11" parent="WindTurbines" unique_id=419054578 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -275.82938, -25.839865, -396.6987)
-
-[node name="WindTurbine12" parent="WindTurbines" unique_id=2054136997 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(0.8624076, -0.32269838, -0.3900241, 0.3504526, 0.9365805, 0, 0.36528894, -0.13668495, 0.9208046, -275.82938, -25.839865, -160.82819)
-
-[node name="WindTurbine13" parent="WindTurbines" unique_id=1392806259 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(0.9884622, 0, 0.15146784, 0, 1, 0, -0.15146784, 0, 0.9884622, -275.82938, -25.839865, -77.828186)
-
-[node name="WindTurbine14" parent="WindTurbines" unique_id=92829434 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -275.82938, -25.839865, -708.6987)
-
-[node name="WindTurbine15" parent="WindTurbines" unique_id=1860284329 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -275.82938, -25.839865, -841.6987)
-
-[node name="WindTurbine16" parent="WindTurbines" unique_id=1561595664 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -275.82938, -25.839865, -605.8281)
-
-[node name="WindTurbine17" parent="WindTurbines" unique_id=1947305664 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -275.82938, -25.839865, -522.8281)
-
-[node name="WindTurbine18" parent="WindTurbines" unique_id=944326716 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -491.69223, -25.839865, 643.44604)
-
-[node name="WindTurbine19" parent="WindTurbines" unique_id=1830287205 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -491.69223, -25.839865, 510.44608)
-
-[node name="WindTurbine20" parent="WindTurbines" unique_id=1951075045 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -491.69223, -25.839865, 746.3166)
-
-[node name="WindTurbine21" parent="WindTurbines" unique_id=2031640985 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -491.69223, -25.839865, 829.3166)
-
-[node name="WindTurbine22" parent="WindTurbines" unique_id=496518155 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -491.69223, -25.839865, 198.44608)
-
-[node name="WindTurbine23" parent="WindTurbines" unique_id=895694529 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(0.9991986, 0.040027156, 0, -0.040027156, 0.9991986, 0, 0, 0, 1, -491.69223, -25.839865, 65.446075)
-
-[node name="WindTurbine24" parent="WindTurbines" unique_id=990746881 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -491.69223, -25.839865, 301.31662)
-
-[node name="WindTurbine25" parent="WindTurbines" unique_id=1219553453 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -491.69223, -25.839865, 384.31662)
-
-[node name="WindTurbine26" parent="WindTurbines" unique_id=1955071738 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -491.69223, -25.839865, -263.69873)
-
-[node name="WindTurbine27" parent="WindTurbines" unique_id=1413598947 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -491.69223, -25.839865, -396.6987)
-
-[node name="WindTurbine28" parent="WindTurbines" unique_id=252185651 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -491.69223, -25.839865, -160.82819)
-
-[node name="WindTurbine29" parent="WindTurbines" unique_id=211356265 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(0.9449261, 0, -0.32728386, 0.030947987, 0.99551916, 0.08935229, 0.32581735, -0.09456008, 0.940692, -491.69223, -25.839865, -77.828186)
-
-[node name="WindTurbine30" parent="WindTurbines" unique_id=971150920 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -491.69223, -25.839865, -708.6987)
-
-[node name="WindTurbine31" parent="WindTurbines" unique_id=1058173408 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -491.69223, -25.839865, -841.6987)
-
-[node name="WindTurbine32" parent="WindTurbines" unique_id=916433900 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -491.69223, -25.839865, -605.8281)
-
-[node name="WindTurbine33" parent="WindTurbines" unique_id=1568772409 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -491.69223, -25.839865, -522.8281)
-
-[node name="WindTurbine34" parent="WindTurbines" unique_id=1771197603 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -777.5718, -25.839865, 643.44604)
-
-[node name="WindTurbine35" parent="WindTurbines" unique_id=787854656 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -777.5718, -25.839865, 510.44608)
-
-[node name="WindTurbine36" parent="WindTurbines" unique_id=1602186001 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -777.5718, -25.839865, 746.3166)
-
-[node name="WindTurbine37" parent="WindTurbines" unique_id=1712233598 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -777.5718, -25.839865, 829.3166)
-
-[node name="WindTurbine38" parent="WindTurbines" unique_id=381057348 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -777.5718, -25.839865, 198.44608)
-
-[node name="WindTurbine39" parent="WindTurbines" unique_id=1263223072 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(0.9608509, 0.094925314, 0.26029727, -0.17468551, 0.93677807, 0.3032026, -0.2150592, -0.33680263, 0.9166861, -777.5718, -25.839865, 65.446075)
-
-[node name="WindTurbine40" parent="WindTurbines" unique_id=356793331 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -777.5718, -25.839865, 301.31662)
-
-[node name="WindTurbine41" parent="WindTurbines" unique_id=1267839217 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -777.5718, -25.839865, 384.31662)
-
-[node name="WindTurbine42" parent="WindTurbines" unique_id=867035839 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -777.5718, -25.839865, -263.69873)
-
-[node name="WindTurbine43" parent="WindTurbines" unique_id=674991195 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -777.5718, -25.839865, -396.6987)
-
-[node name="WindTurbine44" parent="WindTurbines" unique_id=1018485877 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -777.5718, -25.839865, -160.82819)
-
-[node name="WindTurbine45" parent="WindTurbines" unique_id=1303440532 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -777.5718, -25.839865, -77.828186)
-
-[node name="WindTurbine46" parent="WindTurbines" unique_id=404482977 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -777.5718, -25.839865, -708.6987)
-
-[node name="WindTurbine47" parent="WindTurbines" unique_id=64371816 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -777.5718, -25.839865, -841.6987)
-
-[node name="WindTurbine48" parent="WindTurbines" unique_id=281137887 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -777.5718, -25.839865, -605.8281)
-
-[node name="WindTurbine49" parent="WindTurbines" unique_id=1143475493 instance=ExtResource("6_l1hwa")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -777.5718, -25.839865, -522.8281)
+visible = false
 
 [node name="WorldEnvironment" parent="." unique_id=1478789142 instance=ExtResource("5_l1hwa")]
+
+[node name="Sketchfab_Scene" parent="." unique_id=2077724548 instance=ExtResource("4_bk26c")]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0.0039057732, 5.6988955, 25.848717)
+
+[node name="Sketchfab_Scene2" parent="." unique_id=236828056 instance=ExtResource("4_bk26c")]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 11, 5.691141, 25.850187)
+
+[node name="Sketchfab_Scene3" parent="." unique_id=184701177 instance=ExtResource("4_bk26c")]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, -12.300001, 5.691141, 25.850187)
+
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=1173478780]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.540123, 6.2576084, 29.42002)
+collision_layer = 2
+collision_mask = 5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=285914699]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.013399601, 0)
+shape = SubResource("WorldBoundaryShape3D_l1hwa")
+debug_color = Color(0.99, 0, 0.18150006, 1)
+
+[node name="CharacterFollowers" type="Node3D" parent="." unique_id=619913088]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2096252, -0.32637787)
+script = ExtResource("5_svcmn")
+CharacterScene = ExtResource("5_i43sa")
+AimDistance = 4.0
+HeadFollowSpeed = 30.0
+MaxPitchDegrees = 90.0
+
+[node name="Spawn1" type="Marker3D" parent="CharacterFollowers" unique_id=530434328]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 13.066859, 24.617418)
+
+[node name="Spawn2" type="Marker3D" parent="CharacterFollowers" unique_id=724499376]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.674713, 13.066859, 24.773525)
+
+[node name="Spawn7" type="Marker3D" parent="CharacterFollowers" unique_id=306886612]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.0524235, 13.066859, 25.035154)
+
+[node name="Spawn8" type="Marker3D" parent="CharacterFollowers" unique_id=1289617308]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.7654196, 13.066859, 25.250946)
+
+[node name="Spawn9" type="Marker3D" parent="CharacterFollowers" unique_id=468308973]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2825823, 13.066859, 25.013351)
+
+[node name="Spawn12" type="Marker3D" parent="CharacterFollowers" unique_id=1857895202]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.900376, 13.066859, 25.005756)
+
+[node name="Spawn13" type="Marker3D" parent="CharacterFollowers" unique_id=672003352]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5793414, 13.066859, 25.052212)
+
+[node name="Spawn14" type="Marker3D" parent="CharacterFollowers" unique_id=730158741]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.228336, 13.066859, 25.065388)
+
+[node name="Spawn15" type="Marker3D" parent="CharacterFollowers" unique_id=2074069773]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.9042745, 13.066859, 24.969723)
+
+[node name="Spawn16" type="Marker3D" parent="CharacterFollowers" unique_id=367950930]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5398192, 13.066859, 24.878956)
+
+[node name="Spawn17" type="Marker3D" parent="CharacterFollowers" unique_id=1498844374]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.031571, 13.066859, 24.752138)
+
+[node name="Spawn18" type="Marker3D" parent="CharacterFollowers" unique_id=831522851]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.6320243, 13.066859, 24.912745)
+
+[node name="Spawn10" type="Marker3D" parent="CharacterFollowers" unique_id=1795898503]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5385091, 13.066859, 24.77304)
+
+[node name="Spawn11" type="Marker3D" parent="CharacterFollowers" unique_id=838224507]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4693091, 13.066859, 24.625875)
+
+[node name="Spawn3" type="Marker3D" parent="CharacterFollowers" unique_id=1126747445]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6115638, 13.066859, 24.773525)
+
+[node name="Spawn4" type="Marker3D" parent="CharacterFollowers" unique_id=1035297526]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1714141, 13.066859, 24.773972)
+
+[node name="Spawn5" type="Marker3D" parent="CharacterFollowers" unique_id=2048344827]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.950203, 13.066859, 24.82976)
+
+[node name="Spawn6" type="Marker3D" parent="CharacterFollowers" unique_id=21509748]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5864272, 13.066859, 24.606253)
+
+[node name="Spawn19" type="Marker3D" parent="CharacterFollowers" unique_id=1108068605]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.1303406, 13.066859, 24.626373)
+
+[node name="Spawn20" type="Marker3D" parent="CharacterFollowers" unique_id=671640122]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.4742422, 13.066859, 24.771189)
+
+[node name="Spawn21" type="Marker3D" parent="CharacterFollowers" unique_id=1900794577]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.8372383, 13.066859, 24.933403)
+
+[node name="Spawn22" type="Marker3D" parent="CharacterFollowers" unique_id=1982845406]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5098214, 13.066859, 24.952145)
+
+[node name="Spawn23" type="Marker3D" parent="CharacterFollowers" unique_id=937882576]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.069122, 13.066859, 24.938145)
+
+[node name="SpotLight3D" type="SpotLight3D" parent="." unique_id=1486640128]
+transform = Transform3D(1, 0, 0, 0, 0.49999997, -0.86602545, 0, 0.86602545, 0.49999997, -9.536743e-07, 6.0965643, 31.783316)

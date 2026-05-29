@@ -36,4 +36,9 @@ public sealed class MostRagdolledCondition : ISubwinningCondition
         float relevance = (float)(max - secondMax) / max;
         return (leader, relevance);
     }
+
+    public string FormatDetail(PlayerGameStats InStats)
+    {
+        return $"{InStats.RagdollCount} fois";
+    }
 }

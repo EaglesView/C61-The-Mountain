@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://cwfx6wu5jcf6e"]
 
 [ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="1_vc6pr"]
+[ext_resource type="PackedScene" uid="uid://xd8nimsr0780" path="res://Core/UI/InGame/chat/chat.tscn" id="2_27yfu"]
 
 [node name="UiIngame" type="Control" unique_id=1651726219]
 layout_mode = 3
@@ -51,3 +52,10 @@ theme_override_font_sizes/font_size = 52
 text = "TIME LEFT : 01:00"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="ChatPanel" parent="." unique_id=1396906449 instance=ExtResource("2_27yfu")]
+layout_mode = 0
+offset_left = 1534.0
+offset_top = 568.0
+offset_right = 1920.0
+offset_bottom = 1080.0

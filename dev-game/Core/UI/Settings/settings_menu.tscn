@@ -3,8 +3,43 @@
 [ext_resource type="Script" uid="uid://baupysfr1bxv8" path="res://Core/UI/Settings/SettingsMenu.cs" id="1_script"]
 [ext_resource type="Theme" uid="uid://bb6vwl0h1flws" path="res://Assets/ui/kenneyUI-blue.tres" id="2_theme"]
 [ext_resource type="FontFile" uid="uid://d3iekdubpmgvd" path="res://Assets/fonts/Gorditas/Gorditas-Bold.ttf" id="3_bold"]
+[ext_resource type="Texture2D" uid="uid://d00ws7wljnit4" path="res://Assets/ui/UIpack_vector.svg" id="4_aj2a8"]
 
-[node name="SettingsMenu" type="Control" unique_id=1934289598 node_paths=PackedStringArray("_tabs", "_audioContainer", "_controlsContainer", "_backButton")]
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_72444"]
+texture = ExtResource("4_aj2a8")
+texture_margin_left = 12.5436
+texture_margin_top = 10.0349
+texture_margin_right = 8.78053
+texture_margin_bottom = 14.2161
+region_rect = Rect2(211, 180, 190, 49)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_4flrl"]
+texture = ExtResource("4_aj2a8")
+texture_margin_left = 12.5436
+texture_margin_top = 10.0349
+texture_margin_right = 8.78053
+texture_margin_bottom = 14.2161
+region_rect = Rect2(421, 184, 190, 45)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_iw608"]
+texture = ExtResource("4_aj2a8")
+texture_margin_left = 12.5436
+texture_margin_top = 10.0349
+texture_margin_right = 8.78053
+texture_margin_bottom = 14.2161
+region_rect = Rect2(1, 180, 190, 49)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_prrb0"]
+texture = ExtResource("4_aj2a8")
+texture_margin_left = 12.5436
+texture_margin_top = 10.0349
+texture_margin_right = 8.78053
+texture_margin_bottom = 14.2161
+region_rect = Rect2(841, 184, 190, 45)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_eq1ja"]
+
+[node name="SettingsMenu" type="Control" unique_id=1934289598 node_paths=PackedStringArray("_tabs", "_audioContainer", "_controlsContainer", "_graphicsContainer", "_backButton", "_applyButton")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -16,7 +51,9 @@ script = ExtResource("1_script")
 _tabs = NodePath("PanelContainer/Panel/MarginContainer/VBoxContainer/TabContainer")
 _audioContainer = NodePath("PanelContainer/Panel/MarginContainer/VBoxContainer/TabContainer/Audio")
 _controlsContainer = NodePath("PanelContainer/Panel/MarginContainer/VBoxContainer/TabContainer/Controles/ControlsList")
-_backButton = NodePath("PanelContainer/Panel/MarginContainer/VBoxContainer/BackButton")
+_graphicsContainer = NodePath("PanelContainer/Panel/MarginContainer/VBoxContainer/TabContainer/Graphics")
+_backButton = NodePath("PanelContainer/Panel/MarginContainer/VBoxContainer/HBoxContainer/BackButton")
+_applyButton = NodePath("PanelContainer/Panel/MarginContainer/VBoxContainer/HBoxContainer/ApplyButton")
 
 [node name="Overlay" type="ColorRect" parent="." unique_id=19587114]
 layout_mode = 1
@@ -93,6 +130,19 @@ visible = false
 layout_mode = 2
 metadata/_tab_index = 2
 
-[node name="BackButton" type="Button" parent="PanelContainer/Panel/MarginContainer/VBoxContainer" unique_id=649905797]
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/Panel/MarginContainer/VBoxContainer" unique_id=654585642]
 layout_mode = 2
+
+[node name="BackButton" type="Button" parent="PanelContainer/Panel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=649905797]
+layout_mode = 2
+size_flags_horizontal = 3
 text = "Retour"
+
+[node name="ApplyButton" type="Button" parent="PanelContainer/Panel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=222478046]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_72444")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_4flrl")
+theme_override_styles/hover = SubResource("StyleBoxTexture_iw608")
+theme_override_styles/disabled = SubResource("StyleBoxTexture_prrb0")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_eq1ja")
+text = "Appliquer"

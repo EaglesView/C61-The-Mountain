@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://ejfh4s5x3dhi"]
+
+[ext_resource type="Script" uid="uid://724dqc37ekd3" path="res://Core/UI/Preview/Preview.cs" id="1_25dsa"]
+[ext_resource type="PackedScene" uid="uid://cue46vlh7h8q8" path="res://Core/World/CharacterModel/Character/Character.tscn" id="2_1814a"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_upxrq"]
+
+[sub_resource type="Sky" id="Sky_aos1h"]
+sky_material = SubResource("ProceduralSkyMaterial_upxrq")
+
+[sub_resource type="Environment" id="Environment_1814a"]
+background_mode = 2
+sky = SubResource("Sky_aos1h")
+ssr_enabled = true
+ssao_enabled = true
+glow_enabled = true
+glow_intensity = 1.75
+glow_bloom = 0.03
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.01
+volumetric_fog_emission = Color(1, 1, 1, 1)
+adjustment_enabled = true
+adjustment_contrast = 1.145
+adjustment_saturation = 1.72
+
+[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_yspop"]
+
+[sub_resource type="Compositor" id="Compositor_o85uk"]
+
+[node name="PlayerDisplay" type="Node3D" unique_id=1978848881]
+script = ExtResource("1_25dsa")
+Mode = 1
+CharacterScene = ExtResource("2_1814a")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=191290022]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5090104, 1.0697888)
+
+[node name="Pointer" type="Marker3D" parent="Camera3D" unique_id=1610295705]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1)
+gizmo_extents = 0.1
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1436413439]
+transform = Transform3D(0.8767771, 0, -0.480897, 0.45802987, 0.30469808, 0.8350855, 0.1465284, -0.952449, 0.2671523, 0, 3.0893743, 2.758759)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=504577961]
+environment = SubResource("Environment_1814a")
+camera_attributes = SubResource("CameraAttributesPractical_yspop")
+compositor = SubResource("Compositor_o85uk")

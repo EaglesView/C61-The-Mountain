@@ -20,7 +20,7 @@ public sealed partial class WinningSlide3 : MarginContainer
 	[Signal] public delegate void MapVoteCastEventHandler(string InMapId);
 
 	/// <summary>Émis quand l'hôte confirme le résultat du vote (bouton CONFIRM).</summary>
-	[Signal] public delegate void VoteConfirmedEventHandler(string InMapId);
+    [Signal] public delegate void VoteConfirmedEventHandler(string InMapId);
 
 	/// <summary>Émis quand l'utilisateur clique sur QUIT (sortie volontaire).</summary>
 	[Signal] public delegate void QuitPressedEventHandler();
@@ -38,8 +38,18 @@ public sealed partial class WinningSlide3 : MarginContainer
 	private string _majorityMapId = "";
 	private bool _isHost;
 	private readonly List<MapGridItem> _spawnedMapItems = new();
-	private readonly List<LobbyUser> _spawnedLobbyUsers = new();
+	private readonly Dictionary<string, LobbyUser> _lobbyUsersByUserId = new();
 	private bool _populated;
+
+	// Clé synthétique utilisée pour l'unique entrée «&#160;moi&#160;» quand on est en
+	// mode solo/offline : pas de RoomSnapshot, donc pas de userId Firestore.
+	private const string OfflineLocalKey = "__local__";
+
+	// Re-interroge périodiquement la salle Firestore pour rafraîchir la liste
+	// des joueurs (un peer qui se déconnecte/connecte pendant Winning doit
+	// disparaître/apparaître). Aligné sur la cadence du LobbyScene.
+	private const float PollInterval = 4.0f;
+	private Timer _pollTimer;
 
 	/// <summary>Identifiant de la map sélectionnée localement (vide si aucune).</summary>
 	public string SelectedMapId => _selectedMapId;
@@ -63,6 +73,8 @@ public sealed partial class WinningSlide3 : MarginContainer
 			else continue;
 
 			_mapGrid.AddChild(item);
+			item.CustomMinimumSize = new Vector2(400, 250);
+			item.Visible = true;
 			item.SetMap(def.Id, def.DisplayName, def.ImagePath);
 			item.SetVoteCount(0);
 			item.Selected += OnMapSelected;
@@ -72,17 +84,7 @@ public sealed partial class WinningSlide3 : MarginContainer
 		var snapshot = LobbyState.Current;
 		if (snapshot is not null && snapshot.Players.Count > 0)
 		{
-			foreach (var (_, player) in snapshot.Players)
-			{
-				LobbyUser user;
-				if (_lobbyUserScene is not null) user = _lobbyUserScene.Instantiate<LobbyUser>();
-				else if (_lobbyUserTemplate is not null) user = (LobbyUser)_lobbyUserTemplate.Duplicate();
-				else continue;
-
-				_lobbyList.AddChild(user);
-				user.SetUser(player.Username, player.IsHost);
-				_spawnedLobbyUsers.Add(user);
-			}
+			RefreshLobbyUsersFromSnapshot(snapshot);
 		}
 		else
 		{
@@ -90,20 +92,112 @@ public sealed partial class WinningSlide3 : MarginContainer
 			// authentifié (ou un placeholder si pas d'auth) pour ne pas laisser la
 			// colonne lobby vide.
 			string localUsername = AuthServiceProvider.Instance.CurrentUser?.Username ?? "You";
-			LobbyUser user = null;
-			if (_lobbyUserScene is not null) user = _lobbyUserScene.Instantiate<LobbyUser>();
-			else if (_lobbyUserTemplate is not null) user = (LobbyUser)_lobbyUserTemplate.Duplicate();
+			var user = InstantiateLobbyUser();
 			if (user is not null)
 			{
 				_lobbyList.AddChild(user);
+				user.CustomMinimumSize = new Vector2(380, 32);
+				user.Visible = true;
 				user.SetUser(localUsername, true);
-				_spawnedLobbyUsers.Add(user);
+				_lobbyUsersByUserId[OfflineLocalKey] = user;
 			}
 		}
 
 		_isHost = LobbyState.IsHost;
 		RefreshConfirmButton();
 		_populated = true;
+
+		StartPollingIfNeeded();
+	}
+
+	private LobbyUser InstantiateLobbyUser()
+	{
+		if (_lobbyUserScene is not null) return _lobbyUserScene.Instantiate<LobbyUser>();
+		if (_lobbyUserTemplate is not null) return (LobbyUser)_lobbyUserTemplate.Duplicate();
+		return null;
+	}
+
+	/// <summary>
+	/// Diffe la colonne lobby contre <paramref name="InSnapshot"/>&#160;: retire les
+	/// joueurs partis, ajoute les nouveaux, et met à jour le label des joueurs
+	/// déjà présents (changement de username/host). Idempotent — sûr à appeler
+	/// à chaque tick de poll sans flicker.
+	/// </summary>
+	private void RefreshLobbyUsersFromSnapshot(RoomSnapshot InSnapshot)
+	{
+		var currentIds = new HashSet<string>(InSnapshot.Players.Keys);
+		var toRemove = new List<string>();
+		foreach (var (userId, _) in _lobbyUsersByUserId)
+		{
+			if (!currentIds.Contains(userId)) toRemove.Add(userId);
+		}
+		foreach (var userId in toRemove)
+		{
+			var node = _lobbyUsersByUserId[userId];
+			if (IsInstanceValid(node)) node.QueueFree();
+			_lobbyUsersByUserId.Remove(userId);
+		}
+
+		foreach (var (userId, player) in InSnapshot.Players)
+		{
+			if (_lobbyUsersByUserId.TryGetValue(userId, out var existing))
+			{
+				if (IsInstanceValid(existing)) existing.SetUser(player.Username, player.IsHost);
+				continue;
+			}
+			var user = InstantiateLobbyUser();
+			if (user is null) continue;
+			_lobbyList.AddChild(user);
+			user.CustomMinimumSize = new Vector2(380, 32);
+			user.Visible = true;
+			user.SetUser(player.Username, player.IsHost);
+			_lobbyUsersByUserId[userId] = user;
+		}
+	}
+
+	private void StartPollingIfNeeded()
+	{
+		// Pas de salle Firestore associée (mode solo/offline) -> rien à poller.
+		var snapshot = LobbyState.Current;
+		if (snapshot is null || string.IsNullOrEmpty(snapshot.Code)) return;
+		if (_pollTimer is not null && IsInstanceValid(_pollTimer)) return;
+
+		_pollTimer = new Timer { WaitTime = PollInterval, Autostart = true };
+		_pollTimer.Timeout += OnPollTick;
+		AddChild(_pollTimer);
+	}
+
+	private void StopPolling()
+	{
+		if (_pollTimer is null) return;
+		if (IsInstanceValid(_pollTimer))
+		{
+			_pollTimer.Timeout -= OnPollTick;
+			_pollTimer.Stop();
+			_pollTimer.QueueFree();
+		}
+		_pollTimer = null;
+	}
+
+	private async void OnPollTick()
+	{
+		if (!_populated || !IsInsideTree()) return;
+		var snapshot = LobbyState.Current;
+		if (snapshot is null || string.IsNullOrEmpty(snapshot.Code)) return;
+
+		try
+		{
+			var fresh = await RoomServiceProvider.Repository.GetAsync(snapshot.Code);
+			// La slide peut avoir été clearée / sortie de l'arbre pendant l'await.
+			if (!_populated || !IsInsideTree()) return;
+			if (fresh is null) return;
+			LobbyState.Set(fresh, LobbyState.IsHost);
+			RefreshLobbyUsersFromSnapshot(fresh);
+		}
+		catch (System.Exception ex)
+		{
+			GD.PrintErr($"[WinningSlide3] Poll failed: {ex.Message}");
+		}
 	}
 
 	/// <summary>
@@ -112,10 +206,11 @@ public sealed partial class WinningSlide3 : MarginContainer
 	/// </summary>
 	public void ClearSpawned()
 	{
+		StopPolling();
 		foreach (var item in _spawnedMapItems) if (IsInstanceValid(item)) item.QueueFree();
-		foreach (var user in _spawnedLobbyUsers) if (IsInstanceValid(user)) user.QueueFree();
+		foreach (var (_, user) in _lobbyUsersByUserId) if (IsInstanceValid(user)) user.QueueFree();
 		_spawnedMapItems.Clear();
-		_spawnedLobbyUsers.Clear();
+		_lobbyUsersByUserId.Clear();
 		_selectedMapId = "";
 		_majorityMapId = "";
 		_populated = false;

@@ -39,6 +39,17 @@ public sealed class PlayerGameStats
     /// <summary>Cause de la mort (cf. <see cref="DeathReason"/>). Pertinent seulement si <see cref="TimeOfDeathSeconds"/> &gt;= 0.</summary>
     public DeathReason DeathReason = DeathReason.Unknown;
 
+    /// <summary>
+    /// Temps de partie écoulé (en secondes, mesuré depuis l'entrée en phase
+    /// <c>Playing</c>) au moment où le joueur a franchi la ligne d'arrivée
+    /// (mode Obby/Racing). Reste à <c>-1f</c> si le joueur n'a pas terminé&#160;:
+    /// les conditions de type «&#160;Fastest to finish&#160;» filtrent ces valeurs.
+    /// </summary>
+    public float TimeOfFinishSeconds = -1f;
+
     /// <summary>Indique si le joueur a survécu jusqu'à la fin de la partie.</summary>
     public bool Survived => TimeOfDeathSeconds < 0f;
+
+    /// <summary>Indique si le joueur a franchi la ligne d'arrivée du mode courant.</summary>
+    public bool Finished => TimeOfFinishSeconds >= 0f;
 }

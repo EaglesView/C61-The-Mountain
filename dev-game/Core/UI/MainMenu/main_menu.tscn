@@ -16,7 +16,7 @@ outline_color = Color(0.11764706, 0.654902, 0.88235295, 1)
 font = ExtResource("4_77frg")
 font_color = Color(0, 0, 0, 1)
 
-[node name="MainMenu" type="Control" unique_id=712269285]
+[node name="MainMenu" type="Control" unique_id=712269285 node_paths=PackedStringArray("_local", "_play", "_profile", "_credits", "_settings", "_signOut", "_exit", "_status")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -25,62 +25,85 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("1_evkl0")
 script = ExtResource("1_mainmenu")
+_local = NodePath("Panel/CenterContainer/VBoxContainer/HBoxContainer/LocalButton")
+_play = NodePath("Panel/CenterContainer/VBoxContainer/HBoxContainer/PlayButton")
+_profile = NodePath("Panel/CenterContainer/VBoxContainer/ProfileButton")
+_credits = NodePath("Panel/CenterContainer/VBoxContainer/CreditsButton")
+_settings = NodePath("Panel/CenterContainer/VBoxContainer/SettingsButton")
+_signOut = NodePath("Panel/CenterContainer/VBoxContainer/SignOutButton")
+_exit = NodePath("Panel/CenterContainer/VBoxContainer/ExitButton")
+_status = NodePath("Panel/CenterContainer/VBoxContainer/StatusLabel")
 
 [node name="SubViewportContainer" parent="." unique_id=1476608370 instance=ExtResource("3_77frg")]
-layout_mode = 0
-
-[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=101640224]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -160.0
-offset_top = -140.0
-offset_right = 160.0
-offset_bottom = 140.0
+stretch = false
+
+[node name="Panel" type="Panel" parent="." unique_id=264993288]
+custom_minimum_size = Vector2(550, 0)
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+grow_vertical = 2
+theme = ExtResource("1_evkl0")
+
+[node name="CenterContainer" type="CenterContainer" parent="Panel" unique_id=1973343201]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Title" type="Label" parent="VBoxContainer" unique_id=760004715]
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel/CenterContainer" unique_id=101640224]
+custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
+alignment = 1
+
+[node name="Title" type="Label" parent="Panel/CenterContainer/VBoxContainer" unique_id=760004715]
+layout_mode = 2
+size_flags_vertical = 6
 text = "THE MOUNTAIN"
 label_settings = SubResource("LabelSettings_rugc1")
 horizontal_alignment = 1
 
-[node name="PlayButton" type="Button" parent="VBoxContainer" unique_id=1109665968]
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel/CenterContainer/VBoxContainer" unique_id=145641649]
 layout_mode = 2
-text = "Play Online"
+alignment = 1
 
-[node name="ProfileButton" type="Button" parent="VBoxContainer" unique_id=1109665971]
+[node name="PlayButton" type="Button" parent="Panel/CenterContainer/VBoxContainer/HBoxContainer" unique_id=1109665968]
 layout_mode = 2
-text = "Profile"
+size_flags_horizontal = 3
+text = "Jouer en ligne"
 
-[node name="CreditsButton" type="Button" parent="VBoxContainer" unique_id=1109665972]
+[node name="LocalButton" type="Button" parent="Panel/CenterContainer/VBoxContainer/HBoxContainer" unique_id=206309502]
 layout_mode = 2
-text = "Credits"
+text = "Partie Locale"
 
-[node name="SettingsButton" type="Button" parent="VBoxContainer" unique_id=1109665974]
+[node name="ProfileButton" type="Button" parent="Panel/CenterContainer/VBoxContainer" unique_id=1109665971]
 layout_mode = 2
-text = "Settings"
+text = "Profil & Cosmétiques"
 
-[node name="SignOutButton" type="Button" parent="VBoxContainer" unique_id=1109665976]
+[node name="CreditsButton" type="Button" parent="Panel/CenterContainer/VBoxContainer" unique_id=1109665972]
 layout_mode = 2
-text = "Sign Out"
+text = "Crédits"
 
-[node name="ExitButton" type="Button" parent="VBoxContainer" unique_id=1109665973]
+[node name="SettingsButton" type="Button" parent="Panel/CenterContainer/VBoxContainer" unique_id=1109665974]
 layout_mode = 2
-text = "Exit"
+text = "Paramètres"
 
-[node name="Separator" type="HSeparator" parent="VBoxContainer" unique_id=2015251676]
+[node name="SignOutButton" type="Button" parent="Panel/CenterContainer/VBoxContainer" unique_id=1109665976]
 layout_mode = 2
+text = "Se déconnecter"
 
-[node name="LocalButton" type="Button" parent="VBoxContainer" unique_id=206309502]
+[node name="ExitButton" type="Button" parent="Panel/CenterContainer/VBoxContainer" unique_id=1109665973]
 layout_mode = 2
-text = "Play Local (Debug)"
+text = "Quitter au bureau"
 
-[node name="StatusLabel" type="Label" parent="VBoxContainer" unique_id=1007076799]
+[node name="Separator" type="HSeparator" parent="Panel/CenterContainer/VBoxContainer" unique_id=2015251676]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="StatusLabel" type="Label" parent="Panel/CenterContainer/VBoxContainer" unique_id=1007076799]
 layout_mode = 2
 label_settings = SubResource("LabelSettings_77frg")
 horizontal_alignment = 1

@@ -10,7 +10,7 @@ using Utils;
 public partial class Water : MeshInstance3D
 {
 	[Export] public Area3D? WaterArea;
-
+	[Export] private bool _isDeadly = true;
 	private static Character? _FindCharacter(Node? InNode)
 	{
 		while (InNode != null)
@@ -23,6 +23,7 @@ public partial class Water : MeshInstance3D
 
 	private void _OnBodyEntered(Node InBody)
 	{
+		if (!_isDeadly) return;
 		Character? character = _FindCharacter(InBody);
 		GD.Print($"[Water] _OnBodyEntered body={InBody?.Name} character={(character is null ? "null" : character.PeerId.ToString())} authority={(character?.IsMultiplayerAuthority() ?? false)} myPath={GetPath()}");
 		if (character is null) return;
@@ -30,6 +31,16 @@ public partial class Water : MeshInstance3D
 		// inclus), la réplique est pilotée par les snapshots&#160;: c'est l'authority
 		// qui a la vraie position, donc c'est lui qui décide.
 		if (!character.IsMultiplayerAuthority()) return;
+		// Immunité post-spawn&#160;: à la frame d'apparition, les PhysicalBone3D du
+		// squelette n'ont pas encore rattrapé la transform du body — leur position
+		// par défaut (origine du squelette) peut déclencher un faux body_entered
+		// alors que le corps lui-même est posé sur la plateforme. Fenêtre pilotée
+		// par <see cref="Character.SpawnProtectionDuration"/>.
+		if (character.IsSpawnProtected)
+		{
+			GD.Print($"[Water] Spawn-protected, ignoring drown for peer={character.PeerId}");
+			return;
+		}
 		if (character is Player player)
 			player.RequestDeath(CharacterUtils.DeathReason.Drowned);
 		else

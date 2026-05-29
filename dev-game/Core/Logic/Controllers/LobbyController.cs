@@ -19,11 +19,27 @@ public sealed partial class LobbyController : Node3D, IPhase
 
     public enum State { Init, Failure, Waiting, Ready }
 
-    private StateMachine<State> _fsm;
-    private LobbyScene _lobbyInstance;
-    private bool _connectionSucceeded;
-    private bool _connectionFailed;
-    private bool _done;
+	/// <summary>État du transport ENet, indépendant du clic Start de l'utilisateur.</summary>
+	private enum NetConn { Idle, Connecting, Connected, Failed }
+
+	private StateMachine<State> _fsm;
+	private LobbyScene _lobbyInstance;
+	private bool _connectionSucceeded;
+	private bool _connectionFailed;
+	private bool _done;
+
+	/// <summary>
+	/// État du transport ENet. Avancé par <see cref="_BeginConnect"/> au
+	/// lobby-enter (non plus à la sortie sur Start)&#160;: on connecte tôt pour
+	/// que les Preview slots puissent se synchroniser via PreviewPose avant
+	/// même le début de la partie. Une failure pendant le browse n'est PAS
+    /// fatale&#160;: elle ne devient fatale (FSM Failure + ErrorDialog) que si
+	/// l'utilisateur clique Start sans connexion.
+	/// </summary>
+	private NetConn _netState = NetConn.Idle;
+
+	/// <summary>L'utilisateur a cliqué Start. Combiné avec <see cref="_netState"/>=Connected pour avancer la FSM.</summary>
+    private bool _startRequested;
 
     /// <summary>
     /// Message à afficher dans <see cref="ErrorDialog"/> lorsque la FSM entre
@@ -41,6 +57,11 @@ public sealed partial class LobbyController : Node3D, IPhase
         _done = false;
         _connectionSucceeded = false;
         _connectionFailed = false;
+        _startRequested = false;
+        _netState = NetConn.Idle;
+		// Repart d'un mapping vide à chaque entrée de phase. Le handshake
+		// d'identité re-peuple immédiatement après la connexion ENet.
+        LobbyPresence.Clear();
 
 		// Serveur dédié : pas d'UI ni de polling Firestore. La state StateMachine attends
 		// a Game les peers
@@ -64,9 +85,27 @@ public sealed partial class LobbyController : Node3D, IPhase
 		// à "waiting" — sinon le polling de LobbyScene déclencherait un nouveau
 		// GameStartRequested dès le prochain tick.
 		var snapshot = LobbyState.Current;
-		if (LobbyState.IsHost && snapshot is not null && snapshot.Status == "started")
+		if (snapshot is not null && LobbyState.IsHost)
 		{
-			_ = ResetRoomStatusAsync(snapshot.Code);
+			bool needsStatusReset = snapshot.Status == "started";
+			bool needsMapUpdate = snapshot.MapId != LobbyState.SelectedMapId;
+
+			if (needsStatusReset || needsMapUpdate)
+			{
+				var newSnapshot = new RoomSnapshot
+				{
+					Code = snapshot.Code,
+					HostUserId = snapshot.HostUserId,
+					ServerIp = snapshot.ServerIp,
+					ServerPort = snapshot.ServerPort,
+					Status = "waiting",
+					MaxPlayers = snapshot.MaxPlayers,
+					MapId = LobbyState.SelectedMapId,
+					Players = snapshot.Players
+				};
+				LobbyState.Set(newSnapshot, true);
+				_ = PushLobbyStateResetAsync(snapshot.Code, LobbyState.SelectedMapId, needsStatusReset, needsMapUpdate);
+			}
 		}
 
 		if (_lobbySceneAsset is null)
@@ -82,42 +121,57 @@ public sealed partial class LobbyController : Node3D, IPhase
 		_lobbyInstance.GameStartRequested += OnGameStartRequested;
 		AddChild(_lobbyInstance);
 
-		_fsm = new StateMachine<State>(State.Init, OnSubEnter, OnSubExit);
+		// Bring up ENet dès l'entrée du lobby (au lieu d'attendre Start)&#160;:
+		// permet aux Preview slots de synchroniser leurs poses (PreviewPose
+		// packets) et alimente le handshake d'identité LobbyPresence. Une
+		// failure ici est non-fatale (l'UI lobby reste utilisable sans sync)&#160;;
+		// elle ne devient fatale que si l'utilisateur clique Start sans
+        // connexion (voir OnGameStartRequested).
+        _BeginConnect();
+
+        _fsm = new StateMachine<State>(State.Init, OnSubEnter, OnSubExit);
 
 		// Init -> Waiting dès que l'instance est dans l'arbre.
-		_fsm.When(State.Init,
-			new PredicateCondition<State>(() => _lobbyInstance is not null && _lobbyInstance.IsInsideTree()),
-			State.Waiting
-		);
+        _fsm.When(State.Init,
+            new PredicateCondition<State>(() => _lobbyInstance is not null && _lobbyInstance.IsInsideTree()),
+            State.Waiting
+        );
 
-		// Waiting -> Ready quand la connexion au serveur a réussi.
-		_fsm.When(State.Waiting,
-			new PredicateCondition<State>(() => _connectionSucceeded),
-			State.Ready
-		);
+        // Waiting -> Ready quand la connexion au serveur a réussi.
+        _fsm.When(State.Waiting,
+            new PredicateCondition<State>(() => _connectionSucceeded),
+            State.Ready
+        );
 
-		// Waiting -> Failure si la connexion échoue.
-		_fsm.When(State.Waiting,
-			new PredicateCondition<State>(() => _connectionFailed),
-			State.Failure
-		);
+        // Waiting -> Failure si la connexion échoue.
+        _fsm.When(State.Waiting,
+            new PredicateCondition<State>(() => _connectionFailed),
+            State.Failure
+        );
 
-		OnSubEnter(State.Init);
-	}
+        OnSubEnter(State.Init);
+    }
 
-	public void Tick(float InDelta) => _fsm?.Tick(InDelta);
+    public void Tick(float InDelta) => _fsm?.Tick(InDelta);
 
-	public void Exit()
-	{
-		UnsubscribeNetwork();
+    public void Exit()
+    {
+        UnsubscribeNetwork();
 
-		if (_lobbyInstance is not null)
-		{
-			_lobbyInstance.GameStartRequested -= OnGameStartRequested;
-			_lobbyInstance.QueueFree();
-			_lobbyInstance = null;
-		}
-		_fsm = null;
+        if (_lobbyInstance is not null)
+        {
+            _lobbyInstance.GameStartRequested -= OnGameStartRequested;
+            _lobbyInstance.QueueFree();
+            _lobbyInstance = null;
+        }
+        _fsm = null;
+        // On garde la connexion ENet ET le mapping userId↔peerId vivants&#160;:
+		// GameController réutilise la connexion, et Player.cs (`_ResolvePlayerLabel`)
+		// lit LobbyPresence pour afficher le username au-dessus de chaque
+		// distant dans la phase Game. Le mapping est repurgé+repopulé via le
+		// handshake si on re-rentre dans Lobby (cf. `Enter` ci-dessus), et
+		// `NetworkManager.PeerDisconnected` retire individuellement chaque
+		// peer qui part en cours de partie — pas de fuite cross-session.
 	}
 
 	private void OnGameStartRequested()
@@ -126,6 +180,7 @@ public sealed partial class LobbyController : Node3D, IPhase
 		if (snapshot is null)
 		{
 			GD.PrintErr("[LobbyController] LobbyState.Current null à GameStartRequested.");
+			_failureMessage = "État du lobby manquant.";
 			_connectionFailed = true;
 			return;
 		}
@@ -142,54 +197,111 @@ public sealed partial class LobbyController : Node3D, IPhase
 		LobbyState.SetSelectedHat(localHatId);
 		LoadingScreen.Show(GetTree());
 
+		_startRequested = true;
+		switch (_netState)
+		{
+			case NetConn.Connected:
+				LoadingScreen.SetStatus("Connexion existante — préparation de la partie", 0.35f);
+				_connectionSucceeded = true;
+				break;
+			case NetConn.Connecting:
+				// On attend l'aboutissement (success ⇒ _connectionSucceeded,
+				// failure ⇒ _connectionFailed) côté handlers de _BeginConnect.
+				LoadingScreen.SetStatus("Connexion au serveur…", 0.10f);
+				break;
+			case NetConn.Failed:
+				// Background connect a déjà échoué pendant le browse&#160;:
+				// remonter en fatal maintenant que l'utilisateur veut avancer.
+				LoadingScreen.Hide();
+				_connectionFailed = true;
+				break;
+			case NetConn.Idle:
+				// Défensif&#160;: si _BeginConnect n'a pas tourné (snapshot null,
+				// NetworkManager.Instance null), retenter ici.
+				LoadingScreen.SetStatus("Connexion au serveur…", 0.10f);
+				_BeginConnect();
+				break;
+		}
+	}
+
+	/// <summary>
+	/// Démarre la connexion ENet vers le serveur dédié si elle n'est pas déjà
+	/// active. Idempotent&#160;: réutilise une connexion vivante existante (cycle
+	/// Winning → Lobby → Game sans Disconnect intermédiaire). Le statut RÉEL
+	/// de la connexion est vérifié via <see cref="IsMultiplayerActuallyConnected"/>
+	/// pour ne pas se faire piéger par un timeout ENet silencieux.
+	/// </summary>
+	private void _BeginConnect()
+	{
 		var net = NetworkManager.Instance;
-		// Réutilisation de la connexion si on est déjà client connecté (cycle
-		// Winning → Lobby → Game sans Disconnect intermédiaire). Un second
-		// ConnectToServer allouerait un nouveau ENetMultiplayerPeer en
-		// écrasant l'existant sans le fermer — fuite + état réseau zombie.
-		//
-		// IMPORTANT : on vérifie le statut RÉEL de la connexion via
-		// MultiplayerPeer.GetConnectionStatus() + Multiplayer.GetUniqueId().
-		// Sans cette vérification, une connexion morte silencieusement (timeout
-		// ENet ~30s sans trafic, et Winning peut durer 60+s sans keep-alive)
-		// passait quand même par ce short-circuit : Role=Client + _peer non-null
-		// restent vrais alors que le peer n'a plus de session active. On lèverait
-		// _connectionSucceeded=true à tort, et les RPCs ClientReady/HostMapPick
-		// envoyés par GameController iraient dans le vide → loading collé,
-		// playersChildCount=0 côté client, aucun log d'erreur.
-        if (net is not null && net.IsRunning && net.IsClient
-            && IsMultiplayerActuallyConnected())
-        {
-            LoadingScreen.SetStatus("Connexion existante — préparation de la partie", 0.35f);
-            _connectionSucceeded = true;
-            return;
-        }
+		if (net is null) { _netState = NetConn.Failed; return; }
 
-        LoadingScreen.SetStatus("Connexion au serveur…", 0.10f);
+		if (net.IsRunning && net.IsClient && IsMultiplayerActuallyConnected())
+		{
+			_OnConnected();
+			return;
+		}
 
-        var serverIp = snapshot.ServerIp ?? Room.HardcodedServerIp;
-        var serverPort = snapshot.ServerPort != 0 ? snapshot.ServerPort : Room.HardcodedServerPort;
-        net.LocalConnected += OnNetConnected;
-        net.ConnectionFailed += OnNetConnectionFailed;
-        net.ConnectToServer(serverIp, serverPort);
-    }
+		var snapshot = LobbyState.Current;
+		if (snapshot is null) { _netState = NetConn.Failed; return; }
 
-    private void OnNetConnected(int _)
-    {
-        UnsubscribeNetwork();
-        LoadingScreen.SetStatus("Connecté — préparation de la partie", 0.35f);
-        _connectionSucceeded = true;
-    }
+		_netState = NetConn.Connecting;
+		var serverIp = snapshot.ServerIp ?? Room.HardcodedServerIp;
+		var serverPort = snapshot.ServerPort != 0 ? snapshot.ServerPort : Room.HardcodedServerPort;
+		net.LocalConnected += OnNetConnected;
+		net.ConnectionFailed += OnNetConnectionFailed;
+		net.ConnectToServer(serverIp, serverPort);
+	}
 
-    private void OnNetConnectionFailed(string InMessage)
-    {
-        UnsubscribeNetwork();
-        LoadingScreen.Hide();
-		// Le dialog est affiché par OnSubEnter(Failure) — point d'entrée unique
-		// pour tous les chemins d'erreur de la phase Lobby. On ne fait ici que
-        // capturer le message et lever le flag qui pousse la FSM vers Failure.
+	private void OnNetConnected(int _)
+	{
+		UnsubscribeNetwork();
+		_OnConnected();
+	}
+
+	private void _OnConnected()
+	{
+		_netState = NetConn.Connected;
+
+		// Handshake d'identité&#160;: dire au serveur quel userId est associé à
+		// notre peerId. Le serveur enregistre, broadcast aux autres clients,
+		// et back-fill les identités existantes vers nous. On joint l'index
+		// de slot invité (0 si non-invité)&#160;: le serveur le revendique dans
+		// <c>GuestSlotRegistry</c> et applique la règle d'unicité par slot
+		// (cf. <see cref="ServerReceiveIdentity"/>).
+		var currentUser = Core.Auth.AuthServiceProvider.Instance.CurrentUser;
+		string localUserId = currentUser?.Id ?? "";
+		int guestSlot = currentUser?.IsGuest == true ? Core.Auth.GuestSession.LocalSlotIndex : 0;
+		if (!string.IsNullOrEmpty(localUserId))
+			RpcId(1, MethodName.ServerReceiveIdentity, localUserId, guestSlot);
+
+		// Si l'utilisateur avait déjà cliqué Start (cas&#160;: il a cliqué
+		// pendant que la connexion était encore en cours), avance la FSM
+		// maintenant que tout est en place.
+		if (_startRequested)
+		{
+			LoadingScreen.SetStatus("Connecté — préparation de la partie", 0.35f);
+			_connectionSucceeded = true;
+		}
+	}
+
+	private void OnNetConnectionFailed(string InMessage)
+	{
+		UnsubscribeNetwork();
+		_netState = NetConn.Failed;
 		_failureMessage = $"Impossible de se connecter au serveur.\nMessage d'erreur :\n{InMessage}";
-        _connectionFailed = true;
+		// Failure pendant le browse&#160;: pas fatal. Seulement fatal si
+		// l'utilisateur a déjà voulu démarrer (cas&#160;: connexion lente puis
+        // échec après le clic Start).
+        if (_startRequested)
+        {
+            LoadingScreen.Hide();
+            _connectionFailed = true;
+        }
+        else
+        {
+			GD.PrintErr($"[LobbyController] Background connect failed (non-fatal during browse): {InMessage}");
+        }
     }
 
     private void UnsubscribeNetwork()
@@ -200,93 +312,185 @@ public sealed partial class LobbyController : Node3D, IPhase
         net.ConnectionFailed -= OnNetConnectionFailed;
     }
 
-    /// <summary>
-    /// Vrai uniquement si la session multijoueur courante a un peer assigné,
-    /// que ce peer est dans l'état <c>Connected</c>, et que le local peer ID
-    /// a été attribué (&gt; 0). Les flags <c>IsRunning</c> et <c>IsClient</c>
-    /// du NetworkManager sont insuffisants&#160;: ils ne reflètent que l'état
-    /// local (provider instancié, rôle assigné) et restent vrais après un
-    /// timeout silencieux côté ENet. Cette vérification couvre les deux trous.
-    /// </summary>
-    private bool IsMultiplayerActuallyConnected()
-    {
-        // Multiplayer est une propriété d'instance de Node (raccourci vers
-        // GetTree().GetMultiplayer()) — d'où le non-static. Le LobbyController
-        // est dans l'arbre quand cette méthode tourne, donc Multiplayer est
-        // disponible.
-        var peer = Multiplayer.MultiplayerPeer;
-        if (peer is null) return false;
-        if (peer.GetConnectionStatus() != MultiplayerPeer.ConnectionStatus.Connected) return false;
-        // GetUniqueId() == 0 -> aucun peer / non-connecté. Les vrais clients
-        // ont un ID > 1 (1 est réservé au serveur).
-        return Multiplayer.GetUniqueId() > 1;
-    }
+	// ── Handshake d'identité userId↔peerId ──────────────────────────────────
 
-    private static async System.Threading.Tasks.Task ResetRoomStatusAsync(string InCode)
-    {
-        try
-        {
-			await RoomServiceProvider.Repository.UpdateStatusAsync(InCode, "waiting");
-        }
-        catch (Exception ex)
-        {
+	/// <summary>
+	/// Client → Serveur&#160;: enregistre mon userId pour mon peerId actuel.
+	/// Le serveur consigne dans <see cref="LobbyPresence"/>, rebroadcast aux
+	/// autres clients, puis back-fill les identités déjà connues vers nous.
+	/// </summary>
+	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void ServerReceiveIdentity(string userId, int guestSlot)
+	{
+		if (!Multiplayer.IsServer()) return;
+		int senderId = Multiplayer.GetRemoteSenderId();
+		if (string.IsNullOrEmpty(userId) || senderId <= 1) return;
 
-			GD.PrintErr($"[LobbyController] Reset statut salle échoué: {ex.Message}");
-        }
-    }
+		// Unicité de session pour les invités&#160;: Firebase accepte le même
+		// "invite{N}@outilsenligne.ca" depuis plusieurs clients (cf. Login.cs),
+		// donc c'est ici qu'on garde la porte. Le client annonce son slot
+		// (alloué par <c>ServerRequestGuestSlot</c>). Si ce slot est déjà
+		// revendiqué par un autre peer encore connecté, on refuse&#160;: on
+		// signale au sender pour qu'il affiche un message, puis on coupe son
+		// lien ENet. PeerDisconnected nettoiera <c>LobbyPresence</c> et
+		// <c>GuestSlotRegistry</c> côté serveur (cf. NetworkManager._Ready).
+		// guestSlot == 0 = compte utilisateur normal&#160;: pas de règle
+		// d'unicité — eux peuvent rester multi-sessions.
+		if (guestSlot > 0)
+		{
+			if (GuestSlotRegistry.TryGetPeerForSlot(guestSlot, out int existingPeer)
+				&& existingPeer != senderId
+				&& IsPeerStillConnected(existingPeer))
+			{
+				RpcId(senderId, MethodName.ClientReceiveIdentityRejected,
+					"Cette session invité est déjà utilisée. Réessayez pour obtenir un autre invité.");
+				// Disconnect non-forcé&#160;: laisse ENet flusher le paquet RPC
+				// ci-dessus avant de fermer le lien, pour que le client ait une
+				// chance de lire la raison du rejet plutôt qu'un simple
+				// "ServerDisconnected".
+				Multiplayer.MultiplayerPeer?.DisconnectPeer(senderId);
+				return;
+			}
+			GuestSlotRegistry.Claim(guestSlot, senderId);
+		}
 
-    private void OnSubEnter(State InState)
-    {
-        switch (InState)
-        {
-            case State.Ready:
-                _done = true;
-                break;
-            case State.Failure:
-                // Point d'entrée unique : tous les chemins d'erreur (asset
-                // manquant, échec réseau, …) renseignent _failureMessage puis
-                // routent vers Failure. Sans dialog ici l'état serait
-                // terminal silencieux (IsDone jamais vrai) et la FSM
-                // principale soft-lockerait.
-                ShowFailureDialog();
-                break;
-        }
-    }
+		LobbyPresence.Set(senderId, userId);
+		// Broadcast aux autres clients pour qu'ils peuplent leur map.
+		Rpc(MethodName.ClientReceiveIdentity, senderId, userId);
+		// Back-fill&#160;: envoyer au sender toutes les identités déjà connues.
+		foreach (var (existingPeerSnap, existingUser) in LobbyPresence.Snapshot())
+		{
+			if (existingPeerSnap == senderId) continue;
+			RpcId(senderId, MethodName.ClientReceiveIdentity, existingPeerSnap, existingUser);
+		}
+	}
 
-    private void OnSubExit(State _) { }
+	// Vérifie via la liste des peers ENet que l'entrée LobbyPresence n'est pas
+	// un fantôme (cas&#160;: PeerDisconnected programmé mais pas encore traité).
+	// Sans ça, un retry légitime juste après un disconnect pourrait être
+	// refusé à tort.
+	private bool IsPeerStillConnected(int peerId)
+	{
+		foreach (int p in Multiplayer.GetPeers())
+			if (p == peerId) return true;
+		return false;
+	}
 
-    /// <summary>
-    /// Affiche le dialog d'erreur final de la phase Lobby. Idempotent : si un
-    /// dialog est déjà visible (typiquement parce qu'OnNetConnectionFailed a
-    /// déjà rempli le message et que la FSM ré-entre Failure), on ne le
-    /// rouvre pas. Les deux boutons (OK et X) déclenchent le même retour au
-    /// menu principal pour que l'utilisateur ne puisse pas rester coincé.
-    /// </summary>
-    private void ShowFailureDialog()
-    {
-        if (ErrorDialog.IsVisible) return;
-        ErrorDialog.Show(GetTree(),
-            string.IsNullOrEmpty(_failureMessage)
+	/// <summary>Serveur → Clients&#160;: enregistre une identité (sender + back-fill).</summary>
+	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void ClientReceiveIdentity(int peerId, string userId)
+	{
+		LobbyPresence.Set(peerId, userId);
+	}
+
+	/// <summary>
+	/// Serveur → Client refusé&#160;: le userId invité que le sender a annoncé
+	/// est déjà détenu par un autre peer connecté. Le serveur va couper le
+	/// lien ENet juste après ce RPC&#160;; on enregistre le message pour que la
+	/// FSM remonte un dialog d'erreur explicite plutôt qu'un "Lost connection
+	/// to server" générique.
+	/// </summary>
+	[Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+	private void ClientReceiveIdentityRejected(string reason)
+	{
+		GD.PrintErr($"[LobbyController] Identity rejected by server: {reason}");
+		_failureMessage = reason;
+		_connectionFailed = true;
+	}
+
+	/// <summary>
+	/// Vrai uniquement si la session multijoueur courante a un peer assigné,
+	/// que ce peer est dans l'état <c>Connected</c>, et que le local peer ID
+	/// a été attribué (&gt; 0). Les flags <c>IsRunning</c> et <c>IsClient</c>
+	/// du NetworkManager sont insuffisants&#160;: ils ne reflètent que l'état
+	/// local (provider instancié, rôle assigné) et restent vrais après un
+	/// timeout silencieux côté ENet. Cette vérification couvre les deux trous.
+	/// </summary>
+	private bool IsMultiplayerActuallyConnected()
+	{
+		// Multiplayer est une propriété d'instance de Node (raccourci vers
+		// GetTree().GetMultiplayer()) — d'où le non-static. Le LobbyController
+		// est dans l'arbre quand cette méthode tourne, donc Multiplayer est
+		// disponible.
+		var peer = Multiplayer.MultiplayerPeer;
+		if (peer is null) return false;
+		if (peer.GetConnectionStatus() != MultiplayerPeer.ConnectionStatus.Connected) return false;
+		// GetUniqueId() == 0 -> aucun peer / non-connecté. Les vrais clients
+		// ont un ID > 1 (1 est réservé au serveur).
+		return Multiplayer.GetUniqueId() > 1;
+	}
+
+	private static async System.Threading.Tasks.Task PushLobbyStateResetAsync(string InCode, string InMapId, bool resetStatus, bool updateMap)
+	{
+		try
+		{
+			if (resetStatus)
+				await RoomServiceProvider.Repository.UpdateStatusAsync(InCode, "waiting");
+			if (updateMap)
+				await RoomServiceProvider.Repository.UpdateMapAsync(InCode, InMapId);
+		}
+		catch (Exception ex)
+		{
+			GD.PrintErr($"[LobbyController] Reset statut/map salle échoué: {ex.Message}");
+		}
+	}
+
+	private void OnSubEnter(State InState)
+	{
+		switch (InState)
+		{
+			case State.Ready:
+				_done = true;
+				break;
+			case State.Failure:
+				// Point d'entrée unique : tous les chemins d'erreur (asset
+				// manquant, échec réseau, …) renseignent _failureMessage puis
+				// routent vers Failure. Sans dialog ici l'état serait
+				// terminal silencieux (IsDone jamais vrai) et la FSM
+				// principale soft-lockerait.
+				ShowFailureDialog();
+				break;
+		}
+	}
+
+	private void OnSubExit(State _) { }
+
+	/// <summary>
+	/// Affiche le dialog d'erreur final de la phase Lobby. Idempotent : si un
+	/// dialog est déjà visible (typiquement parce qu'OnNetConnectionFailed a
+	/// déjà rempli le message et que la FSM ré-entre Failure), on ne le
+	/// rouvre pas. Les deux boutons (OK et X) déclenchent le même retour au
+	/// menu principal pour que l'utilisateur ne puisse pas rester coincé.
+	/// </summary>
+	private void ShowFailureDialog()
+	{
+		if (ErrorDialog.IsVisible) return;
+		ErrorDialog.Show(GetTree(),
+			string.IsNullOrEmpty(_failureMessage)
 				? "Erreur inattendue durant l'initialisation du lobby."
-                : _failureMessage,
-            InOkText: "Retour au Menu Principal",
-            InOnOk: GoToMainMenu,
-            InOnClose: GoToMainMenu);
-    }
+				: _failureMessage,
+			InOkText: "Retour au Menu Principal",
+			InOnOk: GoToMainMenu,
+			InOnClose: GoToMainMenu);
+	}
 
-    /// <summary>
-    /// Ménage standard pour quitter la phase vers le main menu : coupe la
-    /// connexion ENet, vide le LobbyState (sauf champs « survive-Clear »),
-    /// rétablit le curseur visible, puis change de scène. Aligné sur le flux
-    /// QuittingToMenu du WinningController.
-    /// </summary>
-    private void GoToMainMenu()
-    {
-        NetworkManager.Instance?.Disconnect();
-        LobbyState.Clear();
-        Input.MouseMode = Input.MouseModeEnum.Visible;
-        GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
-    }
+	/// <summary>
+	/// Ménage standard pour quitter la phase vers le main menu : coupe la
+	/// connexion ENet, vide le LobbyState (sauf champs « survive-Clear »),
+	/// rétablit le curseur visible, puis change de scène. Aligné sur le flux
+	/// QuittingToMenu du WinningController.
+	/// </summary>
+	private void GoToMainMenu()
+	{
+		// Retire l'entrée joueur de Firestore avant de vider LobbyState (sinon
+		// le snapshot référencé par le cleanup est déjà null). Sans cet appel,
+		// un quitteur via ErrorDialog reste listé pour les autres clients.
+		LobbyCleanup.LeaveRoomFireAndForget();
+		NetworkManager.Instance?.Disconnect();
+		LobbyState.Clear();
+		Input.MouseMode = Input.MouseModeEnum.Visible;
+		GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
+	}
 
-    public override void _Ready() { }
+	public override void _Ready() { }
 }

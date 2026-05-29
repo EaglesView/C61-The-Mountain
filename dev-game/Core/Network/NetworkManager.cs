@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Godot;
 using Core.Network.Providers;
+using Core.Network.Rooms;
 
 namespace Core.Network;
 
@@ -75,11 +77,42 @@ public partial class NetworkManager : Node
     /// </summary>
     public event Action<PlayerNetState>? StateReceived;
 
+    /// <summary>
+    /// Déclenché à la réception d'une <see cref="PreviewPoseState"/> (head pose
+    /// d'un peer pour son penguin de Preview en Lobby&#160;/&#160;Winning). Côté
+    /// serveur, le paquet a déjà été rebroadcast aux autres pairs avant d'être
+    /// émis ici. Les consommateurs filtrent par <c>PeerId</c> pour ne réagir
+    /// qu'au slot correspondant.
+    /// </summary>
+    public event Action<PreviewPoseState>? PreviewPoseReceived;
+
+    /// <summary>
+    /// Période minimum entre deux <see cref="SendPreviewPose"/>. Le signal
+    /// <c>HeadTargetChanged</c> de Preview peut fire à 60+&#160;Hz sur un
+    /// mouvement souris&#160;; ce throttle ramène le flux à ~15&#160;Hz, suffisant
+    /// pour un suivi de tête naturel (l'œil ne distingue pas mieux à cette
+    /// échelle) sans saturer la bande passante du lobby.
+    /// </summary>
+    private const float PreviewPoseInterval = 1f / 15f;
+    private float _previewPoseAccum = 0f;
+
+    /// <summary>
+    /// Déclenché côté client à la réception d'un <see cref="BallNetState"/>.
+    /// Côté serveur, l'événement n'est pas émis : le serveur est la source de
+    /// vérité, il n'a rien à appliquer en retour. Les consommateurs typiques
+    /// (ex&#160;: <c>SoccerBall</c>) s'abonnent dans <c>_Ready</c> et appliquent
+    /// le snapshot sur leur RigidBody3D local.
+    /// </summary>
+    public event Action<BallNetState>? BallStateReceived;
+
     /// <summary>Déclenché une seule fois lorsque la connexion locale au serveur est confirmée (client seulement).</summary>
     public event Action<int>? LocalConnected;
 
     /// <summary>Déclenché si la connexion au serveur échoue.</summary>
     public event Action<string>? ConnectionFailed;
+
+    /// <summary>Déclenché lorsque la connexion au serveur est perdue.</summary>
+    public event Action? ServerDisconnected;
 
     /// <summary>
     /// Enregistre le personnage local pour que le tick client puisse sérialiser son état.
@@ -93,6 +126,47 @@ public partial class NetworkManager : Node
     /// <c>MultiplayerSpawner.Spawn</c>.
     /// </summary>
     public void RegisterPeerSpawn(int peerId, Vector3 spawnPos) => _peerSpawn[peerId] = spawnPos;
+
+    /// <summary>
+    /// Envoie la pose de tête du joueur local pour son slot de Preview
+    /// (Lobby&#160;/&#160;Winning). Throttle interne à ~15&#160;Hz&#160;: les appels
+    /// surnuméraires sont silencieusement ignorés, donc l'appelant peut brancher
+    /// directement le signal <c>Preview.HeadTargetChanged</c> sans se soucier
+    /// de la fréquence des événements souris. No-op si le transport n'est pas
+    /// connecté&#160;: utile pour ne pas planter Profile (offline) ou Lobby tant
+    /// que le mesh ENet n'est pas monté.
+    /// </summary>
+    public void SendPreviewPose(float yaw, float pitch)
+    {
+        if (_provider is null || !_provider.IsRunning) return;
+        if (Multiplayer.MultiplayerPeer?.GetConnectionStatus() != MultiplayerPeer.ConnectionStatus.Connected)
+            return;
+
+        _previewPoseAccum += (float)GetProcessDeltaTime();
+        if (_previewPoseAccum < PreviewPoseInterval) return;
+        _previewPoseAccum = 0f;
+
+        var packet = PreviewPoseState.Serialize(new PreviewPoseState(LocalPeerId, yaw, pitch));
+        // Vers le serveur (peerId=1). Le serveur rebroadcast aux autres pairs
+        // dans OnPacketReceived&#160;; côté serveur, l'appel est direct.
+        if (_provider.Role == NetworkRole.Server)
+            _provider.BroadcastUnreliable(packet, excludePeerId: LocalPeerId);
+        else
+            _provider.SendUnreliable(1, packet);
+    }
+
+    /// <summary>
+    /// Broadcast d'un snapshot de balle vers tous les clients. No-op si le
+    /// transport est inactif ou si l'appelant n'est pas serveur. Conçu pour
+    /// être appelé à la cadence des autres snapshots (20&#160;Hz) depuis le
+    /// <c>_PhysicsProcess</c> du RigidBody3D autoritaire.
+    /// </summary>
+    public void BroadcastBallState(BallNetState state)
+    {
+        if (_provider is null || !_provider.IsRunning) return;
+        if (_provider.Role != NetworkRole.Server) return;
+        _provider.BroadcastUnreliable(BallNetState.Serialize(state), excludePeerId: LocalPeerId);
+    }
 
     /// <summary>Démarre manuellement un serveur.</summary>
     public void StartServer(int port = 7777, int maxPeers = 16)
@@ -138,6 +212,8 @@ public partial class NetworkManager : Node
     {
         Instance = this;
 
+        SettingsMenu.ApplySettings(GetTree());
+
         var enet = new GodotENetProvider();
         AddChild(enet);
         _provider = enet;
@@ -149,6 +225,15 @@ public partial class NetworkManager : Node
             _lastKnownState.Remove(id);
             _peerSpawn.Remove(id);
             _lastCorrectionMsec.Remove(id);
+            // Purge le mapping userId↔peerId&#160;: sans ça, un peerId recyclé par
+            // ENet sur reconnexion conserverait l'ancien userId, et la
+            // validation dans GameController.ClientReady accepterait un peer
+            // sous une identité périmée.
+            LobbyPresence.Remove(id);
+            // Libère également le slot invité revendiqué par ce peer (cf.
+            // GuestSlotRegistry.Claim dans LobbyController.ServerReceiveIdentity).
+            // No-op pour un peer non-invité.
+            GuestSlotRegistry.ReleasePeer(id);
         };
         _provider.PacketReceived += OnPacketReceived;
         _provider.ServerStarted += () => GD.Print("[NetworkManager] Server started on port 7777.");
@@ -156,6 +241,11 @@ public partial class NetworkManager : Node
         {
             GD.PrintErr($"[NetworkManager] {msg}");
             ConnectionFailed?.Invoke(msg);
+        };
+        _provider.ServerDisconnected += () =>
+        {
+            GD.PrintErr("[NetworkManager] Lost connection to server.");
+            ServerDisconnected?.Invoke();
         };
 
         string[] args = OS.GetCmdlineArgs();
@@ -254,6 +344,32 @@ public partial class NetworkManager : Node
         // rafraîchi le timer côté ENet.
         if (type == PacketType.KeepAlive) return;
 
+        if (type == PacketType.PreviewPose)
+        {
+            if (data.Length < 13) return;
+            var pose = PreviewPoseState.Deserialize(data);
+            if (_provider?.Role == NetworkRole.Server)
+            {
+                // Pas d'état conservé&#160;: la pose est purement transiente, le
+                // dernier paquet fait foi côté consommateur. On rebroadcast tel
+                // quel aux autres pairs avant de notifier localement.
+                _provider.BroadcastUnreliable(data, excludePeerId: fromPeerId);
+            }
+            PreviewPoseReceived?.Invoke(pose);
+            return;
+        }
+
+        if (type == PacketType.BallStateUpdate)
+        {
+            // Le serveur est la source de vérité&#160;: il n'a rien à appliquer
+            // au paquet qu'il vient d'émettre. Côté client, on relaie via
+            // l'event pour que le RigidBody3D local applique le snapshot.
+            if (data.Length < 53) return;
+            if (_provider?.Role == NetworkRole.Client)
+                BallStateReceived?.Invoke(BallNetState.Deserialize(data));
+            return;
+        }
+
         if (type == PacketType.PositionCorrect)
         {
             if (_provider?.Role == NetworkRole.Client && data.Length >= 17 && _localPlayer != null)
@@ -304,6 +420,23 @@ public partial class NetworkManager : Node
                 StateReceived?.Invoke(respawned);
                 return;
             }
+            else if ((incomingFell || lastFell) && !_peerSpawn.ContainsKey(fromPeerId))
+            {
+                // Fallback si _peerSpawn n'a pas été peuplé
+                Vector3 fallbackSpawn = Vector3.Zero;
+                if (incomingFell)
+                    _provider.SendReliable(fromPeerId, PlayerNetState.SerializeCorrection(fromPeerId, fallbackSpawn));
+                var respawned = new PlayerNetState(
+                    state.PeerId, fallbackSpawn, Vector3.Zero,
+                    state.BodyYaw, state.HeadPitch, state.ArmPointDir,
+                    (byte)state.MoveState, (byte)state.EmoteState, state.Flags);
+                _lastKnownState[fromPeerId] = respawned;
+                _provider.BroadcastUnreliable(
+                    PlayerNetState.Serialize(PacketType.StateUpdate, respawned),
+                    excludePeerId: fromPeerId);
+                StateReceived?.Invoke(respawned);
+                return;
+            }
 
             // 2) Anti-teleport classique. Sur rejet, on rate-limite l'envoi de
             //    correction (la correction en vol n'est pas instantanée — pas
@@ -332,5 +465,98 @@ public partial class NetworkManager : Node
         {
             StateReceived?.Invoke(state);
         }
+    }
+
+    // ── Allocateur de slot invité ────────────────────────────────────────────
+    //
+    // Avant le sign-in Firebase, un client invité demande un slot libre au
+    // serveur via <see cref="RequestGuestSlotAsync"/>. Le serveur consulte
+    // <see cref="GuestSlotRegistry"/> et renvoie l'index 1..8 (ou -1). Ça
+    // évite la situation où Firebase auth réussit pour <c>invite1</c> sur
+    // plusieurs clients simultanément&#160;: l'allocator est la seule source
+    // de vérité du «&#160;ce slot est-il pris&#160;?&#160;».
+
+    private TaskCompletionSource<int> _pendingSlotRequest;
+
+    /// <summary>
+    /// Établit une connexion ENet vers le serveur et attend que la session
+    /// client locale soit confirmée. No-op si déjà connecté. La timeout couvre
+    /// les cas réseau morts (sinon l'attente est silencieusement infinie).
+    /// </summary>
+    public async Task ConnectAndAwaitAsync(string ip, int port, int timeoutMs = 5000)
+    {
+        if (IsClient && IsRunning
+            && Multiplayer.MultiplayerPeer?.GetConnectionStatus() == MultiplayerPeer.ConnectionStatus.Connected
+            && LocalPeerId > 1)
+            return;
+
+        var tcs = new TaskCompletionSource<bool>();
+        Action<int> onConnected = null;
+        Action<string> onFailed = null;
+        onConnected = _ =>
+        {
+            LocalConnected -= onConnected;
+            ConnectionFailed -= onFailed;
+            tcs.TrySetResult(true);
+        };
+        onFailed = msg =>
+        {
+            LocalConnected -= onConnected;
+            ConnectionFailed -= onFailed;
+            tcs.TrySetException(new Exception(msg));
+        };
+
+        LocalConnected += onConnected;
+        ConnectionFailed += onFailed;
+
+        ConnectToServer(ip, port);
+
+        var completed = await Task.WhenAny(tcs.Task, Task.Delay(timeoutMs));
+        if (completed != tcs.Task)
+        {
+            LocalConnected -= onConnected;
+            ConnectionFailed -= onFailed;
+            throw new TimeoutException($"ENet connect to {ip}:{port} timed out after {timeoutMs}ms.");
+        }
+        await tcs.Task;
+    }
+
+    /// <summary>
+    /// Demande au serveur le prochain slot invité libre. Retourne 1..8 si un
+    /// slot est attribué, -1 si tous sont occupés. La timeout protège contre
+    /// un serveur muet (pas de réponse RPC).
+    /// </summary>
+    public async Task<int> RequestGuestSlotAsync(int timeoutMs = 3000)
+    {
+        var tcs = new TaskCompletionSource<int>();
+        _pendingSlotRequest = tcs;
+        RpcId(1, MethodName.ServerRequestGuestSlot);
+
+        var completed = await Task.WhenAny(tcs.Task, Task.Delay(timeoutMs));
+        if (completed != tcs.Task)
+        {
+            if (ReferenceEquals(_pendingSlotRequest, tcs)) _pendingSlotRequest = null;
+            throw new TimeoutException("Guest slot request timed out.");
+        }
+        return await tcs.Task;
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ServerRequestGuestSlot()
+    {
+        if (!Multiplayer.IsServer()) return;
+        int senderId = Multiplayer.GetRemoteSenderId();
+        if (senderId <= 1) return;
+
+        int slot = GuestSlotRegistry.TryReserveFreeSlot();
+        RpcId(senderId, MethodName.ClientReceiveGuestSlot, slot);
+    }
+
+    [Rpc(MultiplayerApi.RpcMode.Authority, CallLocal = false, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ClientReceiveGuestSlot(int slot)
+    {
+        var pending = _pendingSlotRequest;
+        _pendingSlotRequest = null;
+        pending?.TrySetResult(slot);
     }
 }

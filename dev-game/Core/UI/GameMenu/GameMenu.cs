@@ -1,9 +1,11 @@
 using Godot;
 
 /// <summary>
-/// Menu de pause du jeu. Gère sa propre visibilité et le mode souris.
-/// Le <see cref="Player"/> vérifie <see cref="IsPaused"/> pour bloquer son input
-/// et appelle <see cref="OpenMenu"/> pour ouvrir le menu.
+/// Menu de pause du jeu. Gère sa propre visibilité, le mode souris, et son
+/// propre input ESC (ouverture/fermeture) pour que la pause fonctionne pendant
+/// toute la phase Game — y compris avant le spawn du joueur local, pendant
+/// ragdoll, après la mort, en spectateur, etc. L'instance est créée par
+/// <see cref="Core.World.GameController"/> au <c>Enter</c> de la phase.
 /// </summary>
 public partial class GameMenu : Control
 {
@@ -23,24 +25,37 @@ public partial class GameMenu : Control
 	public override void _Ready()
 	{
 		Instance = this;
-		Visible  = false;
+		Visible = false;
+		IsPaused = false;
 
-		_resumeButton.Pressed        += CloseMenu;
-		_settingsButton.Pressed      += OpenSettings;
-		_backToMenuButton.Pressed    += QuitToMenu;
+		_resumeButton.Pressed += CloseMenu;
+		_settingsButton.Pressed += OpenSettings;
+		_backToMenuButton.Pressed += QuitToMenu;
 		_backToDesktopButton.Pressed += QuitToDesktop;
-		_muteButton.Pressed          += ToggleMute;
+		_muteButton.Pressed += ToggleMute;
 		_killCharacterButton.Pressed += KillCharacter;
 	}
 
+	public override void _ExitTree()
+	{
+		if (Instance == this) Instance = null;
+		// Reset for the next phase — sinon un menu fermé via QuitToMenu
+		// laisserait IsPaused=true et la prochaine phase Game ouvrirait
+		// avec l'input du joueur déjà gelé.
+		IsPaused = false;
+	}
+
 	/// <summary>
-	/// Ouvre le menu de pause. Appelé par le <see cref="Player"/> sur l'action <c>pause_menu</c>.
+	/// Ouvre le menu de pause. Gèle l'input du joueur local s'il existe
+	/// (sinon no-op — utile quand on ouvre le menu avant le spawn).
 	/// </summary>
 	public void OpenMenu()
 	{
-		IsPaused        = true;
-		Visible         = true;
+		if (IsPaused) return;
+		IsPaused = true;
+		Visible = true;
 		Input.MouseMode = Input.MouseModeEnum.Visible;
+		SetLocalPlayerFrozen(true);
 	}
 
 	/// <summary>
@@ -48,18 +63,26 @@ public partial class GameMenu : Control
 	/// </summary>
 	public void CloseMenu()
 	{
-		IsPaused        = false;
-		Visible         = false;
+		if (!IsPaused) return;
+		IsPaused = false;
+		Visible = false;
 		Input.MouseMode = DebugMenuOpen()
 			? Input.MouseModeEnum.Visible
 			: Input.MouseModeEnum.Captured;
+		SetLocalPlayerFrozen(false);
 	}
 
 	public override void _Input(InputEvent @event)
 	{
-		// Le menu gère uniquement la fermeture — l'ouverture est gérée par le Player
-		if (IsPaused && @event.IsActionPressed("pause_menu"))
-			CloseMenu();
+		if (!@event.IsActionPressed("pause_menu")) return;
+		if (IsPaused) CloseMenu();
+		else OpenMenu();
+	}
+
+	private void SetLocalPlayerFrozen(bool InFrozen)
+	{
+		if (GetTree().GetFirstNodeInGroup("local_player") is Player p)
+			p.InputFrozen = InFrozen;
 	}
 
 	private void OpenSettings()
@@ -70,7 +93,12 @@ public partial class GameMenu : Control
 
 	private void QuitToMenu()
 	{
-		IsPaused        = false;
+		IsPaused = false;
+
+		Core.Network.Rooms.LobbyCleanup.LeaveRoomFireAndForget();
+		Core.Network.NetworkManager.Instance?.Disconnect();
+		Core.Network.Rooms.LobbyState.Clear();
+
 		Input.MouseMode = Input.MouseModeEnum.Visible;
 		GetTree().ChangeSceneToFile("res://Core/UI/MainMenu/main_menu.tscn");
 	}
@@ -92,7 +120,7 @@ public partial class GameMenu : Control
 
 	private static bool DebugMenuOpen()
 	{
-		var tree  = Engine.GetMainLoop() as SceneTree;
+		var tree = Engine.GetMainLoop() as SceneTree;
 		var debug = tree?.Root.FindChild("Debug", true, false) as Control;
 		return debug?.Visible ?? false;
 	}

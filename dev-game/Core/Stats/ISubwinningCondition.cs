@@ -32,6 +32,11 @@ public interface ISubwinningCondition
     /// </list>
     /// </summary>
     (int peerId, float relevance) Evaluate(IReadOnlyDictionary<int, PlayerGameStats> InStats);
+
+    /// <summary>
+    /// Formate la stat pertinente pour le UI (ex: "15 fois").
+    /// </summary>
+    string FormatDetail(PlayerGameStats InStats);
 }
 
 /// <summary>

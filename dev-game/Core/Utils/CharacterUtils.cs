@@ -58,7 +58,11 @@ public static class CharacterUtils
         ///<summary>Menu de pause ouvert</summary>
         Paused,
         ///<summary>Joueur mort pour la durée du round. Le corps ragdoll, les inputs et la locomotion sont coupés, le HUD est remplacé par l'overlay Wasted.</summary>
-        Dead
+        Dead,
+        ///<summary>Joueur mort en mode spectateur : caméra libre (orbit-cam) ancrée sur un Marker3D du niveau ou sur un joueur vivant. La locomotion reste coupée mais la souris pilote la caméra et N/P cyclent la cible.</summary>
+        Spectating,
+        ///<summary>Instance utilisée dans une SubViewport UI (Lobby/Profile/Winning). Aucune locomotion, aucune FSM&#160;: <see cref="Preview"/> pilote pitch (HeadAngle) et yaw (root rotation). Idle anim joue, PhysicsSkeleton tourne ses springs.</summary>
+        Preview
     }
 
     ///<summary>
@@ -245,6 +249,28 @@ public static class CharacterUtils
     public static Transform3D GetPoseFromIdx(Skeleton3D InTargetSkeleton, int InHeadBoneIdx)
     {
         return InTargetSkeleton.GlobalTransform * InTargetSkeleton.GetBoneGlobalPose(InHeadBoneIdx);
+    }
+
+    public static void TryPlayHatAnimation(Node3D hatRoot)
+    {
+        if (hatRoot == null) return;
+
+        var players = hatRoot.FindChildren("*", "AnimationPlayer", true, false);
+        foreach (Node node in players)
+        {
+            if (node is not AnimationPlayer ap) continue;
+
+            var names = ap.GetAnimationList();
+            if (names.Length == 0) continue;
+
+            string animName = names[0];
+            var anim = ap.GetAnimation(animName);
+            if (anim != null && anim.LoopMode == Animation.LoopModeEnum.None)
+                anim.LoopMode = Animation.LoopModeEnum.Linear;
+
+            ap.Play(animName);
+            return;
+        }
     }
 
 
