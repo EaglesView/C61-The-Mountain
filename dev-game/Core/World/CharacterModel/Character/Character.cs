@@ -128,7 +128,7 @@ public partial class Character : CharacterBody3D
     /// authoritative via le RPC <c>SubmitStats</c> en fin de phase Game).
     /// </summary>
     protected PlayerGameStats _stats = new();
-    private float _ragdollEnterSec;
+    protected float _ragdollEnterSec;
 
     /// <summary>Accès lecture aux stats accumulées (authority).</summary>
     public PlayerGameStats Stats => _stats;
