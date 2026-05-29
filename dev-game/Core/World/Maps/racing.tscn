@@ -14,6 +14,7 @@
 [ext_resource type="PackedScene" path="res://Core/Dev/boat_auto_anim.tscn" id="13_hqadp"]
 [ext_resource type="PackedScene" uid="uid://d1fshm7mq3au7" path="res://Core/World/MapAssets/MainAssets/PlayerSpawner/player_spawner.tscn" id="13_t7i38"]
 [ext_resource type="PackedScene" uid="uid://w0vh0lann51y" path="res://Core/World/MapAssets/MainAssets/ConveyorBelt/ConveyorBelt.tscn" id="13_x4cju"]
+[ext_resource type="PackedScene" path="res://Core/Dev/bouer_auto_anim.tscn" id="14_x4cju"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yk3oh"]
 albedo_texture = ExtResource("3_siko4")
@@ -386,6 +387,9 @@ transform = Transform3D(0.33770314, 0, 0.9412527, 0, 1, 0, -0.9412527, 0, 0.3377
 BeltForce = 2.0
 StartPosition = Vector3(5.125, 2.005, 12.37)
 EndPosition = Vector3(3.42, 9.594, 0)
+
+[node name="BouerAutoAnim" parent="ConveyorBelt2" unique_id=156963534 instance=ExtResource("14_x4cju")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -46.203896, 0.7912407, 39.613945)
 
 [node name="ConveyorBelt3" parent="." unique_id=521899152 instance=ExtResource("13_x4cju")]
 transform = Transform3D(0.33770314, 0, 0.9412527, 0, 1, 0, -0.9412527, 0, 0.33770314, -51.71891, 9.242021, 4.201974)

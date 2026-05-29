@@ -10,6 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://cpqx5abj7gsp5" path="res://Assets/Textures/Tiles/water_normal.jpg" id="7_lfqjf"]
 [ext_resource type="PackedScene" uid="uid://i7k20gcwfda6" path="res://Core/World/MapAssets/MainAssets/WindTurbine/eolienne.tscn" id="8_lfqjf"]
 [ext_resource type="Texture2D" uid="uid://uhabcecu8axm" path="res://Assets/Textures/Particles/snowparticle.png" id="9_1ddx8"]
+[ext_resource type="PackedScene" path="res://Core/Dev/bouer_auto_anim.tscn" id="9_48yvc"]
 [ext_resource type="PackedScene" path="res://Core/Dev/boat_auto_anim.tscn" id="11_lyymk"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_d6caa"]
@@ -137,6 +138,12 @@ shadow_enabled = true
 [node name="Water" parent="." unique_id=2121387950 instance=ExtResource("5_nmjdn")]
 transform = Transform3D(0.86942166, 0, 0, 0, 1, 0, 0, 0, 1, 0, -25.628687, 0)
 mesh = SubResource("PlaneMesh_1ddx8")
+
+[node name="BouerAutoAnim" parent="Water" unique_id=413055398 instance=ExtResource("9_48yvc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -62.51696, 0.94688034, -68.485504)
+
+[node name="BouerAutoAnim2" parent="Water" unique_id=1311641730 instance=ExtResource("9_48yvc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 61.487473, 0.94688034, 158.24045)
 
 [node name="DecorAssets" type="Node3D" parent="." unique_id=457791370]
 

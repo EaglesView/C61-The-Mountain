@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" path="res://Core/Dev/boat_auto_anim.tscn" id="11_n77yk"]
 [ext_resource type="PackedScene" uid="uid://i7k20gcwfda6" path="res://Core/World/MapAssets/MainAssets/WindTurbine/eolienne.tscn" id="12_y8hyy"]
 [ext_resource type="Texture2D" uid="uid://uhabcecu8axm" path="res://Assets/Textures/Particles/snowparticle.png" id="13_aylxt"]
+[ext_resource type="PackedScene" path="res://Core/Dev/bouer_auto_anim.tscn" id="13_n77yk"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_wall_side"]
 size = Vector3(0.6, 6, 3.9128418)
@@ -460,3 +461,6 @@ lifetime = 5.0
 transform_align = 1
 process_material = SubResource("ParticleProcessMaterial_slf8e")
 draw_pass_1 = SubResource("QuadMesh_ee6jm")
+
+[node name="BouerAutoAnim" parent="." unique_id=536619228 instance=ExtResource("13_n77yk")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -42.07689, 0, 43.27679)
