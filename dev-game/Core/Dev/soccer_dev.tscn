@@ -1,10 +1,10 @@
 [gd_scene format=3 uid="uid://dns142sqfubcr"]
 
 [ext_resource type="PackedScene" uid="uid://bvqj5ukmwkfh5" path="res://Assets/Models/goal/soccer.tscn" id="2_8kdkq"]
-[ext_resource type="Script" uid="uid://c16cwu4br0che" path="res://Core/Dev/SoccerBall.cs" id="2_socdev"]
-[ext_resource type="Script" uid="uid://dmq53218nqd7c" path="res://Core/Dev/GoalZone.cs" id="4_socdev"]
-[ext_resource type="Script" uid="uid://cnj0e7n01romt" path="res://Core/Dev/AutoSceneCollisions.cs" id="5_socdev"]
-[ext_resource type="Script" uid="uid://oer0bbrt2vwj" path="res://Core/Dev/SoccerModeController.cs" id="6_socdev"]
+[ext_resource type="Script" path="res://Core/Dev/SoccerBall.cs" id="2_socdev"]
+[ext_resource type="Script" path="res://Core/Dev/GoalZone.cs" id="4_socdev"]
+[ext_resource type="Script" path="res://Core/Dev/AutoSceneCollisions.cs" id="5_socdev"]
+[ext_resource type="Script" path="res://Core/Dev/SoccerModeController.cs" id="6_socdev"]
 [ext_resource type="Script" uid="uid://c07lylcrncmf6" path="res://Core/World/MapAssets/MainAssets/PlayerSpawner/PlayerSpawner.cs" id="7_socdev"]
 [ext_resource type="PackedScene" uid="uid://bvmigfks33r4g" path="res://Core/World/MapAssets/world_environment_base.tscn" id="8_30emy"]
 [ext_resource type="PackedScene" uid="uid://blxnhy8a0mxon" path="res://Core/World/Terrain/endless_water.tscn" id="9_n77yk"]
@@ -176,8 +176,7 @@ collision_layer = 2
 collision_mask = 3
 mass = 3.048
 physics_material_override = SubResource("PhysicsMaterial_ball")
-linear_damp = 0.5
-angular_damp = 1.0
+custom_integrator = true
 script = ExtResource("2_socdev")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="SoccerBall" unique_id=398230800]
