@@ -103,23 +103,45 @@ public partial class GodotENetProvider : Node, INetworkProvider
     /// <inheritdoc/>
     public void BroadcastUnreliable(byte[] data, int excludePeerId = -1)
     {
-        if (_sm == null) return;
+        if (_sm == null || _peer == null) return;
         foreach (int id in Multiplayer.GetPeers())
         {
-            if (id != excludePeerId)
-                _sm.SendBytes(data, id, MultiplayerPeer.TransferModeEnum.UnreliableOrdered);
+            if (id == excludePeerId) continue;
+            if (!IsPeerReady(id)) continue;
+            _sm.SendBytes(data, id, MultiplayerPeer.TransferModeEnum.UnreliableOrdered);
         }
     }
 
     /// <inheritdoc/>
     public void BroadcastReliable(byte[] data, int excludePeerId = -1)
     {
-        if (_sm == null) return;
+        if (_sm == null || _peer == null) return;
         foreach (int id in Multiplayer.GetPeers())
         {
-            if (id != excludePeerId)
-                _sm.SendBytes(data, id, MultiplayerPeer.TransferModeEnum.Reliable);
+            if (id == excludePeerId) continue;
+            if (!IsPeerReady(id)) continue;
+            _sm.SendBytes(data, id, MultiplayerPeer.TransferModeEnum.Reliable);
         }
+    }
+
+    /// <summary>
+    /// Vrai si l'ENet peer correspondant est pleinement négocié (channels
+    /// ouverts). Pendant les transitions rapides Game→Winning→Lobby→Game,
+    /// <see cref="MultiplayerApi.GetPeers"/> peut lister des peers dont la
+    /// connexion ENet est encore en handshake (channelCount=0 côté natif)&#160;:
+    /// tout <c>SendBytes</c> sur un tel peer lève
+    /// <c>"Unable to send packet on channel N, max channels: 0"</c> au niveau
+    /// du module ENet. Ce gate filtre ces peers transitoires&#160;; ils
+    /// recevront les broadcasts suivants une fois la négociation finie.
+    /// Particulièrement visible avec les broadcasts 20&#160;Hz côté serveur
+    /// (ex. <c>BallStateUpdate</c> en mode soccer) qui amplifient la fenêtre
+    /// où l'erreur peut tomber.
+    /// </summary>
+    private bool IsPeerReady(int peerId)
+    {
+        if (_peer == null) return false;
+        var enetPeer = _peer.GetPeer(peerId);
+        return enetPeer != null && enetPeer.GetState() == ENetPacketPeer.PeerState.Connected;
     }
 
     public override void _Ready()

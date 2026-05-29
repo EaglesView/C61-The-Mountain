@@ -2,9 +2,11 @@
 
 [ext_resource type="Script" uid="uid://c145mvoa44rb1" path="res://Core/Logic/LevelControllers/RotatingBarrelController.cs" id="1_xhr76"]
 [ext_resource type="PackedScene" uid="uid://3lj7a0stmiiv" path="res://Core/World/MapAssets/MainAssets/RotatingThing/rotating_thing_animatable.tscn" id="2_xhr76"]
+[ext_resource type="PackedScene" path="res://Core/Dev/bouer_auto_anim.tscn" id="3_p3y0j"]
 [ext_resource type="PackedScene" uid="uid://d1fshm7mq3au7" path="res://Core/World/MapAssets/MainAssets/PlayerSpawner/player_spawner.tscn" id="4_6680f"]
 [ext_resource type="PackedScene" uid="uid://blxnhy8a0mxon" path="res://Core/World/Terrain/endless_water.tscn" id="6_abpew"]
 [ext_resource type="PackedScene" uid="uid://c336gjjdjalff" path="res://Core/World/MapAssets/DecorAssets/icebarg_wall.tscn" id="7_abpew"]
+[ext_resource type="PackedScene" path="res://Core/Dev/boat_auto_anim.tscn" id="7_w3hpr"]
 [ext_resource type="PackedScene" uid="uid://ch3fdjsbdo3oq" path="res://Core/World/Terrain/map_terrain.tscn" id="8_p3y0j"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_rd44d"]
@@ -39,6 +41,9 @@ HardSpeed = 1.2
 
 [node name="Water" parent="Map" unique_id=2121387950 instance=ExtResource("6_abpew")]
 transform = Transform3D(0.86942166, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.378206, 0)
+
+[node name="BouerAutoAnim" parent="Map/Water" unique_id=252874414 instance=ExtResource("3_p3y0j")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 80.86868, 3.1267319, 21.677109)
 
 [node name="Platform" type="Node3D" parent="Map" unique_id=617177621]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.403206, 0)
@@ -112,3 +117,6 @@ transform = Transform3D(-1, 0, 8.940697e-08, 0, 1, 0, -8.940697e-08, 0, -1, 7.09
 
 [node name="MapTerrainNormal" parent="." unique_id=2129251925 instance=ExtResource("8_p3y0j")]
 transform = Transform3D(50, 0, 0, 0, 50, 0, 0, 0, 50, 8.4999275, -20, 0)
+
+[node name="BoatAutoAnim" parent="." unique_id=1903408127 instance=ExtResource("7_w3hpr")]
+transform = Transform3D(-0.24432586, 0, 0.9696932, 0, 1, 0, -0.9696932, 0, -0.24432586, 0, 0, 83.72534)

@@ -96,6 +96,15 @@ public partial class NetworkManager : Node
     private const float PreviewPoseInterval = 1f / 15f;
     private float _previewPoseAccum = 0f;
 
+    /// <summary>
+    /// Déclenché côté client à la réception d'un <see cref="BallNetState"/>.
+    /// Côté serveur, l'événement n'est pas émis : le serveur est la source de
+    /// vérité, il n'a rien à appliquer en retour. Les consommateurs typiques
+    /// (ex&#160;: <c>SoccerBall</c>) s'abonnent dans <c>_Ready</c> et appliquent
+    /// le snapshot sur leur RigidBody3D local.
+    /// </summary>
+    public event Action<BallNetState>? BallStateReceived;
+
     /// <summary>Déclenché une seule fois lorsque la connexion locale au serveur est confirmée (client seulement).</summary>
     public event Action<int>? LocalConnected;
 
@@ -144,6 +153,19 @@ public partial class NetworkManager : Node
             _provider.BroadcastUnreliable(packet, excludePeerId: LocalPeerId);
         else
             _provider.SendUnreliable(1, packet);
+    }
+
+    /// <summary>
+    /// Broadcast d'un snapshot de balle vers tous les clients. No-op si le
+    /// transport est inactif ou si l'appelant n'est pas serveur. Conçu pour
+    /// être appelé à la cadence des autres snapshots (20&#160;Hz) depuis le
+    /// <c>_PhysicsProcess</c> du RigidBody3D autoritaire.
+    /// </summary>
+    public void BroadcastBallState(BallNetState state)
+    {
+        if (_provider is null || !_provider.IsRunning) return;
+        if (_provider.Role != NetworkRole.Server) return;
+        _provider.BroadcastUnreliable(BallNetState.Serialize(state), excludePeerId: LocalPeerId);
     }
 
     /// <summary>Démarre manuellement un serveur.</summary>
@@ -334,6 +356,17 @@ public partial class NetworkManager : Node
                 _provider.BroadcastUnreliable(data, excludePeerId: fromPeerId);
             }
             PreviewPoseReceived?.Invoke(pose);
+            return;
+        }
+
+        if (type == PacketType.BallStateUpdate)
+        {
+            // Le serveur est la source de vérité&#160;: il n'a rien à appliquer
+            // au paquet qu'il vient d'émettre. Côté client, on relaie via
+            // l'event pour que le RigidBody3D local applique le snapshot.
+            if (data.Length < 53) return;
+            if (_provider?.Role == NetworkRole.Client)
+                BallStateReceived?.Invoke(BallNetState.Deserialize(data));
             return;
         }
 

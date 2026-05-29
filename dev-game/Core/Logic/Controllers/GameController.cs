@@ -366,7 +366,9 @@ public sealed partial class GameController : Node3D, IPhase
             {
                 bool timeUp = _resolvingTimeElapsed >= _gameOverDuration;
                 var net = NetworkManager.Instance;
-                if (net is null || !net.IsRunning) return timeUp && _winnerDataReceived;
+				// Offline: aucune attente réseau, on ne bloque pas la sortie
+				// de Resolving sur _winnerDataReceived pour éviter les soft-locks.
+				if (net is null || !net.IsRunning) return timeUp;
                 if (net.IsServer) return timeUp;
                 return timeUp && _winnerDataReceived;
             }),
@@ -1193,7 +1195,11 @@ public sealed partial class GameController : Node3D, IPhase
     private void ResolveAndApplyLocal()
     {
         var modeConditions = (_mode as IGameMode)?.SubwinningConditions;
-        if (modeConditions is null || modeConditions.Count == 0) return;
+		if (modeConditions is null || modeConditions.Count == 0)
+		{
+			_winnerDataReceived = true;
+			return;
+		}
         var result = _resolver.Resolve(_statsByPeer, modeConditions);
 
         var subWinners = new List<(int, string, string, string)>(result.SubWinners.Count);
