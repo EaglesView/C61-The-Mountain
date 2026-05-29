@@ -17,6 +17,7 @@ public partial class Player : Character
 	[Export(PropertyHint.Range, "0.1f,1000.0f,0.1f")] public float SpeedRagdollThreshold = 10.0f;
 	[Export(PropertyHint.Range, "0.0f,360.0f,1.0f,suffix:deg")] public float FloorAngleRagdollThreshold = 60.0f;
 	[Export(PropertyHint.Range, "0.0f,50.0f,0.1f")] public float RecoveryVelocityThreshold = 3.0f;
+	[Export(PropertyHint.Range, "0.0f,10.0f,0.1f,suffix:sec")] public float RagdollEscapeTimeout = 2.5f;
 
 	[ExportGroup("Controller Settings")]
 	[Export(PropertyHint.Range, "0.0f,0.1f,0.001f")] private float _mouseSensitivity = 0.002f;
@@ -398,6 +399,14 @@ public partial class Player : Character
 
 	public override void _Input(InputEvent @event)
 	{
+		if (@event.IsActionPressed("jump"))
+		{
+			float spineVel = PhysicsSkelton != null ? PhysicsSkelton.GetSpinePhysicsLinearVelocity().Length() : -1f;
+			GD.Print($"[JumpDiag] _Input jump press: authority={IsMultiplayerAuthority()} state={_characterState} " +
+				$"frozen={_inputFrozen} onFloor={IsOnFloor()} velLen={Velocity.Length():F2} spineVel={spineVel:F2} " +
+				$"isRagdoll={PhysicsSkelton?.IsRagdoll} ragdollTriggered={PhysicsSkelton?.RagdollTriggered}");
+		}
+
 		if (!IsMultiplayerAuthority()) return;
 
 		// Handle camera rotation even if frozen (ThirdPerson only)
@@ -436,9 +445,20 @@ public partial class Player : Character
 
 		if (_characterState == CharacterState.Ragdoll)
 		{
-			if (@event.IsActionPressed("jump") &&
-				PhysicsSkelton.GetSpinePhysicsLinearVelocity().Length() < RecoveryVelocityThreshold)
-				TransitionTo(CharacterState.Recovering);
+			if (@event.IsActionPressed("jump"))
+			{
+				float spineVel = PhysicsSkelton.GetSpinePhysicsLinearVelocity().Length();
+				float ragdollElapsed = Time.GetTicksMsec() / 1000f - _ragdollEnterSec;
+				// Velocity gate is a quality check (don't get up mid-tumble).
+				// After RagdollEscapeTimeout, accept the press unconditionally
+				// — a body in continuous contact (soccer ball) can keep the
+				// spine velocity above the threshold indefinitely, which would
+				// otherwise trap the player in Ragdoll forever.
+				if (spineVel < RecoveryVelocityThreshold || ragdollElapsed > RagdollEscapeTimeout)
+					TransitionTo(CharacterState.Recovering);
+				else
+					GD.Print($"[Ragdoll] jump ignored — spineVel={spineVel:F2} threshold={RecoveryVelocityThreshold:F2} elapsed={ragdollElapsed:F2}s");
+			}
 			return;
 		}
 	}
@@ -503,8 +523,10 @@ public partial class Player : Character
 			return;
 		}
 
-		if (IsOnFloor() && GetFloorAngle() > Mathf.DegToRad(FloorAngleRagdollThreshold))
+		if (_characterState != CharacterState.Recovering
+			&& IsOnFloor() && GetFloorAngle() > Mathf.DegToRad(FloorAngleRagdollThreshold))
 		{
+			GD.Print($"[FloorAngleRagdoll] state={_characterState} floorAngleDeg={Mathf.RadToDeg(GetFloorAngle()):F1} threshold={FloorAngleRagdollThreshold:F1}");
 			TransitionTo(CharacterState.Ragdoll);
 			return;
 		}
