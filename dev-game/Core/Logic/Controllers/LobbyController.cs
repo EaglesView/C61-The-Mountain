@@ -206,25 +206,25 @@ public sealed partial class LobbyController : Node3D, IPhase
 				break;
 			case NetConn.Connecting:
 				// On attend l'aboutissement (success ⇒ _connectionSucceeded,
-                // failure ⇒ _connectionFailed) côté handlers de _BeginConnect.
-                LoadingScreen.SetStatus("Connexion au serveur…", 0.10f);
-                break;
-            case NetConn.Failed:
-                // Background connect a déjà échoué pendant le browse&#160;:
+				// failure ⇒ _connectionFailed) côté handlers de _BeginConnect.
+				LoadingScreen.SetStatus("Connexion au serveur…", 0.10f);
+				break;
+			case NetConn.Failed:
+				// Background connect a déjà échoué pendant le browse&#160;:
 				// remonter en fatal maintenant que l'utilisateur veut avancer.
 				LoadingScreen.Hide();
 				_connectionFailed = true;
 				break;
 			case NetConn.Idle:
 				// Défensif&#160;: si _BeginConnect n'a pas tourné (snapshot null,
-                // NetworkManager.Instance null), retenter ici.
-                LoadingScreen.SetStatus("Connexion au serveur…", 0.10f);
-                _BeginConnect();
-                break;
-        }
-    }
+				// NetworkManager.Instance null), retenter ici.
+				LoadingScreen.SetStatus("Connexion au serveur…", 0.10f);
+				_BeginConnect();
+				break;
+		}
+	}
 
-    /// <summary>
+	/// <summary>
 	/// Démarre la connexion ENet vers le serveur dédié si elle n'est pas déjà
 	/// active. Idempotent&#160;: réutilise une connexion vivante existante (cycle
 	/// Winning → Lobby → Game sans Disconnect intermédiaire). Le statut RÉEL
