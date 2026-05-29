@@ -1,15 +1,15 @@
 [gd_scene format=3 uid="uid://7h7hjgbj6pvx"]
 
 [ext_resource type="PackedScene" uid="uid://blxnhy8a0mxon" path="res://Core/World/Terrain/endless_water.tscn" id="1_iudw6"]
-[ext_resource type="Script" path="res://Core/Logic/LevelControllers/ObbyController.cs" id="1_s703b"]
+[ext_resource type="Script" uid="uid://dypo6v6le1cxg" path="res://Core/Logic/LevelControllers/ObbyController.cs" id="1_s703b"]
 [ext_resource type="PackedScene" uid="uid://da16y5obcuijk" path="res://Assets/Models/map.glb" id="2_fmfhc"]
-[ext_resource type="PackedScene" path="res://Core/World/MapAssets/DecorAssets/icebarg_wall.tscn" id="2_siko4"]
+[ext_resource type="PackedScene" uid="uid://c336gjjdjalff" path="res://Core/World/MapAssets/DecorAssets/icebarg_wall.tscn" id="2_siko4"]
 [ext_resource type="Texture2D" uid="uid://c68nes7tsf7dj" path="res://Assets/Textures/Snow/snow-2/textures/snow_02_diff_1k.jpg" id="3_siko4"]
 [ext_resource type="PackedScene" uid="uid://7f5ysctvudb8" path="res://Core/World/MapAssets/MainAssets/VentBlowerCharacter/Fan.tscn" id="4_mgk26"]
 [ext_resource type="PackedScene" uid="uid://3lj7a0stmiiv" path="res://Core/World/MapAssets/MainAssets/RotatingThing/rotating_thing_animatable.tscn" id="5_ne78q"]
 [ext_resource type="Script" uid="uid://dds81g3nsewph" path="res://Core/World/MapAssets/MainAssets/SnowballSpawner.cs" id="8_og786"]
 [ext_resource type="Texture2D" uid="uid://bu7fsw23jtsu3" path="res://Assets/Textures/Particles/dingbats-518.png" id="9_el33a"]
-[ext_resource type="Shader" path="res://Core/Shaders/smoke.gdshader" id="10_2qcbw"]
+[ext_resource type="Shader" uid="uid://mhdltx1fsr48" path="res://Core/Shaders/smoke.gdshader" id="10_2qcbw"]
 [ext_resource type="PackedScene" uid="uid://bvmigfks33r4g" path="res://Core/World/MapAssets/world_environment_base.tscn" id="10_yy8ho"]
 [ext_resource type="PackedScene" path="res://Core/Dev/boat_auto_anim.tscn" id="13_hqadp"]
 [ext_resource type="PackedScene" uid="uid://d1fshm7mq3au7" path="res://Core/World/MapAssets/MainAssets/PlayerSpawner/player_spawner.tscn" id="13_t7i38"]
@@ -294,7 +294,7 @@ RotationSpeed = 3.0
 RagdollForceThreshold = 0.0
 
 [node name="RotatingThing2" parent="Rotators" unique_id=440690080 instance=ExtResource("5_ne78q")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.6352915, -15.591663, 0, -17.062815)
+transform = Transform3D(1, 0, 0, 0, 0.8463419, -0.53264, 0, 0.53264, 0.8463419, -7.3005123, 6.8188453, -20.281288)
 RotationSpeed = 3.0
 RagdollForceThreshold = 0.0
 
@@ -378,16 +378,19 @@ transform = Transform3D(-1, 0, 8.940697e-08, 0, 1, 0, -8.940697e-08, 0, -1, 7.09
 
 [node name="ConveyorBelt" parent="." unique_id=117061207 instance=ExtResource("13_x4cju")]
 transform = Transform3D(0.33770314, 0, 0.9412527, 0, 1, 0, -0.9412527, 0, 0.33770314, -26.223183, 1.6782875, 7.7756577)
+BeltForce = 2.0
 StartPosition = Vector3(5.125, 1.375, 12.37)
 EndPosition = Vector3(3.42, 2.579, 0)
 
 [node name="ConveyorBelt2" parent="." unique_id=1851596958 instance=ExtResource("13_x4cju")]
 transform = Transform3D(0.33770314, 0, 0.9412527, 0, 1, 0, -0.9412527, 0, 0.33770314, -38.78797, 1.6782875, 6.378272)
+BeltForce = 2.0
 StartPosition = Vector3(5.125, 2.005, 12.37)
 EndPosition = Vector3(3.42, 9.594, 0)
 
 [node name="ConveyorBelt3" parent="." unique_id=521899152 instance=ExtResource("13_x4cju")]
 transform = Transform3D(0.33770314, 0, 0.9412527, 0, 1, 0, -0.9412527, 0, 0.33770314, -51.71891, 9.242021, 4.201974)
+BeltForce = 4.0
 StartPosition = Vector3(5.17, 2.14, 12.495)
 EndPosition = Vector3(-5.91, 3.344, -9.76)
 
