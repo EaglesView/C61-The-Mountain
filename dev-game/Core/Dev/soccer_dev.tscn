@@ -6,7 +6,6 @@
 [ext_resource type="Script" uid="uid://oer0bbrt2vwj" path="res://Core/Dev/SoccerModeController.cs" id="6_socdev"]
 [ext_resource type="Script" uid="uid://c07lylcrncmf6" path="res://Core/World/MapAssets/MainAssets/PlayerSpawner/PlayerSpawner.cs" id="7_socdev"]
 [ext_resource type="PackedScene" uid="uid://bvmigfks33r4g" path="res://Core/World/MapAssets/world_environment_base.tscn" id="8_30emy"]
-[ext_resource type="PackedScene" uid="uid://pyyf2q46j574" path="res://Core/World/CharacterModel/Player/Player.tscn" id="8_pr5x7"]
 [ext_resource type="PackedScene" uid="uid://blxnhy8a0mxon" path="res://Core/World/Terrain/endless_water.tscn" id="9_n77yk"]
 [ext_resource type="Shader" uid="uid://c3d638behmwd8" path="res://Core/Shaders/water.gdshader" id="10_pr5x7"]
 [ext_resource type="Texture2D" uid="uid://cpqx5abj7gsp5" path="res://Assets/Textures/Tiles/water_normal.jpg" id="11_0yxw7"]
@@ -461,5 +460,3 @@ lifetime = 5.0
 transform_align = 1
 process_material = SubResource("ParticleProcessMaterial_slf8e")
 draw_pass_1 = SubResource("QuadMesh_ee6jm")
-
-[node name="Player" parent="." unique_id=1298834634 instance=ExtResource("8_pr5x7")]
