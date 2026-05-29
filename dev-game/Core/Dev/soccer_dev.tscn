@@ -3,7 +3,6 @@
 [ext_resource type="PackedScene" uid="uid://bvqj5ukmwkfh5" path="res://Assets/Models/goal/soccer.tscn" id="2_8kdkq"]
 [ext_resource type="Script" uid="uid://c16cwu4br0che" path="res://Core/Dev/SoccerBall.cs" id="2_socdev"]
 [ext_resource type="Script" uid="uid://dmq53218nqd7c" path="res://Core/Dev/GoalZone.cs" id="4_socdev"]
-[ext_resource type="Script" uid="uid://cnj0e7n01romt" path="res://Core/Dev/AutoSceneCollisions.cs" id="5_socdev"]
 [ext_resource type="Script" uid="uid://oer0bbrt2vwj" path="res://Core/Dev/SoccerModeController.cs" id="6_socdev"]
 [ext_resource type="Script" uid="uid://c07lylcrncmf6" path="res://Core/World/MapAssets/MainAssets/PlayerSpawner/PlayerSpawner.cs" id="7_socdev"]
 [ext_resource type="PackedScene" uid="uid://bvmigfks33r4g" path="res://Core/World/MapAssets/world_environment_base.tscn" id="8_30emy"]
@@ -122,7 +121,6 @@ size = Vector2(0.1, 0.1)
 script = ExtResource("6_socdev")
 
 [node name="soccer" parent="." unique_id=23486021 instance=ExtResource("2_8kdkq")]
-script = ExtResource("5_socdev")
 
 [node name="BoundaryWalls" type="Node3D" parent="." unique_id=1213633054]
 
@@ -184,7 +182,7 @@ shape = SubResource("BoxShape3D_mgy3e")
 
 [node name="SoccerBall" type="RigidBody3D" parent="." unique_id=1764525413]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.028448582, 1.4960321, 0)
-collision_layer = 64
+collision_layer = 66
 collision_mask = 7
 mass = 3.048
 physics_material_override = SubResource("PhysicsMaterial_ball")
