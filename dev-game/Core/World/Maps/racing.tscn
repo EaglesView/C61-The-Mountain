@@ -376,7 +376,7 @@ transform = Transform3D(-1, 0, 8.940697e-08, 0, 1, 0, -8.940697e-08, 0, -1, 3.19
 transform = Transform3D(-1, 0, 8.940697e-08, 0, 1, 0, -8.940697e-08, 0, -1, 7.0999994, 0.2564956, 7.400001)
 
 [node name="ConveyorBelt" parent="." unique_id=117061207 instance=ExtResource("13_x4cju")]
-transform = Transform3D(0.33770314, 0, 0.9412527, 0, 1, 0, -0.9412527, 0, 0.33770314, -26.223183, 1.6782875, 7.7756577)
+transform = Transform3D(0.33770314, 0, 0.9412527, 0, 1, 0, -0.9412527, 0, 0.33770314, -26.223183, 1.7254868, 7.7756577)
 BeltForce = 2.0
 StartPosition = Vector3(5.125, 1.375, 12.37)
 EndPosition = Vector3(3.42, 2.579, 0)

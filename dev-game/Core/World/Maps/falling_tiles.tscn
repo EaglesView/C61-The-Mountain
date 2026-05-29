@@ -10,6 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://cpqx5abj7gsp5" path="res://Assets/Textures/Tiles/water_normal.jpg" id="7_lfqjf"]
 [ext_resource type="PackedScene" uid="uid://i7k20gcwfda6" path="res://Core/World/MapAssets/MainAssets/WindTurbine/eolienne.tscn" id="8_lfqjf"]
 [ext_resource type="Texture2D" uid="uid://uhabcecu8axm" path="res://Assets/Textures/Particles/snowparticle.png" id="9_1ddx8"]
+[ext_resource type="PackedScene" path="res://Core/Dev/boat_auto_anim.tscn" id="11_lyymk"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_d6caa"]
 render_priority = 0
@@ -294,3 +295,9 @@ lifetime = 5.0
 transform_align = 1
 process_material = SubResource("ParticleProcessMaterial_jg2i4")
 draw_pass_1 = SubResource("QuadMesh_lyymk")
+
+[node name="BoatAutoAnim" parent="." unique_id=667124746 instance=ExtResource("11_lyymk")]
+transform = Transform3D(0.75072247, 0, 0.6606177, 0, 1, 0, -0.6606177, 0, 0.75072247, -96.02968, -24.175976, 0)
+
+[node name="BoatAutoAnim2" parent="." unique_id=1614755088 instance=ExtResource("11_lyymk")]
+transform = Transform3D(0.089659154, 0, 0.9959725, 0, 1, 0, -0.9959725, 0, 0.089659154, 115.498245, -24.175976, -67.75658)

@@ -28,6 +28,10 @@ public partial class BoatAutoAnim : Node3D
 			clip = list[0];
 		}
 
+		var anim = animPlayer.GetAnimation(clip);
+		if (anim is not null && anim.LoopMode == Animation.LoopModeEnum.None)
+			anim.LoopMode = Animation.LoopModeEnum.Linear;
+
 		animPlayer.Play(clip);
 	}
 
