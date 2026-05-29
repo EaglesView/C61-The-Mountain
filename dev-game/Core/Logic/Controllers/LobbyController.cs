@@ -165,11 +165,13 @@ public sealed partial class LobbyController : Node3D, IPhase
             _lobbyInstance = null;
         }
         _fsm = null;
-        // On garde la connexion ENet vivante&#160;: GameController la réutilise.
-		// En revanche le mapping userId↔peerId n'est plus pertinent hors lobby
-		// (Game/Winning travaillent directement en peerId)&#160;; un re-entry
-		// Winning → Lobby le repeuple via Enter ⇒ Clear ⇒ handshake.
-		LobbyPresence.Clear();
+        // On garde la connexion ENet ET le mapping userId↔peerId vivants&#160;:
+		// GameController réutilise la connexion, et Player.cs (`_ResolvePlayerLabel`)
+		// lit LobbyPresence pour afficher le username au-dessus de chaque
+		// distant dans la phase Game. Le mapping est repurgé+repopulé via le
+		// handshake si on re-rentre dans Lobby (cf. `Enter` ci-dessus), et
+		// `NetworkManager.PeerDisconnected` retire individuellement chaque
+		// peer qui part en cours de partie — pas de fuite cross-session.
 	}
 
 	private void OnGameStartRequested()
